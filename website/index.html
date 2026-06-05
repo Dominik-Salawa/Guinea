@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Guinea - main page</title>
+        <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+        <link rel="stylesheet" href="style.css">
+        <meta name="viewport" content="width=device-width">
+    </head>
+
+    <body>
+        <header>
+            <a href="index.html">
+                <div>
+                    <img src="images/favicon.ico" alt="Guinea logo">
+                    <h1>Guinea</h1>
+                </div>
+            </a>
+
+            <nav>
+                <a href="#AboutGuinea">About Us</a>
+                <a href="installation/main.html">Installation Guide</a>
+                <a href="documentation/main.html">Documentation</a>
+                <a href="https://github.com/Dominik-Salawa/Guinea">Source Code</a>
+            </nav>
+        </header>
+
+        <main>
+            <h1 style="margin-top: 5px;">Welcome!</h1>
+            <p>
+                This is the official website for the documentation and the programming language of Guinea.<br><br>
+                <b>NOTE: Guinea prioritizes updates for Unix-based Operating Systems (i.e. Linux) before Windows!</b>
+            </p>
+
+            <hr>
+
+            <h4>Example of Guinea's "Hello, World!"</h4>
+            <pre>imul io: auto = import("io")
+                
+function main(): int
+    io.println("Hello, World!")
+    return 0
+end</pre>
+
+            <h2 id="AboutGuinea">About Guinea</h2>
+            <p>
+                Guinea is a bytecoded-interpreted high-level programming language built with the intention of combining the positives of
+                dynamically-typed languages, and the benefits of statically-typed languages. By making sure our language 
+                prioritizes being statically-typed for safety, it also allows for dynamic-typing to ensure you can 
+                write code which can support multiple scenarios where needing a variable/list/array to represent a range of 
+                unique data-types can be a mess, such as JSONs.
+            </p>
+
+            <br>
+
+            <h2>Installation of Guinea</h2>
+            <p>
+                For <b>Linux-based</b> Operating Systems, it depends on your package manager:                
+            </p>
+            <ul>
+                <li>Arch: pacman, yay | name: guinea</li>
+                <li>Ubuntu/Debian: apt  | name: guinea</li>
+            </ul>
+            <p>
+                For Windows, you can install the CLI-pkg for Windows.<br>
+            </p>
+            <h4>What if I want to compile the source-code instead?</h4>
+            <p>
+                To compile the Source-code, you need to use CMake in order for your program to compile correctly.
+            </p>
+
+            <br>
+
+            <h2>Documentation for Guinea</h2>
+            <p>
+                Documentations are located <a href="documentation/main.html">right here</a>.
+            </p>
+
+            <br>
+
+            <h2>Philosophy of Guinea</h2>
+            <p>
+                Minimalist, clean, readable, flexible, powerful. (not actually everything this is just notes)
+            </p>
+
+            <br>
+
+            <!--
+            <h2>More about Guinea</h2>
+            <p>
+                I'm going to sleep. (didnt have time)
+            </p>
+            
+            <br>
+            -->
+
+            <h2>Info</h2>
+            <p>
+                I would like to encourage who-ever is reading this to test Guinea to its limits. Due to Guinea being
+                a new language, it will come at a cost of bugs hidden and unstable performance in some scenarios. Guinea
+                is strongly open to bug reports and inquires.
+            </p>
+
+            <br>
+
+            <h2>License</h2>
+            <p>
+                Guinea is under the MIT license. Meaning it is free to distribute, modify, and use for any purpose 
+                including commercial-use.
+            </p>
+        </main>
+
+        <footer>
+
+        </footer>
+    </body>
+
+    <script src="highlight code.js"></script>
+</html>

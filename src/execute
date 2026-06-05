@@ -1,0 +1,7 @@
+#!/bin/bash
+
+clear
+
+gcc -o ".out" "main.c" -lm
+time ./.out
+rm ./.out
