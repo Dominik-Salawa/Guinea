@@ -4,21 +4,26 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef struct {
+typedef struct String {
     size_t length;
     size_t size;
     char* content;
 } String;
 
 String init_String();
-void stringaddchar(String* str, char ch);
+String* init_String_ptr();
+String* stringaddchar(String* str, char ch);
 // clearstring() IS IF YOU WANT TO FREE A STRING WITHOUT free() it
 // OR IF ITS A STACK VALUE
 void clearstring(String* str);
 // clearstring_ptr() IS IF YOU WANT TO free() THE PTR STRING
 void clearstring_ptr(String** str);
 String copystring(String* str);
-bool stringconcat(String* toconcat, String* toadd);
-bool stringconcat_charptr(String* toconcat, char* toadd);
+String* copystring_as_ptr(String* str);
+String* stringconcat(String* toconcat, String* toadd);
+// FOR RAW char* WITH A DEFINED length
+String* stringconcat_char_w_len(String* toconcat, char* toadd, size_t length);
+String* stringconcat_charptr(String* toconcat, char* toadd);
+bool stringcompare(String* string1, String* string2);
 
 #endif

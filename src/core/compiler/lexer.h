@@ -55,6 +55,7 @@ typedef enum {
     TK_char,
     TK_bool,
     TK_string,
+    TK_dynamic,
 
     // MATH/OPERATIONS
     TK_ASSIGN,
@@ -83,8 +84,9 @@ typedef enum {
 
 typedef struct {
     LexTokenEnum type;
-    unsigned int line;
-    unsigned int column;
+    size_t line;
+    size_t column;
+    size_t length;
 
     union {
         bool    bl;

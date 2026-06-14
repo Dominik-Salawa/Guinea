@@ -2,14 +2,9 @@
 #define STRING_MANIPULATION_C
 
 #include "string_manipulation.h"
+#include "declarations.h"
 #include <stdbool.h>
 #include <stdlib.h>
-
-#define is_num_char(ch)     (ch >= '0' && ch <= '9')
-#define is_octal_char(ch)   (ch >= '0' && ch <= '7')
-#define to_number(ch)       (ch - '0')
-#define is_alphabet(ch)     (lower(ch) >= 'a' && lower(ch) <= 'z')
-#define is_hex_code(ch)     (lower(ch) >= 'a' && lower(ch) <= 'f' || is_num_char(ch))
 
 char alphabet[] = "abcdefghijklmnopqrstuvwxyz";
 char numbers[]  = "0123456789";
@@ -70,7 +65,7 @@ bool is_valid_number(char* str)
 bool is_valid_identifier_string(char* str)
 {
     bool found = false;
-    for (char i = 0; i < sizeof(alphabet)/sizeof(char)-1; i++) {
+    for (ubyte i = 0; i < sizeof(alphabet)/sizeof(char)-1; i++) {
         if (alphabet[i] == lower(str[0]) || str[0] == '_') {
             found = true;
             break;

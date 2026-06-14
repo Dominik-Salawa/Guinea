@@ -52,14 +52,10 @@ ParseState init_ParseState(String* file_content);
 void destroy_ParseState(ParseState* pState);
 void advance_parser(ParseState* pState);
 
-ExpressionNodeType LexTokenEnum_to_ValidExpressionNodeType_Operation(LexTokenEnum x);
-
-ExpressionAST* get_function_args_in_expression_parser(ParseState* pState);
-G_AST eval_if_statement(ParseState* pState);
-G_AST eval_if_statement(ParseState* pState);
-G_AST eval_while_statement(ParseState* pState);
-G_AST eval_for_statement(ParseState* pState);
-G_AST parse_segment(ParseState* pState, LexTokenEnum ending, bool is_global_scope);
-G_AST parse(String* file_content);
+bool eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope);
+bool get_function_args_in_expression_parser(ParseState* pState);
+bool eval_if_statement(ParseState* pState);
+bool parse_segment(ParseState* pState, LexTokenEnum ending, bool is_global_scope);
+bool parse(String* file_content);
 
 #endif

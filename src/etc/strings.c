@@ -2,6 +2,7 @@
 #define STRINGS_C
 
 #include "strings.h"
+#include <string.h>
 
 String init_String()
 {
@@ -10,23 +11,32 @@ String init_String()
     return s;
 }
 
-void stringaddchar(String* str, char ch)
+String* init_String_ptr()
+{
+    String* x = malloc(sizeof(String));
+    if (!x) return NULL;
+    *x = init_String();
+    return x;
+}
+
+String* stringaddchar(String* str, char ch)
 {
     if (str->length >= str->size-1) {
         str->size *= 2;
-        str->content = realloc(str->content, str->size);
+        char* tmp = realloc(str->content, str->size);
+        if (!tmp) return NULL;
 
-        if (!str->content) {
-            str->size    = 0;
-            str->length  = 0;
-        }
+        str->content = tmp;
     }
     str->content[str->length++] = ch;
     str->content[str->length]   = 0;
+    return str;
 }
 
 void clearstring(String* str)
 {
+    if (!str) return;
+
     str->length = 0;
     str->size   = 0;
 
@@ -39,9 +49,29 @@ void clearstring(String* str)
 // THIS IS IF YOU WANT TO free() A PTR STRING
 void clearstring_ptr(String** str)
 {
+    if (!str) return;
     clearstring(*str);
     free(*str);
     *str = NULL;
+}
+
+String* stringconcat(String* toconcat, String* toadd)
+{
+    while (toconcat->length + toadd->length + 1 > toconcat->size) {
+        toconcat->size = toconcat->length + toadd->length + 1;
+        char* tmp = realloc(toconcat->content, toconcat->size);
+
+        if (!tmp)
+            return NULL;
+
+        toconcat->content = tmp;
+    }
+
+    for (size_t i = 0; i < toadd->length; i++)
+        toconcat->content[toconcat->length++] = toadd->content[i];
+
+    toconcat->content[toconcat->length] = 0;
+    return toconcat;
 }
 
 String copystring(String* str)
@@ -49,61 +79,58 @@ String copystring(String* str)
     String x;
 
     x.size    = str->size;
-    x.length  = str->length;
+    x.length  = 0;
     x.content = malloc(x.size);
+    if (!x.content) return (String){0};
 
-    for (size_t i = 0; i < x.length; i++)
-        x.content[i] = str->content[i];
-
+    stringconcat(&x, str);
     x.content[x.length] = 0;
-
     return x;
 }
 
-bool stringconcat(String* toconcat, String* toadd)
+String* copystring_as_ptr(String* str)
 {
-    if (toconcat->length + toadd->length + 1 > toconcat->size) {
-        toconcat->size = toconcat->length + toadd->length + 1;
-        char* tmp = realloc(toconcat->content, toconcat->size);
-
-        if (!tmp)
-            return false;
-
-        toconcat->content = tmp;
-    }
-
-    size_t toconcat_i = toconcat->length;
-    for (size_t i = 0; i < toadd->length; i++) {
-        toconcat->content[toconcat_i] = toadd->content[i];
-        toconcat_i++;
-    }
-    toconcat->length = toconcat->length + toadd->length;
-    toconcat->content[toconcat->length] = 0;
-    return true;
+    if (!str) return NULL;
+    String* x = init_String_ptr();
+    if (!x) return NULL;
+    stringconcat(x, str);
+    return x;
 }
 
-bool stringconcat_charptr(String* toconcat, char* toadd)
+// FOR RAW char* WITH A DEFINED length
+String* stringconcat_char_w_len(String* toconcat, char* toadd, size_t toadd_len)
 {
-    size_t toadd_len = 0;
-    while (toadd[toadd_len] != 0) toadd_len++;
-
     if (toconcat->length + toadd_len + 1 > toconcat->size) {
         toconcat->size = toconcat->length + toadd_len + 1;
         char* tmp = realloc(toconcat->content, toconcat->size);
 
         if (!tmp)
-            return false;
+            return NULL;
 
         toconcat->content = tmp;
     }
 
-    size_t toconcat_i = toconcat->length;
     for (size_t i = 0; i < toadd_len; i++) {
-        toconcat->content[toconcat_i] = toadd[i];
-        toconcat_i++;
+        toconcat->content[toconcat->length++] = toadd[i];
     }
-    toconcat->length = toconcat->length + toadd_len;
     toconcat->content[toconcat->length] = 0;
+    return toconcat;
+}
+
+
+String* stringconcat_charptr(String* toconcat, char* toadd)
+{
+    return stringconcat_char_w_len(toconcat, toadd, strlen(toadd));
+}
+
+bool stringcompare(String* string1, String* string2)
+{
+    if (string1->length != string2->length) return false;
+
+    for (size_t i = 0; i < string1->length; i++) {
+        if (string1->content[i] != string2->content[i]) return false;
+    }
+
     return true;
 }
 

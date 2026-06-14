@@ -1,7 +1,10 @@
 #!/bin/bash
 
-clear
-
-gcc -o ".out" "main.c" -lm
-time ./.out
-rm ./.out
+gcc -Wall -Werror -Wno-unused-variable -Wno-unused-function -lm -o ".out" "main.c"
+./.out "$@"
+if [[ $EUID -eq 0 ]]; then
+    listamount=$(ls -1 ./oldexecutables | wc -l)
+    num=$((listamount + 1))
+    sudo mv /bin/guinea "./oldexecutables/guinea$num"
+    sudo mv ./.out /bin/guinea
+fi

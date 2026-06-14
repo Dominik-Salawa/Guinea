@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include "../etc/strings.h"
 
-typedef enum {
-    G_VALUETYPE_DEAD = 0, // GC
+typedef enum G_ValueType {
+    G_VALUETYPE_DEAD = 0,
 
     G_VALUETYPE_CHAR,
     G_VALUETYPE_STRING,
@@ -23,12 +23,7 @@ typedef enum {
 } G_ValueType;
 
 
-typedef struct G_Value G_Value;
-typedef struct {
-    uint64_t size;
-    G_Value** children;
-} G_Childrens;
-struct G_Value {
+typedef struct G_Value {
     G_ValueType type;
     union {
         bool            bl;
@@ -38,9 +33,12 @@ struct G_Value {
         double          f64;
         int32_t         i32;
         int64_t         i64;
-        G_Childrens     children;
+        struct {
+            size_t size;
+            struct G_Value** children;
+        } children;
     };
-};
+} G_Value;
 
 G_Value init_Value();
 

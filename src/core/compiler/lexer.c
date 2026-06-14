@@ -93,7 +93,7 @@ struct LexNodeCharToEnumData {
     LexTokenEnum type;
 };
 
-const struct LexNodeStringToEnumData stringtoken[] = {
+static const struct LexNodeStringToEnumData stringtoken[] = {
     {.string="true",        .type=TK_Bool_val},
     {.string="false",       .type=TK_Bool_val},
     {.string="nil",         .type=TK_nil},
@@ -118,7 +118,7 @@ const struct LexNodeStringToEnumData stringtoken[] = {
     {.string="var",         .type=TK_var},
 };
 
-const struct LexNodeCharToEnumData chartoken[] = {
+static const struct LexNodeCharToEnumData chartoken[] = {
     {.ch='{',       .type=TK_CURLY_L},
     {.ch='}',       .type=TK_CURLY_R},
     {.ch='[',       .type=TK_BRACKET_L},
@@ -149,14 +149,14 @@ struct DoubleOperationChar {
     LexTokenEnum type;
 };
 
-const struct DoubleOperationChar doublechartoken[] = {
+static const struct DoubleOperationChar doublechartoken[] = {
     {.f_ch='=', .s_ch='=',      .type=TK_EQU},
     {.f_ch='!', .s_ch='=',      .type=TK_NOT_EQU},
     {.f_ch='<', .s_ch='=',      .type=TK_LT_EQU},
     {.f_ch='>', .s_ch='=',      .type=TK_GT_EQU},
 };
 
-void set_token_type(LexToken* token, LexState* lState) // for true/false also converts into right datatype
+static void set_token_type(LexToken* token, LexState* lState) // for true/false also converts into right datatype
 {
     if (is_int_string(token->string.content) || is_valid_number(token->string.content)) {
         size_t decimal_index = 0;
@@ -233,7 +233,7 @@ struct EscapeCodeToInt {
     char convert;
 };
 
-const struct EscapeCodeToInt escapeCodeToNumber[] = {
+static const struct EscapeCodeToInt escapeCodeToNumber[] = {
     {.ch='"',   .convert='"' },
     {.ch='\'',  .convert='\''},
     {.ch='t',   .convert='\t'},
@@ -252,7 +252,7 @@ struct ParseEscapeCode {
     bool err;
 };
 
-struct ParseEscapeCode parse_escape_code(char* str, size_t index)
+static struct ParseEscapeCode parse_escape_code(char* str, size_t index)
 {
     struct ParseEscapeCode ret = {.ch=0,.err=false,.size=0};
     size_t len = 0;
@@ -302,24 +302,27 @@ struct ParseEscapeCode parse_escape_code(char* str, size_t index)
 #define lState_char       (lState->string[lState->index])
 #define ahead_lState_char (lState->string[lState->index + 1])
 
-void increment_lexer(LexState* lState, size_t incremental_size)
+static void increment_lexer(LexState* lState, size_t incremental_size)
 {
     lState->current_column += incremental_size;
     lState->index          += incremental_size;
 }
 
-void parse_lexer_string(LexState* lState, LexToken* lToken)
+static void parse_lexer_string(LexState* lState, LexToken* lToken)
 {
     increment_lexer(lState, 1);
 
     #define rewind_string_lexer() {\
         clearstring(&lToken->string);\
         lToken->string = init_String();\
+        lToken->length = 1;\
         increment_lexer(lState, -((lState->current_column)-original));\
     }
 
+    lToken->length = 1;
     size_t original = lState->current_column;
     for (;true;increment_lexer(lState, 1)) {
+        ++lToken->length;
         // reached EOF
         if (lState->index >= lState->str_length) {
             if (lToken->type == TK_ERR) {
@@ -346,8 +349,10 @@ void parse_lexer_string(LexState* lState, LexToken* lToken)
         // Reached the end of string
         if (lState_char == '"') {
             increment_lexer(lState, 1);
-            if (lToken->type == TK_ERR)
+            if (lToken->type == TK_ERR) {
+                ++lToken->length;
                 stringaddchar(&lToken->string, '"');
+            }
             break;
         }
 
@@ -355,6 +360,7 @@ void parse_lexer_string(LexState* lState, LexToken* lToken)
             increment_lexer(lState, 1);
             struct ParseEscapeCode ret = parse_escape_code(lState->string, lState->index);
 
+            lToken->length += ret.size;
             if (ret.err) {
                 lState->errmsg = "Invalid escape character!";
                 lToken->type = TK_ERR;
@@ -366,12 +372,13 @@ void parse_lexer_string(LexState* lState, LexToken* lToken)
                 stringaddchar(&lToken->string, ret.ch);
             }
         } else {
+            //++lToken->length;
             stringaddchar(&lToken->string, lState_char);
         }
     }
 
     if (lToken->type != TK_ERR)
-        lToken->type = TK_String_val;
+        lToken->type   = TK_String_val;
 }
 
 
@@ -402,13 +409,15 @@ LexToken advance_lexer(LexState* lState)
     LexToken lToken = {0};
     lToken.column = lState->current_column;
     lToken.line   = lState->current_line;
+    lToken.length = 1;
 
     if (lState->index >= lState->str_length) {
         lToken.type = TK_EOF;
         return lToken;
     }
 
-    bool doing_comment = false;
+    bool doing_comment       = false;
+    bool doing_multi_comment = false;
 
     for (; lState->index < lState->str_length; increment_lexer(lState, 1)) {
         if (lState_char == ' ') {
@@ -430,8 +439,32 @@ LexToken advance_lexer(LexState* lState)
         if (doing_comment) {
             continue;
         }
-        if (lState_char == '/' && ahead_lState_char == '/') {
+        if (lState_char == '/' && ahead_lState_char == '*') {
+            doing_multi_comment = true;
+            continue;    
+        }
+        if (lState_char == '*' && ahead_lState_char == '/') {
+            if (!doing_multi_comment) {
+                lState->errmsg = "End of a multi-lined comment mentioned when it wasn't active!";
+                lToken.column = lState->current_column;
+                lToken.line   = lState->current_line;
+                lToken.string = init_String();
+                stringconcat_charptr(&lToken.string, "*/");
+                lToken.type = TK_ERR;
+                return lToken;
+            }
+
+            doing_multi_comment = false;
+
+            // so it effectively skips 2 chars
+            ++lState->index;
+            continue;
+
+        } else if (lState_char == '/' && ahead_lState_char == '/' && !doing_multi_comment) {
             doing_comment = true;
+            continue;
+        }
+        if (doing_multi_comment) {
             continue;
         }
 
@@ -456,8 +489,6 @@ LexToken advance_lexer(LexState* lState)
             }
         }
 
-        bool done_decimal = false;
-        bool error        = false;
         lToken.string = init_String();
 
         // Doing string
@@ -466,6 +497,8 @@ LexToken advance_lexer(LexState* lState)
             return lToken;
         }
         
+        lToken.length = 0;
+
         // Checking if its just invalid characters and if it is then collect
         if (!is_valid_identifier_char(lState_char)) {
             for (;!is_valid_identifier_char(lState_char) && lState_char != ' ' && lState_char != '\n' && lState_char != '\t'; increment_lexer(lState, 1)) {
@@ -473,21 +506,23 @@ LexToken advance_lexer(LexState* lState)
             }
             lToken.type = TK_UNKNOWN;
         } else {
-            double decimal = 0;
             char doing_decimal = 0;
 
             // If its invalid then collect the identifier/number
             for (;true;increment_lexer(lState, 1)) {
                 if (is_valid_identifier_char(lState_char)) {
                     stringaddchar(&lToken.string, lState_char);
+                    ++lToken.length;
                 } else {
                     // if its a number accept the . to be a float
                     if (!doing_decimal && lState_char == '.' && is_int_string(lToken.string.content)) {
                         stringaddchar(&lToken.string, '.');
                         doing_decimal = 1;
+                        ++lToken.length;
                     } else if ((doing_decimal < 2 && doing_decimal != 0) && (is_valid_identifier_char(lState_char) || lState_char == '.')) {
                         stringaddchar(&lToken.string, lState_char);
                         ++doing_decimal;
+                        ++lToken.length;
                     } else {
                         break;
                     }
@@ -505,6 +540,8 @@ LexToken advance_lexer(LexState* lState)
     // If we reached this far, it means 
     // we went through all whitespace 
     // and reached the end
+    lToken.column = lState->current_column;
+    lToken.line   = lState->current_line;
     lToken.type = TK_EOF;
     return lToken;
 }
