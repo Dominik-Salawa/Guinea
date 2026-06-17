@@ -56,32 +56,7 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
     if (!expr) return x;
     if (!addr_to_bytecode) return x;
 
-    ubyte pathways = 0;
-    switch (expr->type)
-    {
-        case EXPRNODE_ADD: pathways = 2; break;
-        case EXPRNODE_SUB: pathways = 2; break;
-        case EXPRNODE_MUL: pathways = 2; break;
-        case EXPRNODE_DIV: pathways = 2; break;
-        case EXPRNODE_MOD: pathways = 2; break;
-        case EXPRNODE_POW: pathways = 2; break;
-
-        case EXPRNODE_EQU: pathways = 2; break;
-        case EXPRNODE_NOT_EQU: pathways = 2; break;
-
-        case EXPRNODE_GT: pathways = 2; break;
-        case EXPRNODE_LT: pathways = 2; break;
-        case EXPRNODE_GT_EQU: pathways = 2; break;
-        case EXPRNODE_LT_EQU: pathways = 2; break;
-
-        case EXPRNODE_NEG: pathways = 1; break;
-        case EXPRNODE_NOT: pathways = 1; break;
-        case EXPRNODE_CALL: pathways = 1; break;
-        default: pathways = 0;
-    }
-
-    G_log("pathway count: %d\n", pathways);
-
+    ubyte pathways = get_pathway_count_of_ExpressionNodeAST(expr->type);
     G_Bytecode* bytecode = *addr_to_bytecode;
 
     switch (pathways)

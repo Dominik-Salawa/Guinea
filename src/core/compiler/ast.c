@@ -7,6 +7,62 @@
 #include "../bytecode.h"
 
 
+byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type)
+{
+    byte pathways;
+    switch (type)
+    {
+        case EXPRNODE_ADD: pathways = 2; break;
+        case EXPRNODE_SUB: pathways = 2; break;
+        case EXPRNODE_MUL: pathways = 2; break;
+        case EXPRNODE_DIV: pathways = 2; break;
+        case EXPRNODE_MOD: pathways = 2; break;
+        case EXPRNODE_POW: pathways = 2; break;
+
+        case EXPRNODE_EQU: pathways = 2; break;
+        case EXPRNODE_NOT_EQU: pathways = 2; break;
+
+        case EXPRNODE_GT: pathways = 2; break;
+        case EXPRNODE_LT: pathways = 2; break;
+        case EXPRNODE_GT_EQU: pathways = 2; break;
+        case EXPRNODE_LT_EQU: pathways = 2; break;
+
+        case EXPRNODE_NEG: pathways = 1; break;
+        case EXPRNODE_NOT: pathways = 1; break;
+        case EXPRNODE_CALL: pathways = 1; break;
+        default: pathways = 0;
+    }
+    return pathways;
+}
+
+char* ExpressionNodeType_to_string(ExpressionNodeType dt)
+{
+    switch (dt)
+    {
+        case EXPRNODE_UNINIT:               return "UNINIT";
+        case EXPRNODE_ADD:                  return "+";
+        case EXPRNODE_SUB:                  return "-";
+        case EXPRNODE_MUL:                  return "*";
+        case EXPRNODE_DIV:                  return "/";
+        case EXPRNODE_POW:                  return "^";
+        case EXPRNODE_MOD:                  return "%";
+        case EXPRNODE_NEG:                  return "-";
+        case EXPRNODE_CALL:                 return "()";
+        case EXPRNODE_INT:                  return "(int)";
+        case EXPRNODE_NUMBER:               return "(number)";
+        case EXPRNODE_STRING:               return "(string)";
+        case EXPRNODE_BOOL:                 return "(bool)";
+        case EXPRNODE_CHAR:                 return "(char)";
+        case EXPRNODE_FUNCTION_LITERAL:     return "(function)";
+        case EXPRNODE_IDENTIFIER:           return "(identifier)";
+        case EXPRNODE_NIL:                  return "nil";
+        default:                            return NULL;
+    }
+}
+
+
+
+
 bool assign_ExpressionNodeAST(ExpressionNodeAST** x, ExpressionNodeType type)
 {
     if (!x) return false;
@@ -20,53 +76,70 @@ bool assign_ExpressionNodeAST(ExpressionNodeAST** x, ExpressionNodeType type)
 }
 
 
-
 void G_log_ExpressionNodeAST(ExpressionNodeAST* x)
 {
+    if (!x) {
+        printf("NULL\n");
+        return;
+    }
 
     switch (x->type)
     {
         case EXPRNODE_UNINIT: return;
 
         case EXPRNODE_ADD:
-            G_log_ExpressionNodeAST(x->left);
-            G_log(" +");
+            G_log("+\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_SUB:
-            G_log_ExpressionNodeAST(x->left);
-            G_log(" -");
+            G_log("-\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_MUL:
-            G_log_ExpressionNodeAST(x->left);
-            G_log(" *");
+            G_log("*\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_DIV:
-            G_log_ExpressionNodeAST(x->left);
-            G_log(" /");
+            G_log("/\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_POW:
-            G_log_ExpressionNodeAST(x->left);
-            G_log(" ^");
+            G_log("^\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_MOD:
-            G_log_ExpressionNodeAST(x->left);
-            G_log(" %");
+            G_log("%\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_NEG:
-            G_log(" neg");
+            G_log("NEG\n");
+            G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
+            G_log_pop_layer();
             return;
 
         case EXPRNODE_CALL:
@@ -79,43 +152,43 @@ void G_log_ExpressionNodeAST(ExpressionNodeAST* x)
                     G_log(", ");
             }
 
-            G_log(")");
+            G_log(")\n");
             return;
 
         case EXPRNODE_INT:
-            G_log(" int:%lld", x->data.integer);
+            G_log("int:%lld\n", x->data.integer);
             return;
 
         case EXPRNODE_CHAR:
-            G_log(" '%c'", x->data.ch);
+            G_log("'%c'\n", x->data.ch);
             return;
 
         case EXPRNODE_BOOL:     
-            G_log(" %s", (x->data.bl) ? " true" : " false");
+            G_log("%s\n", (x->data.bl) ? " true" : " false");
             return;
 
         case EXPRNODE_NUMBER:
-            G_log(" %lf", x->data.number);
+            G_log("%lf\n", x->data.number);
             return;
 
         case EXPRNODE_STRING:
-            G_log(" \"%s\"", x->data.string_identifier.content);
+            G_log("\"%s\"\n", x->data.string_identifier.content);
             return;
 
         case EXPRNODE_IDENTIFIER:
-            G_log(" %s", x->data.string_identifier.content);
+            G_log("%s\n", x->data.string_identifier.content);
             return;
 
         case EXPRNODE_FUNCTION_LITERAL:
-            G_log(" (function)");
+            G_log("(function)\n");
             return;
 
         case EXPRNODE_NIL:
-            G_log(" nil");
+            G_log("nil\n");
             return;
 
         default:
-            printf("![Error (%d:%s)]", x->type, ExpressionNodeType_to_string(x->type));
+            G_log("![Error (%d:%s)]\n", x->type, ExpressionNodeType_to_string(x->type));
     }
 }
 
@@ -197,7 +270,6 @@ void destroy_ExpressionNodeAST(ExpressionNodeAST* x)
 void destroy_ExpressionNodeAST_ptr(ExpressionNodeAST** x)
 {
     if (!x) return;
-    G_log("destroying ExpressionNodeAST_ptr...\n");
     destroy_ExpressionNodeAST(*x);
     if (*x) free(*x);
     *x = NULL;

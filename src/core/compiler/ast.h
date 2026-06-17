@@ -71,30 +71,8 @@ typedef enum ExpressionNodeType {
     EXPRNODE_IDENTIFIER,
     EXPRNODE_NIL
 } ExpressionNodeType;
-char* ExpressionNodeType_to_string(ExpressionNodeType dt)
-{
-    switch (dt)
-    {
-        case EXPRNODE_UNINIT:               return "UNINIT";
-        case EXPRNODE_ADD:                  return "+";
-        case EXPRNODE_SUB:                  return "-";
-        case EXPRNODE_MUL:                  return "*";
-        case EXPRNODE_DIV:                  return "/";
-        case EXPRNODE_POW:                  return "^";
-        case EXPRNODE_MOD:                  return "%";
-        case EXPRNODE_NEG:                  return "-";
-        case EXPRNODE_CALL:                 return "()";
-        case EXPRNODE_INT:                  return "(int)";
-        case EXPRNODE_NUMBER:               return "(number)";
-        case EXPRNODE_STRING:               return "(string)";
-        case EXPRNODE_BOOL:                 return "(bool)";
-        case EXPRNODE_CHAR:                 return "(char)";
-        case EXPRNODE_FUNCTION_LITERAL:     return "(function)";
-        case EXPRNODE_IDENTIFIER:           return "(identifier)";
-        case EXPRNODE_NIL:                  return "nil";
-        default:                            return NULL;
-    }
-}
+byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type);
+char* ExpressionNodeType_to_string(ExpressionNodeType dt);
 
 
 typedef struct ExpressionAST ExpressionAST;

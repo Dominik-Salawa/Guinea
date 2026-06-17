@@ -196,8 +196,6 @@ static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len)
 #define is_function_end(LexTokenType)        (token_to_signify_end == TK_COMMA && (LexTokenType == TK_PARENTHESIS_R || LexTokenType == TK_COMMA))
 
 
-static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope);
-
 static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
 {
     if (!pState || !token_to_signify_end) return NULL;
@@ -277,7 +275,6 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 return exprAST;
 
             default: 
-                G_log("default %p\n", exprAST);
                 return exprAST;
         }
         advance_parser(pState);
@@ -286,17 +283,21 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
     return exprAST;
 }
 
+
 // IF YOU ONLY RECIEVE NULL, THAT MEANS IT FAILED TO ALLOC MEM
 // ELSE TO KNOW IF ITD FAIL, YOU'D CHECK ...->failed
 // EXPECT IF IT ->failed THAT ->top IS COMPLETELY INVALID
-static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
+static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
 {
     ExpressionAST* exprAST = init_ExpressionAST_ptr();
     if (!exprAST) return NULL;
 
     advance_parser(pState);
 
+    G_log("getting original value...\n");
+    G_log_push_layer();
     ExpressionAST* value = get_value_expression_parser(pState, token_to_signify_end, is_global_scope);
+    G_log_pop_layer();
     { // checking the status of the current value, whether it exists or not or whatever
         if (!value) {
             G_log("invalid! (value = NULL)\n");
@@ -358,57 +359,6 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
         }
         G_log("merged value and exprAST\n");
         G_log("CUR:%s\n", ExpressionNodeType_to_string(exprAST->top->type));
-
-        G_log_push_layer();
-        ExpressionAST* tree = eval_expression_parser(pState, token_to_signify_end, is_global_scope);
-        G_log_pop_layer();
-        if (!tree) {
-            destroy_ExpressionAST_ptr(&exprAST);
-            return NULL;
-        }
-
-        G_log("CUR:%s\n", ExpressionNodeType_to_string(exprAST->top->type));
-        { // Check if the tree is valid
-            if (tree->fail) {
-                exprAST->fail = true;
-                destroy_ExpressionNodeAST_ptr(&exprAST->top);
-                return exprAST;
-            }
-
-            if (!tree->top) {
-                exprAST->fail = true;
-                pState->errmsg = "Expected a valid value after the operation!";
-                destroy_ExpressionAST_ptr(&tree);
-                destroy_ExpressionNodeAST_ptr(&exprAST->top);
-                return exprAST;
-            }
-        }
-
-        G_log("checking precedence...\n");
-        { // Checking who has greater precedence
-            byte tree_precedence    = get_Precedence_level(tree->top->type);
-            byte exprAST_precedence = get_Precedence_level(exprAST->top->type);
-
-                                                    // 0 == single val
-            if (tree_precedence < exprAST_precedence && tree_precedence != 0) {
-                exprAST->top->right = tree->top->left;
-                tree->top->left = exprAST->top;
-
-                // now exprAST inherits tree and we scrap tree
-                exprAST->top = tree->top;
-            }
-            else if (tree_precedence == exprAST_precedence) {
-                exprAST->top->right = tree->top;
-            }
-            else { // tree_precedence > exprAST_precedence || tree_precedence == 0
-                exprAST->top->right = tree->top;
-            }
-        }
-
-        { // Delete tree
-            tree->top = NULL;
-            destroy_ExpressionAST_ptr(&tree);
-        }
     } else {
         G_log("not an operation!\n");
         exprAST->top = value->top;
@@ -419,6 +369,80 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
     G_log("\tCurrent token: %s~%s~%s\n", LexTokenEnum_to_string(pState_prev.type), LexTokenEnum_to_string(pState_current.type), LexTokenEnum_to_string(pState_ahead.type));
     G_log("RET:%s\n", ExpressionNodeType_to_string(exprAST->top->type));
     return exprAST;
+}
+
+
+static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
+{
+    ExpressionAST* main = eval_expression_parser_section(pState, token_to_signify_end, is_global_scope);
+    ExpressionNodeAST** current = NULL; // POINTS TO THE CURRENT main BRANCH | IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
+
+    if (!main)
+        return NULL;
+
+    if (main->fail)
+        return main;
+
+    if (get_Precedence_level(main->top->type) == 0)
+        return main;
+
+    current = &main->top;
+
+    do { // IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
+        ExpressionAST* right;
+        
+        { // fetching right
+            G_log("--------------\n");
+            G_log_push_layer();
+            right = eval_expression_parser_section(pState, token_to_signify_end, is_global_scope);
+            G_log_pop_layer();
+            G_log("--------------\n");
+
+            if (!right) {
+                destroy_ExpressionAST_ptr(&right);
+                destroy_ExpressionNodeAST_ptr(&main->top);
+                main->fail = true;
+                return main;
+            }
+            if (!right->top || right->fail) {
+                destroy_ExpressionAST_ptr(&right);
+                destroy_ExpressionNodeAST_ptr(&main->top);
+                main->fail = true;
+                return main;
+            }
+        }
+
+        ExpressionNodeAST* c_ref = *current;
+        byte current_precedence  = get_Precedence_level(c_ref->type);
+        byte right_precedence    = get_Precedence_level(right->top->type);
+
+        if (current_precedence >= right_precedence && right_precedence != 0) {
+            G_log("current >= right && right != 0\n");
+
+            // we position main to be on the left side of the lesser/equ right
+            c_ref->right     = right->top->left;
+            right->top->left = c_ref;
+            *current = right->top; // resets the current pos where right->top is isntead of c_ref
+        }
+        else if (right_precedence == 0) {
+            G_log("right == 0\n");
+            c_ref->right = right->top;
+            current = NULL;
+        }
+        else { // current_precedence < right_precedence
+            G_log("current < right\n");
+            c_ref->right = right->top;
+            current = &c_ref->right;
+        }
+        if (current)
+            G_log("current: %s\n", ExpressionNodeType_to_string((*current)->type));
+
+        // before it exits
+        right->top = NULL;
+        destroy_ExpressionAST_ptr(&right);
+    } while (current);
+
+    return main;
 }
 
 // IMPORTANT THINGS
@@ -527,6 +551,8 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
     ASTNode.declarationAST.expression = eval_expression_parser(pState, ending, is_global_scope);
     G_log_pop_layer();
 
+    G_log_ExpressionNodeAST(ASTNode.declarationAST.expression->top);
+    putchar(10);
     G_log("determining if its invalid\n");
     if (!ASTNode.declarationAST.expression->top) {
         ASTNode.error = true;
