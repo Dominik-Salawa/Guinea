@@ -79,7 +79,7 @@ bool assign_ExpressionNodeAST(ExpressionNodeAST** x, ExpressionNodeType type)
 void G_log_ExpressionNodeAST(ExpressionNodeAST* x)
 {
     if (!x) {
-        printf("NULL\n");
+        G_log("NULL\n");
         return;
     }
 

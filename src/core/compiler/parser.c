@@ -213,8 +213,6 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
     }
 
     ExpressionNodeAST** current = &exprAST->top; // current exprNode we are on
-    G_log("current: %p\n", current);
-
 
     // PLAN:
     // WHEN REACHES VALID POINT IT ASSIGNS
@@ -223,16 +221,13 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
     // but doesnt when it reaches a non continuation point
 
     while (true) {
-        G_log("fetching value...\n");
         switch (pState_current.type)
         {
             case TK_nil:
-                G_log("nil\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_NIL);
                 return exprAST;
 
             case TK_Int_val:
-                G_log("int\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_INT);
                 (*current)->data.integer = pState_current.integer;
                 return exprAST;
@@ -244,7 +239,6 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 break;
 
             case TK_Number_val:
-                G_log("number\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_NUMBER);
                 (*current)->data.number = pState_current.number;
                 return exprAST;
@@ -269,7 +263,6 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
             */
 
             case TK_String_val:
-                G_log("string\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_STRING);
                 (*current)->data.string_identifier = copystring(&pState_current.string);
                 return exprAST;
@@ -294,7 +287,7 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
 
     advance_parser(pState);
 
-    G_log("getting original value...\n");
+    G_log("getting value...\n");
     G_log_push_layer();
     ExpressionAST* value = get_value_expression_parser(pState, token_to_signify_end, is_global_scope);
     G_log_pop_layer();
@@ -315,7 +308,7 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
         } else if (!value->top) {
             G_log("value doesnt exist!");
             destroy_ExpressionAST_ptr(&value);
-            G_log("done destroying!\n");
+            G_log("done destroying value!\n");
             return exprAST;
         }
     }
@@ -323,19 +316,19 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
     { // Checking if its not just negative symbols like this: <val> + -- (nothing after) 
         ExpressionNodeAST* check = value->top;
 
-        G_log("checking if its just invalid parse tree slop... (if its just negs or logic not)\n");
+        G_log("checking if its an invalid expression... (if its just negs or logic not)\n");
         while (check) {
             if (check->type == EXPRNODE_NEG) check = check->right;
             else break;
         }
-        G_log("done\n");
+        G_log("done checking invalid expression\n");
         if (!check) {
             G_log("check doesnt exist so its invalid!\n");
             pState->errmsg = "Expression was not finished!";
             exprAST->fail = true;
             destroy_ExpressionNodeAST_ptr(&exprAST->top);
             destroy_ExpressionAST_ptr(&value);
-            G_log("done destroying\n");
+            G_log("done destroying Expression stuff\n");
             return exprAST;
         }
 
@@ -344,10 +337,7 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
         }
     }
 
-    G_log("\tCurrent token: %s~%s~%s\n", LexTokenEnum_to_string(pState_prev.type), LexTokenEnum_to_string(pState_current.type), LexTokenEnum_to_string(pState_ahead.type));
-    G_log("checking...\n");
     if (is_op(pState_ahead.type)) {
-        G_log("is op!\n");
         advance_parser(pState);
 
         { // merge the value and exprAST variables, making value invalid
@@ -357,17 +347,13 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
             value->top = NULL;
             destroy_ExpressionAST_ptr(&value);
         }
-        G_log("merged value and exprAST\n");
-        G_log("CUR:%s\n", ExpressionNodeType_to_string(exprAST->top->type));
+        G_log("is op: merged value and exprAST\n");
     } else {
         G_log("not an operation!\n");
         exprAST->top = value->top;
         value->top = NULL;
         destroy_ExpressionAST_ptr(&value);
     }
-
-    G_log("\tCurrent token: %s~%s~%s\n", LexTokenEnum_to_string(pState_prev.type), LexTokenEnum_to_string(pState_current.type), LexTokenEnum_to_string(pState_ahead.type));
-    G_log("RET:%s\n", ExpressionNodeType_to_string(exprAST->top->type));
     return exprAST;
 }
 
@@ -422,7 +408,7 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
             // we position main to be on the left side of the lesser/equ right
             c_ref->right     = right->top->left;
             right->top->left = c_ref;
-            *current = right->top; // resets the current pos where right->top is isntead of c_ref
+            *current = right->top;
         }
         else if (right_precedence == 0) {
             G_log("right == 0\n");
@@ -434,8 +420,6 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
             c_ref->right = right->top;
             current = &c_ref->right;
         }
-        if (current)
-            G_log("current: %s\n", ExpressionNodeType_to_string((*current)->type));
 
         // before it exits
         right->top = NULL;
@@ -551,8 +535,12 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
     ASTNode.declarationAST.expression = eval_expression_parser(pState, ending, is_global_scope);
     G_log_pop_layer();
 
-    G_log_ExpressionNodeAST(ASTNode.declarationAST.expression->top);
-    putchar(10);
+    {
+        G_log("Expression tree:\n");
+        G_log("-------------------\n");
+        G_log_ExpressionNodeAST(ASTNode.declarationAST.expression->top);
+        G_log("-------------------\n");
+    }
     G_log("determining if its invalid\n");
     if (!ASTNode.declarationAST.expression->top) {
         ASTNode.error = true;

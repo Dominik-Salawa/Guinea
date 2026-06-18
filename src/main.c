@@ -62,6 +62,7 @@ int main(int argc, char** argv)
             return 1;
         }
 
+        
         String inp = readfile(f);
 
         if (!inp.content || inp.length == 0) return 0;
@@ -73,6 +74,7 @@ int main(int argc, char** argv)
         G_Bytecode* x = G_IR_CONVERT(&ir, SIZE_T);
 
         if (x) {
+            /*
             for (size_t i = 0; i < x->length; i++) {
                 printf("%d ", x->bytecode[i]);
             }
@@ -101,7 +103,7 @@ int main(int argc, char** argv)
                         printf("%ld: ", name->length);
                         fwrite(name->content, sizeof(ubyte), name->length, stdout);
                         printf("\n");
-                        /*
+
                         switch (datatype)
                         {
                             case GINSTRDATATYPE_STRING:
@@ -109,7 +111,6 @@ int main(int argc, char** argv)
                             case GINSTRDATATYPE_INT64:
                                 int64_t val =
                         }
-                        */
                         clearstring_ptr(&name);
                         break;
 
@@ -296,6 +297,8 @@ int main(int argc, char** argv)
                         break;
                 }
             }
+        */
+
             FILE* tosave = fopen("file.gbc", "w");
             if (tosave) {
                 fwrite(x->bytecode, sizeof(ubyte), x->length, tosave);
