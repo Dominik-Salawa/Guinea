@@ -9,18 +9,6 @@
 #include "ast.h"
 #include "../../etc/declarations.h"
 
-typedef struct ParseScopeNode ParseScopeNode;
-
-typedef struct {
-    LexToken prev;
-    LexToken current;
-    LexToken ahead;
-
-    ParseScopeNode* scope_top;
-    LexState lState;
-    char* errmsg;
-} ParseState;
-
 typedef enum {
     SCOPE_UNINIT = 0,
     SCOPE_GLOBAL,
@@ -31,8 +19,8 @@ typedef enum {
     SCOPE_SCOPE
 } ScopeType;
 
-struct ParseScopeNode {
-    ParseScopeNode* prev;
+typedef struct ParseScopeNode {
+    struct ParseScopeNode* prev;
     ScopeType scopetype;
 
     struct {
@@ -40,7 +28,19 @@ struct ParseScopeNode {
         size_t var_info_size;
         size_t var_info_len;
     } var_info;
-};
+} ParseScopeNode;
+
+
+typedef struct {
+    LexToken prev;
+    LexToken current;
+    LexToken ahead;
+
+    ParseScopeNode*  scope_top;
+    ParseScopeNode** scope_base_aka_global;
+    LexState lState;
+    char* errmsg;
+} ParseState;
 
 ParseScopeNode init_ParseScopeNode(ScopeType scopetype);
 void destroy_ParseScopeNode(ParseScopeNode** pScope);

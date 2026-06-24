@@ -69,7 +69,7 @@ char* G_Bytecode_Datatype_to_str(GINSTR_Datatype x)
         case GINSTRDATATYPE_CHAR:       return "char";
         case GINSTRDATATYPE_FUNCTION:   return "function";
         case GINSTRDATATYPE_DYNAMIC:    return "dynamic";
-        default: return NULL;
+        default: return "(null)";
     }
 }
 

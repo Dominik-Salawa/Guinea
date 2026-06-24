@@ -74,7 +74,6 @@ int main(int argc, char** argv)
         G_Bytecode* x = G_IR_CONVERT(&ir, SIZE_T);
 
         if (x) {
-            /*
             for (size_t i = 0; i < x->length; i++) {
                 printf("%d ", x->bytecode[i]);
             }
@@ -85,11 +84,11 @@ int main(int argc, char** argv)
             for (size_t i = 7; i < x->length;) {
                 switch (x->bytecode[i])
                 {
-                    case GINSTR_DECLARE_GLOBAL:
+                    case GINSTR_DECLARE_GLOBAL: {
                         ++i;
                         GINSTR_Datatype globaldatatype = x->bytecode[i];
 
-                        printf("declare global [%s] ", G_Bytecode_Datatype_to_str(globaldatatype));
+                        printf("declare global [%s]: ", G_Bytecode_Datatype_to_str(globaldatatype));
 
                         ++i;
 
@@ -99,20 +98,13 @@ int main(int argc, char** argv)
                             return 1;
                         }
 
-                        i += 8 + name->length;
-                        printf("%ld: ", name->length);
+                        i += 8 + name->length; // varname len + int size
                         fwrite(name->content, sizeof(ubyte), name->length, stdout);
                         printf("\n");
 
-                        switch (datatype)
-                        {
-                            case GINSTRDATATYPE_STRING:
-                                break;
-                            case GINSTRDATATYPE_INT64:
-                                int64_t val =
-                        }
                         clearstring_ptr(&name);
                         break;
+                    }
 
                     case GINSTR_PUSH_GLOBAL:
                         printf("PUSHGLOBAL\n");
@@ -147,9 +139,7 @@ int main(int argc, char** argv)
 
                             case GINSTRDATATYPE_NIL:
                             {
-                                printf("nil");
-                                ++i;
-                                break;
+                                break; // dont need to do anything
                             }
 
                             case GINSTRDATATYPE_INT32:
@@ -200,7 +190,7 @@ int main(int argc, char** argv)
 
                             default:
                             {
-                                printf("[unknown type: %d]\n", immediatedatatype);
+                                printf("[unknown type: %d:%ld]\n", immediatedatatype, i+1);
                                 break;
                             }
                         }
@@ -294,10 +284,10 @@ int main(int argc, char** argv)
 
                     default:
                         printf("err %d\n", x->bytecode[i]);
+                        ++i;
                         break;
                 }
             }
-        */
 
             FILE* tosave = fopen("file.gbc", "w");
             if (tosave) {

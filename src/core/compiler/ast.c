@@ -359,6 +359,7 @@ void destroy_G_AST(G_AST* g_ast)
         //case ASTNODE_FUNC_CALL:   { destroy_FuncCallAST(&g_ast->funcCallAST); break;            }
         default: printf("err ASTNODE G_AST destroy\n"); exit(1);
     }
+    g_ast->nodetype = ASTNODE_IGNORE;
     G_log("done destroying G_AST\n");
 }
 

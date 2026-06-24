@@ -64,7 +64,6 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
         case 2:
         {
             x = expr->type;
-            G_log("2 path\n");
             G_IR_CONVERT_expression(expr->left,  addr_to_bytecode);
             G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
             add_G_Bytecode_one_byte(bytecode, (ubyte)ExpressionNodeType_to_GINSTR(expr->type));
@@ -74,7 +73,6 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
         case 1:
         {
             x = expr->type;
-            G_log("1 path\n");
             G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
             add_G_Bytecode_one_byte(bytecode, (ubyte)ExpressionNodeType_to_GINSTR(expr->type));
             break;
@@ -82,12 +80,10 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
 
         case 0: 
         {
-            G_log("0 path\n");
             x = expr->type;
             switch (expr->type)
             {
                 case EXPRNODE_STRING:
-                    G_log("string\n");
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_STRING);
                     add_G_Bytecode_w_byte_size(bytecode, &expr->data.string_identifier.length, SIZE_T);
@@ -95,42 +91,36 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
                     break;
 
                 case EXPRNODE_INT:
-                    G_log("int\n");
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_INT64);
                     add_G_Bytecode_w_byte_size(bytecode, &expr->data.integer, sizeof(int64_t));
                     break;
 
                 case EXPRNODE_NUMBER:
-                    G_log("number\n");
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_NUMBER64);
                     add_G_Bytecode_w_byte_size(bytecode, &expr->data.number, sizeof(double));
                     break;
 
                 case EXPRNODE_BOOL:
-                    G_log("bool\n");
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_BOOL);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)expr->data.bl);
                     break;
 
                 case EXPRNODE_CHAR:
-                    G_log("char\n");
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_CHAR);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)expr->data.ch);
                     break;
                 
                 case EXPRNODE_NIL:
-                    G_log("nil\n");
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_NIL);
                     break;
 
                 case EXPRNODE_IDENTIFIER:
-                    G_log("identifier\n");
-                    printf("\n\nFOR NOW VARIABLES IN ASSIGNMENT ARE DISABLED AS I NEED TO CONFIG NAME STUFF!\n\n");
+                    printf("identifier not yet implemented...\n");
                     //add_G_Bytecode_one_byte(bytecode, GINSTR)
                     break;
 
@@ -163,7 +153,7 @@ G_Bytecode* G_IR_CONVERT(G_IR* ir, ubyte SIZE_T_OF_PLATFORM)
 
     ParseState pState = init_ParseState(&ir->source);
     G_Bytecode* bytecode = init_G_Bytecode_ptr();
-    G_AST astnode;
+    G_AST astnode = (G_AST){0};
 
 if (bytecode) {
     { // MAGIC
@@ -207,11 +197,6 @@ if (bytecode) {
                 // str of global name
                 add_G_Bytecode_w_byte_size(bytecode, &astnode.declarationAST.info.identifier.length, SIZE_T_OF_PLATFORM);
                 add_G_Bytecode(bytecode, (ubyte*)astnode.declarationAST.info.identifier.content, astnode.declarationAST.info.identifier.length);
-                
-                //G_log_ExpressionNodeAST(astnode.declarationAST.expression->top);
-                //G_log("\n");
-
-                G_log("exprnodetype: %s\n", ExpressionNodeType_to_string(astnode.declarationAST.expression->top->type));
                 break;
 
             case ASTNODE_IGNORE:
@@ -230,7 +215,8 @@ if (bytecode) {
     }
 }
     destroy_ParseState(&pState);
-    destroy_G_AST(&astnode);
+    // means it wasnt erased
+    if (astnode.nodetype != ASTNODE_IGNORE) destroy_G_AST(&astnode);
     return bytecode;
 }
 

@@ -37,25 +37,26 @@ bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype)
 
 bool pop_ParseScopeNode(ParseState* pState)
 {
+    if (!pState) return false;
+
     ParseScopeNode* x = pState->scope_top;
+
+    // invalid
     if (!x) return false;
+
+    // this means we are in the global scope
+    if (!x->prev) return false;
+ 
+    // delete
     pState->scope_top = x->prev;
     destroy_ParseScopeNode(&x);
     return true;
 }
 
+VariableInfoAST* get_var_info(char* name)
+{
 
-
-
-
-
-
-
-
-
-
-
-
+}
 
 
 
@@ -191,10 +192,10 @@ static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len)
 #define pState_current (pState->current)
 #define pState_ahead   (pState->ahead)
 
-#define is_op(LexTokenType)                  (is_in(LexTokenType, valid_Operations, sizeof(valid_Operations)/sizeof(LexTokenEnum)))
-#define is_semi_colon_approved(LexTokenType) (LexTokenType == TK_EOF || LexTokenType == TK_end)
-#define is_function_end(LexTokenType)        (token_to_signify_end == TK_COMMA && (LexTokenType == TK_PARENTHESIS_R || LexTokenType == TK_COMMA))
-
+#define is_op(LexTokenType)                                   (is_in(LexTokenType, valid_Operations, sizeof(valid_Operations)/sizeof(LexTokenEnum)))
+#define is_EOF_or_end(LexTokenType)                           (LexTokenType == TK_EOF || LexTokenType == TK_end)
+#define is_function_end(LexTokenType)                         (token_to_signify_end == TK_COMMA && (LexTokenType == TK_PARENTHESIS_R || LexTokenType == TK_COMMA))
+#define is_valid_Expr_end(LexTokenType, current_tk_type)      (is_EOF_or_end(LexTokenType) || current_tk_type == LexTokenType)
 
 static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
 {
@@ -203,15 +204,7 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
     ExpressionAST* exprAST = init_ExpressionAST_ptr();
     if (!exprAST) return NULL;
     exprAST->top = NULL;
-
-    if (pState->current.type == token_to_signify_end && !(is_function_end(pState_current.type) && pState_current.type == TK_PARENTHESIS_R)) {
-        return exprAST;
-    }
-    // if its TK_EOF
-    if ((is_semi_colon_approved(token_to_signify_end) && pState_current.type == TK_SEMI_COLON) && !(is_function_end(pState_current.type) && pState_current.type == TK_PARENTHESIS_R)) {
-        return exprAST;
-    }
-
+    
     ExpressionNodeAST** current = &exprAST->top; // current exprNode we are on
 
     // PLAN:
@@ -220,34 +213,42 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
     // BUT I NEED TO MAINTAIN THAT IT CHANGES THE exprAST correctly when needs
     // but doesnt when it reaches a non continuation point
 
+    bool dont_break  = true;
+    bool on_negative = false; 
     while (true) {
         switch (pState_current.type)
         {
             case TK_nil:
+                G_log("nil\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_NIL);
-                return exprAST;
+                dont_break = false;
+                break;
 
             case TK_Int_val:
+                G_log("int val\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_INT);
                 (*current)->data.integer = pState_current.integer;
-                return exprAST;
+                dont_break = false;
+                break;
 
             
             case TK_SUB: // AUTO ASSUME ITS AT THE START OF A CHAIN OF NEG
-                assign_ExpressionNodeAST(current, EXPRNODE_NEG);
-                current = &((*current)->right);
+                G_log("neg\n");
+                on_negative = !on_negative;
                 break;
 
             case TK_Number_val:
+                G_log("num val\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_NUMBER);
                 (*current)->data.number = pState_current.number;
-                return exprAST;
+                dont_break = false;
+                break;
 
-            /*
             case TK_Identifier:
                 G_log("identifier");
                 String identifier = copystring(&pState_current.string);
             
+            /*
                  CHECK AHEAD IF ITS LIKE A FUNCTION CALL OR WHATEVER
                 switch (pState_ahead.type)
                 {
@@ -255,22 +256,51 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                         get_function_args_in_expression_parser(pState);
                         waddawdw;
                 }
+            */
                 
 
                 assign_ExpressionNodeAST(current, EXPRNODE_IDENTIFIER);
                 (*current)->data.string_identifier = identifier;
-                return exprAST;
-            */
+                dont_break = false;
+                break;
 
             case TK_String_val:
+                G_log("str val\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_STRING);
                 (*current)->data.string_identifier = copystring(&pState_current.string);
-                return exprAST;
+                dont_break = false;
+                break;
 
-            default: 
-                return exprAST;
+            case TK_UNKNOWN:
+                G_log("UNKNOWN token\n");
+                destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                exprAST->fail = true;
+                pState->errmsg = pState->lState.errmsg;
+                dont_break = false;
+                break;
+
+            case TK_ERR:
+                G_log("ERR token\n");
+                destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                exprAST->fail = true;
+                pState->errmsg = pState->lState.errmsg;
+                dont_break = false;
+                break;
+
+            default:
+                G_log("got no val\n");
+                dont_break = false;
+                break;
         }
+        if (!dont_break) break;
         advance_parser(pState);
+    }
+
+    if (on_negative) {
+        ExpressionNodeAST* tmp = NULL;
+        assign_ExpressionNodeAST(&tmp, EXPRNODE_NEG);
+        tmp->right = exprAST->top;
+        exprAST->top = tmp;
     }
 
     return exprAST;
@@ -306,8 +336,9 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
             return exprAST;
 
         } else if (!value->top) {
-            G_log("value doesnt exist!");
+            G_log("value doesnt exist!\n");
             destroy_ExpressionAST_ptr(&value);
+            exprAST->fail = true;
             G_log("done destroying value!\n");
             return exprAST;
         }
@@ -353,6 +384,15 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
         exprAST->top = value->top;
         value->top = NULL;
         destroy_ExpressionAST_ptr(&value);
+
+        if (is_valid_Expr_end(token_to_signify_end, pState->ahead.type)) {
+            return exprAST;
+        }
+
+        pState->errmsg = "Expected a valid end of the expression!";
+        destroy_ExpressionNodeAST_ptr(&exprAST->top);
+        exprAST->fail = true;
+        advance_parser(pState);
     }
     return exprAST;
 }
@@ -429,44 +469,6 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
     return main;
 }
 
-// IMPORTANT THINGS
-// IF token_to_signify_end == TK_EOF/TK_end THEN itll also allow semi-colon
-
-/*
-ExpressionAST* get_function_args_in_expression_parser(ParseState* pState) // FIX PLEASE
-{
-    bool first_iteration = true;
-        
-    printf("(");
-
-    ExpressionAST* functionArgs = {0};
-
-    while (true) {
-        if (pState_current.type == TK_PARENTHESIS_R) {
-            break;
-        } else {
-            //printf("PARAM %s: ", LexTokenEnum_to_string(pState_ahead.type));
-
-            if (pState_ahead.type == TK_COMMA) {
-                pState->errmsg = "Unexpected comma!";
-                return false;
-            }
-            if (pState_ahead.type == TK_PARENTHESIS_R && !first_iteration) {
-                pState->errmsg = "Unfinished argument!";
-                return false;
-            }
-
-            ExpressionAST expression = eval_expression_parser(pState, TK_COMMA, false);
-            if (expression.fail) {
-                return false;
-            }
-            first_iteration = false;
-        }
-    }
-
-    return (ExpressionAST*){0};
-}
-*/
 
 ASTDatatype get_datatype_parser(ParseState* pState)
 {
@@ -544,7 +546,7 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
     G_log("determining if its invalid\n");
     if (!ASTNode.declarationAST.expression->top) {
         ASTNode.error = true;
-        pState->errmsg = "Expected an expression!";
+        if (!pState->errmsg) pState->errmsg = "Expected an expression! (from declaration)";
     }
     else if (ASTNode.declarationAST.expression->fail) {
         ASTNode.error = true;
@@ -553,124 +555,6 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
 
     return ASTNode;
 }
-
-
-/*
-bool eval_identifier(ParseState* pState, LexTokenEnum ending, bool is_global_scope)
-{
-    G_AST ASTNode;
-    String identifier = copystring(&pState_current.string);
-    advance_parser(pState);
-
-    printf("%s\n", LexTokenEnum_to_string(pState_current.type));
-
-    if (pState_current.type == TK_PARENTHESIS_L) {
-        //printf("Identifier CALL `%s`:\n\t", identifier.content);
-        status = get_function_args_in_expression_parser(pState);
-        printf("done\n");
-    } else if (pState_current.type == TK_ASSIGN) {
-        //printf("Identifier ASSIGN `%s`:\n\t", identifier.content);
-        ExpressionAST status = eval_expression_parser(pState, ending, is_global_scope);
-        return status;
-    } else {
-        pState->errmsg = "Expected '='!";
-        return false;
-    }
-
-    return status;
-}
-
-
-
-bool eval_get_function(ParseState* pState)
-{
-    printf("FINISH ME\n");
-    return true;
-}
-
-
-
-bool eval_function(ParseState* pState)
-{
-    advance_parser(pState);
-
-    if (pState_current.type != TK_Identifier) {
-        pState->errmsg = "Expected 'identifier'!";
-        return false;
-    }
-
-    String identifier = copystring(&pState_current.string);
-    advance_parser(pState);
-
-    if (pState_current.type != TK_PARENTHESIS_L) {
-        pState->errmsg = "Expected '('!";
-        return false;
-    }
-
-    printf("FINISH ME\n");
-    return eval_get_function(pState);
-}
-
-
-
-// CONTROL FLOW
-
-bool eval_if_statement(ParseState* pState)
-{
-    bool status = eval_expression_parser(pState, TK_then, false);
-    if (!status) return false;
-
-    while (true) {
-        status = parse_segment(pState, TK_end, false);
-        if (pState->errmsg) return false;
-        if (!status) break;
-    }
-    printf("BREAK! IF\n");
-    return true;
-}
-
-
-bool eval_while_statement(ParseState* pState)
-{
-    bool status = eval_expression_parser(pState, TK_do, false);
-    if (!status) return false;
-
-    while (true) {
-        status = parse_segment(pState, TK_end, false);
-        if (pState->errmsg) return false;
-        if (!status) break;
-    }
-    printf("BREAK! WHILE\n");
-    return true;
-}
-
-
-
-G_AST eval_for_statement(ParseState* pState)
-{
-    G_AST for_statement = {0};
-
-    // first segment
-    G_AST f_segment = parse_segment(pState, TK_SEMI_COLON, false);
-    if (f_segment.nodetype == ASTNODE_ERROR) return status;
-
-    // second segment
-    status = eval_expression_parser(pState, TK_SEMI_COLON, false);
-    if (pState->errmsg) return false;
-
-    // third segment
-    status = parse_segment(pState, TK_do, false);
-    if (pState->errmsg) return false;
-
-    while (true) {
-        status = parse_segment(pState, TK_end, false);
-        if (pState->errmsg) return false;
-        if (!status) break;
-    }
-    printf("BREAK! FOR\n");
-    return true;
-}
-*/
 
 
 
@@ -684,21 +568,16 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, bool is_globa
     switch (pState_current.type) 
     {
         case TK_var:             {  G_log_pop_layer(); return eval_variable_parser(pState, ending, is_global_scope);  }
-        //case TK_if:              {  return eval_if_statement(pState);                              }
-        //case TK_while:           {  return eval_while_statement(pState);                           }
-        //case TK_for:             {  return eval_for_statement(pState);                             }
-        //case TK_Identifier:      {  return eval_identifier(pState, ending, is_global_scope);       }
-        //case TK_function:        {  return eval_function(pState);                                  }
         default: {
             G_log_pop_layer();
 
-            if (is_semi_colon_approved(ending) && pState_current.type == TK_SEMI_COLON) {
-                return (G_AST){0};
+            if (pState_current.type == TK_SEMI_COLON) {
+                G_AST x = (G_AST){0};
+                return x;
             }
 
             // to tell the IR to stop looping, the scope has closed or the end of the file
             if (pState_current.type == ending) {
-                G_log("Break!\n");
                 G_AST x = (G_AST){0};
                 x.nodetype = ASTNODE_END;
                 return x;
