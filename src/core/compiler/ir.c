@@ -6,7 +6,7 @@
 #include "../bytecode.h"
 #include "../errors.h"
 #include "../../etc/declarations.h"
-#include "../../etc/log.h"
+#include "../../etc/G_stdio.h"
 #include <math.h>
 #include <string.h>
 #include <inttypes.h>
@@ -33,6 +33,7 @@ GINSTR ExpressionNodeType_to_GINSTR(ExpressionNodeType x)
         case EXPRNODE_POW:          return GINSTR_POW;
 
         case EXPRNODE_AND:          return GINSTR_AND;
+        case EXPRNODE_OR:           return GINSTR_OR;
         case EXPRNODE_NOT:          return GINSTR_NOT;
         case EXPRNODE_NEG:          return GINSTR_NEG;
 
@@ -73,8 +74,38 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
         case 1:
         {
             x = expr->type;
-            G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
-            add_G_Bytecode_one_byte(bytecode, (ubyte)ExpressionNodeType_to_GINSTR(expr->type));
+            switch (x) 
+            {
+                case EXPRNODE_NEG:
+                {
+                    ExpressionNodeType child = expr->right->type;
+
+                    if (child == EXPRNODE_INT) {
+                        expr->right->data.integer = -expr->right->data.integer;
+                        G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                        break;
+                    }
+                    else if (child == EXPRNODE_NUMBER) {
+                        expr->right->data.number = -expr->right->data.number;
+                        G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                        break;
+                    }
+
+                    // if it doesnt meet the requirements above, it is expected to do the same as default
+                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                    add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTR_NEG);
+                    break;
+                }
+
+                case EXPRNODE_PARENTHESIS:
+                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                    break;
+
+                default:
+                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                    add_G_Bytecode_one_byte(bytecode, (ubyte)ExpressionNodeType_to_GINSTR(expr->type));
+                    break;
+            }
             break;
         }
 
@@ -99,7 +130,7 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
                 case EXPRNODE_NUMBER:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     add_G_Bytecode_one_byte(bytecode, (ubyte)GINSTRDATATYPE_NUMBER64);
-                    add_G_Bytecode_w_byte_size(bytecode, &expr->data.number, sizeof(double));
+                    add_G_Bytecode_w_byte_size(bytecode, &expr->data.number, sizeof(number64));
                     break;
 
                 case EXPRNODE_BOOL:

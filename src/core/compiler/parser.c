@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../../etc/strings.h"
-#include "../../etc/log.h"
+#include "../../etc/G_stdio.h"
 #include "lexer.h"
 #include "parser.h"
 #include "ast.h"
@@ -55,7 +55,7 @@ bool pop_ParseScopeNode(ParseState* pState)
 
 VariableInfoAST* get_var_info(char* name)
 {
-
+    return NULL;
 }
 
 
@@ -197,6 +197,8 @@ static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len)
 #define is_function_end(LexTokenType)                         (token_to_signify_end == TK_COMMA && (LexTokenType == TK_PARENTHESIS_R || LexTokenType == TK_COMMA))
 #define is_valid_Expr_end(LexTokenType, current_tk_type)      (is_EOF_or_end(LexTokenType) || current_tk_type == LexTokenType)
 
+static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope);
+
 static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
 {
     if (!pState || !token_to_signify_end) return NULL;
@@ -246,21 +248,8 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
 
             case TK_Identifier:
                 G_log("identifier");
-                String identifier = copystring(&pState_current.string);
-            
-            /*
-                 CHECK AHEAD IF ITS LIKE A FUNCTION CALL OR WHATEVER
-                switch (pState_ahead.type)
-                {
-                    case TK_PARENTHESIS_L:
-                        get_function_args_in_expression_parser(pState);
-                        waddawdw;
-                }
-            */
-                
-
                 assign_ExpressionNodeAST(current, EXPRNODE_IDENTIFIER);
-                (*current)->data.string_identifier = identifier;
+                (*current)->data.string_identifier = copystring(&pState_current.string);
                 dont_break = false;
                 break;
 
@@ -269,6 +258,28 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 assign_ExpressionNodeAST(current, EXPRNODE_STRING);
                 (*current)->data.string_identifier = copystring(&pState_current.string);
                 dont_break = false;
+                break;
+
+            case TK_PARENTHESIS_L:
+                destroy_ExpressionAST_ptr(&exprAST);
+                G_log_push_layer();
+                exprAST = eval_expression_parser(pState, TK_PARENTHESIS_R, is_global_scope);
+                G_log_pop_layer();
+                
+                G_log("failed to get paren? %d\n", !exprAST);
+                if (!exprAST)      return NULL;    // failed alloc
+
+                G_log("paren fail? %d\n", exprAST->fail);
+                if (exprAST->fail) return exprAST; // pass the state over
+
+                ExpressionNodeAST* tmp = exprAST->top;
+                exprAST->top = NULL;
+
+                assign_ExpressionNodeAST(&exprAST->top, EXPRNODE_PARENTHESIS);
+                exprAST->top->right = tmp;
+
+                dont_break = false;
+                advance_parser(pState);
                 break;
 
             case TK_UNKNOWN:
@@ -288,7 +299,7 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 break;
 
             default:
-                G_log("got no val\n");
+                G_log("got no value (%s)\n", LexTokenEnum_to_string(pState_current.type));
                 dont_break = false;
                 break;
         }
@@ -361,10 +372,6 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
             destroy_ExpressionAST_ptr(&value);
             G_log("done destroying Expression stuff\n");
             return exprAST;
-        }
-
-        { // Finish expressions like "-5"/"---5" so the number itself is negative
-            G_log("FINISH ME FOR COLLAPSING INTS/NUMS DOWN INTO NEGATIVES AUTOMATICALLY!!!!\n");
         }
     }
 

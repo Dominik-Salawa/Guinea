@@ -3,7 +3,7 @@
 
 #include "ast.h"
 #include "../../etc/strings.h"
-#include "../../etc/log.h"
+#include "../../etc/G_stdio.h"
 #include "../bytecode.h"
 
 
@@ -12,24 +12,28 @@ byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type)
     byte pathways;
     switch (type)
     {
-        case EXPRNODE_ADD: pathways = 2; break;
-        case EXPRNODE_SUB: pathways = 2; break;
-        case EXPRNODE_MUL: pathways = 2; break;
-        case EXPRNODE_DIV: pathways = 2; break;
-        case EXPRNODE_MOD: pathways = 2; break;
-        case EXPRNODE_POW: pathways = 2; break;
+        case EXPRNODE_ADD:          pathways = 2; break;
+        case EXPRNODE_SUB:          pathways = 2; break;
+        case EXPRNODE_MUL:          pathways = 2; break;
+        case EXPRNODE_DIV:          pathways = 2; break;
+        case EXPRNODE_MOD:          pathways = 2; break;
+        case EXPRNODE_POW:          pathways = 2; break;
 
-        case EXPRNODE_EQU: pathways = 2; break;
-        case EXPRNODE_NOT_EQU: pathways = 2; break;
+        case EXPRNODE_AND:          pathways = 2; break;
+        case EXPRNODE_OR:           pathways = 2; break;
 
-        case EXPRNODE_GT: pathways = 2; break;
-        case EXPRNODE_LT: pathways = 2; break;
-        case EXPRNODE_GT_EQU: pathways = 2; break;
-        case EXPRNODE_LT_EQU: pathways = 2; break;
+        case EXPRNODE_EQU:          pathways = 2; break;
+        case EXPRNODE_NOT_EQU:      pathways = 2; break;
 
-        case EXPRNODE_NEG: pathways = 1; break;
-        case EXPRNODE_NOT: pathways = 1; break;
-        case EXPRNODE_CALL: pathways = 1; break;
+        case EXPRNODE_GT:           pathways = 2; break;
+        case EXPRNODE_LT:           pathways = 2; break;
+        case EXPRNODE_GT_EQU:       pathways = 2; break;
+        case EXPRNODE_LT_EQU:       pathways = 2; break;
+
+        case EXPRNODE_NEG:          pathways = 1; break;
+        case EXPRNODE_NOT:          pathways = 1; break;
+        case EXPRNODE_CALL:         pathways = 1; break;
+        case EXPRNODE_PARENTHESIS:  pathways = 1; break;
         default: pathways = 0;
     }
     return pathways;
@@ -40,12 +44,23 @@ char* ExpressionNodeType_to_string(ExpressionNodeType dt)
     switch (dt)
     {
         case EXPRNODE_UNINIT:               return "UNINIT";
+
         case EXPRNODE_ADD:                  return "+";
         case EXPRNODE_SUB:                  return "-";
         case EXPRNODE_MUL:                  return "*";
         case EXPRNODE_DIV:                  return "/";
         case EXPRNODE_POW:                  return "^";
         case EXPRNODE_MOD:                  return "%";
+
+        case EXPRNODE_AND:                  return "and";
+        case EXPRNODE_OR:                   return "or";
+        case EXPRNODE_EQU:                  return "==";
+        case EXPRNODE_NOT_EQU:              return "!=";
+        case EXPRNODE_GT:                   return ">";
+        case EXPRNODE_LT:                   return "<";
+        case EXPRNODE_GT_EQU:               return ">=";
+        case EXPRNODE_LT_EQU:               return "<=";
+
         case EXPRNODE_NEG:                  return "-";
         case EXPRNODE_CALL:                 return "()";
         case EXPRNODE_INT:                  return "(int)";
@@ -56,7 +71,7 @@ char* ExpressionNodeType_to_string(ExpressionNodeType dt)
         case EXPRNODE_FUNCTION_LITERAL:     return "(function)";
         case EXPRNODE_IDENTIFIER:           return "(identifier)";
         case EXPRNODE_NIL:                  return "nil";
-        default:                            return NULL;
+        default:                            return "NULL";
     }
 }
 
@@ -135,8 +150,85 @@ void G_log_ExpressionNodeAST(ExpressionNodeAST* x)
             G_log_pop_layer();
             return;
 
+
+        ///
+
+        case EXPRNODE_AND:
+            G_log("and\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_OR:
+            G_log("or\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_EQU:
+            G_log("==\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_NOT_EQU:
+            G_log("!=\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_GT:
+            G_log(">\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_LT:
+            G_log("<\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_GT_EQU:
+            G_log(">=\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_LT_EQU:
+            G_log("<=\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_ExpressionNodeAST(x->left);
+            G_log_pop_layer();
+            return;
+
+        ///
+        
+
         case EXPRNODE_NEG:
             G_log("NEG\n");
+            G_log_push_layer();
+            G_log_ExpressionNodeAST(x->right);
+            G_log_pop_layer();
+            return;
+
+        case EXPRNODE_PARENTHESIS:
+            G_log("(...)\n");
             G_log_push_layer();
             G_log_ExpressionNodeAST(x->right);
             G_log_pop_layer();
@@ -199,71 +291,122 @@ void destroy_ExpressionNodeAST(ExpressionNodeAST* x)
 
     switch (x->type)
     {
-        case EXPRNODE_UNINIT: return;
+        case EXPRNODE_UNINIT: break;
 
         case EXPRNODE_ADD:
             destroy_ExpressionNodeAST_ptr(&x->left);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
 
         case EXPRNODE_SUB:
             destroy_ExpressionNodeAST_ptr(&x->left);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
 
         case EXPRNODE_MUL:
             destroy_ExpressionNodeAST_ptr(&x->left);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
 
         case EXPRNODE_DIV:
             destroy_ExpressionNodeAST_ptr(&x->left);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
 
         case EXPRNODE_POW:
             destroy_ExpressionNodeAST_ptr(&x->left);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
 
         case EXPRNODE_MOD:
             destroy_ExpressionNodeAST_ptr(&x->left);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
+
+
+        ////////////////////////////////////////////////////////
+        // LOGIC
+        case EXPRNODE_AND:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_OR:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_EQU:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_NOT_EQU:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_GT:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_LT:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_GT_EQU:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+
+        case EXPRNODE_LT_EQU:
+            destroy_ExpressionNodeAST_ptr(&x->left);
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
+        ////////////////////////////////////////////////////////
+
+
 
         case EXPRNODE_NEG:
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
+
+        case EXPRNODE_PARENTHESIS:
+            destroy_ExpressionNodeAST_ptr(&x->right);
+            break;
 
         case EXPRNODE_CALL:
             destroy_ExprFuncCallAST(&x->data.exprFuncCallAST);
             destroy_ExpressionNodeAST_ptr(&x->right);
-            return;
+            break;
 
-        case EXPRNODE_INT:      return;
-        case EXPRNODE_CHAR:     return;
-        case EXPRNODE_BOOL:     return;
-        case EXPRNODE_NUMBER:   return;
+        case EXPRNODE_INT:      break;
+        case EXPRNODE_CHAR:     break;
+        case EXPRNODE_BOOL:     break;
+        case EXPRNODE_NUMBER:   break;
 
         case EXPRNODE_STRING:
             clearstring(&x->data.string_identifier);
-            return;
+            break;
 
         case EXPRNODE_IDENTIFIER:
             clearstring(&x->data.string_identifier);
-            return;
+            break;
 
         case EXPRNODE_FUNCTION_LITERAL:
             destroy_FunctionAST(&x->data.function);
-            return;
+            break;
 
         case EXPRNODE_NIL:
-            return;
+            break;
 
         default:
             printf("Error: ExpressionNodeAST failed to destroy! (%d:%s)\n", x->type, ExpressionNodeType_to_string(x->type));
             exit(1);
     }
+    *x = (ExpressionNodeAST){0};
 }
 
 // FOR DESTROYING ExpressionNodeAST*

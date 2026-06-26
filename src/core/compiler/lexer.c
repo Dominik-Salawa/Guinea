@@ -23,6 +23,7 @@ char* LexTokenEnum_to_string(LexTokenEnum e)
         case TK_Char_val:       return "(char)";
         case TK_Bool_val:       return "(bool)";
         case TK_nil:            return "nil";
+        case TK_NaN:            return "NaN";
 
         case TK_if:             return "if";
         case TK_then:           return "then";
@@ -97,6 +98,7 @@ static const struct LexNodeStringToEnumData stringtoken[] = {
     {.string="true",        .type=TK_Bool_val},
     {.string="false",       .type=TK_Bool_val},
     {.string="nil",         .type=TK_nil},
+    {.string="NaN",         .type=TK_NaN},
 
     {.string="function",    .type=TK_function},
     {.string="int",         .type=TK_int},
@@ -174,9 +176,9 @@ static void set_token_type(LexToken* token, LexState* lState) // for true/false 
             token->type = (found) ? TK_Number_val : TK_Int_val;
         }
 
-        int64_t integer = 0;
-        double  number  = 0;
-        double  decimal = 0;
+        int64 integer = 0;
+        number64  number  = 0;
+        number64  decimal = 0;
 
         if (token->type == TK_Int_val) {
             for (size_t i = 0; i < token->string.length; i++) {
@@ -214,6 +216,11 @@ static void set_token_type(LexToken* token, LexState* lState) // for true/false 
 
             if (token->type == TK_Bool_val)
                 token->bl = stringtoken[i].string[0] == 't'; // if true, then 1 else 0
+
+            else if (token->type == TK_NaN) {
+                token->type = TK_Number_val;
+                token->number = G_NaN;
+            }
 
             return;
         }

@@ -38,6 +38,7 @@ char* Datatype_to_string(ASTDatatype dt)
 
 typedef enum ExpressionNodeType {
     EXPRNODE_UNINIT = 0,
+    EXPRNODE_PARENTHESIS,
 
     // OPERATION
     EXPRNODE_ADD,
@@ -109,8 +110,8 @@ typedef struct ExpressionNodeAST {
     ExpressionNodeType type;
 
     union {
-        double number;
-        int64_t integer;
+        number64 number;
+        int64  integer;
         String string_identifier;
         char ch;
         bool bl;

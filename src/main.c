@@ -3,7 +3,7 @@
 #include "etc/strings.c"
 #include "etc/string_manipulation.c"
 #include "etc/input.c"
-#include "etc/log.c"
+#include "etc/G_stdio.c"
 
 #include "core/ver.h"
 
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
                             {
                                 int64_t val;
                                 memcpy(&val, &x->bytecode[i], 8);
-                                printf("%ld", val);
+                                printf("%lld", val);
                                 i += 8;
                                 break;
                             }
@@ -190,7 +190,7 @@ int main(int argc, char** argv)
 
                             default:
                             {
-                                printf("[unknown type: %d:%ld]\n", immediatedatatype, i+1);
+                                printf("[unknown type: %d:%lld]\n", immediatedatatype, i+1);
                                 break;
                             }
                         }
