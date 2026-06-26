@@ -7,6 +7,7 @@
 #include "../../etc/strings.h"
 #include "../bytecode.h"
 
+typedef struct G_AST G_AST;
 
 typedef enum ASTDatatype {
     ASTDATATYPE_ERR = 0, // FOR ERRORS
@@ -109,6 +110,12 @@ typedef struct ExpressionNodeAST {
     struct ExpressionNodeAST* right;
     ExpressionNodeType type;
 
+    struct {
+        size_t line;
+        size_t column;
+        size_t length;
+    } info;
+
     union {
         number64 number;
         int64  integer;
@@ -168,13 +175,37 @@ void destroy_VariableAssignAST(VariableAssignAST* x);
 
 
 
+
+
+
+typedef struct ASTScope {
+    size_t size;
+    size_t length;
+    G_AST* nodes;
+} ASTScope;
+
+ASTScope init_ASTScope();
+// does NOT deepcopy pointers in it, just a lightcopy, BEWARE
+bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd);
+void destroy_ASTScope(ASTScope* x);
+
+
+typedef struct IfAST {
+    ASTScope nodes;
+    ExpressionAST* expression;
+} IfAST;
+IfAST init_IfAST();
+void destroy_IfAST(IfAST* x);
+
+
+
 typedef enum ASTNodeType {
     ASTNODE_IGNORE = 0,  // FOR THE IR TO SIMPLY IGNORE
     ASTNODE_END,         // PARSER HAS REACHED THE END of its desired token (like end for a function or EOF for a file)
 
     ASTNODE_DECLARATION,
     ASTNODE_ASSIGN,
-    ASTNODE_FUNC_CALL
+    ASTNODE_IF
 } ASTNodeType;
 
 typedef struct G_AST {
@@ -184,7 +215,7 @@ typedef struct G_AST {
     union {
         VariableDeclarationAST declarationAST;
         VariableAssignAST      assignAST;
-        //FuncCallAST            funcCallAST;
+        IfAST                  ifAST;
     };
 } G_AST;
 void destroy_G_AST(G_AST* g_ast);

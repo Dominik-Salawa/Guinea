@@ -28,9 +28,8 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
     }
 
     if (current_line == line) {
-        while (source[i] != '\n' && source[i] != '\0') {
+        while (source[i] != '\n' && source[i] != '\0')
             stringaddchar(&error_line, source[i++]);
-        }
 
         { // Print the text
             size_t current_column = 1;

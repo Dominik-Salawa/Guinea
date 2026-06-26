@@ -489,6 +489,61 @@ void destroy_FunctionAST(FunctionAST* x)
 }
 
 
+
+
+ASTScope init_ASTScope()
+{
+    ASTScope x = (ASTScope){0};
+    x.size = 6;
+    x.nodes = calloc(x.size, sizeof(G_AST));
+    if (!x.nodes) {
+        return (ASTScope){0};
+    }
+    return x;
+}
+
+// does NOT deepcopy pointers in it, just a lightcopy, BEWARE
+bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd)
+{
+    while (x->length >= x->size) {
+        x->size *= 2;
+        G_AST* tmp = realloc(x->nodes, x->size);
+        if (!tmp) {
+            x->size /= 2;
+            return false;
+        }
+        x->nodes = tmp;
+    }
+    x->nodes[x->length++] = toadd;
+    return true;
+}
+
+void destroy_ASTScope(ASTScope* x)
+{
+    for (size_t i = 0; i < x->length; ++i)
+        destroy_G_AST(&x->nodes[i]);
+
+    free(x->nodes);
+    x->length = 0;
+    x->size   = 0;
+}
+
+
+
+IfAST init_IfAST()
+{
+    IfAST x = (IfAST){0};
+    x.nodes = init_ASTScope();
+    return x;
+}
+void destroy_IfAST(IfAST* x)
+{
+    destroy_ExpressionAST_ptr(&x->expression);
+    destroy_ASTScope(&x->nodes);
+}
+
+
+
 void destroy_G_AST(G_AST* g_ast)
 {
     G_log("destroying G_AST...\n");
@@ -499,7 +554,7 @@ void destroy_G_AST(G_AST* g_ast)
 
         case ASTNODE_DECLARATION: { G_log("declaration\n"); destroy_VariableDeclaration(&g_ast->declarationAST); break; }
         case ASTNODE_ASSIGN:      { G_log("assign\n");      destroy_VariableAssignAST(&g_ast->assignAST); break;        }
-        //case ASTNODE_FUNC_CALL:   { destroy_FuncCallAST(&g_ast->funcCallAST); break;            }
+        case ASTNODE_IF:          { G_log("if\n");           destroy_IfAST(&g_ast->ifAST); break;                       }
         default: printf("err ASTNODE G_AST destroy\n"); exit(1);
     }
     g_ast->nodetype = ASTNODE_IGNORE;

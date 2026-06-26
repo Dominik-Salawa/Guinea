@@ -55,11 +55,6 @@ void advance_parser(ParseState* pState);
 ExpressionNodeType LexTokenEnum_to_ValidExpressionNodeType_Operation(LexTokenEnum x);
 
 ExpressionAST* get_function_args_in_expression_parser(ParseState* pState);
-G_AST eval_if_statement(ParseState* pState);
-G_AST eval_if_statement(ParseState* pState);
-G_AST eval_while_statement(ParseState* pState);
-G_AST eval_for_statement(ParseState* pState);
-G_AST parse_segment(ParseState* pState, LexTokenEnum ending, bool is_global_scope);
-G_AST parse(String* file_content);
+G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is_global_scope);
 
 #endif

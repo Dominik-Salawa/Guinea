@@ -71,7 +71,7 @@ int main(int argc, char** argv)
         ir.filename = argv[i];
         ir.source = inp;
 
-        G_Bytecode* x = G_IR_CONVERT(&ir, SIZE_T);
+        G_Bytecode* x = G_IR_CONVERT(&ir, SIZE_T, true);
 
         if (x) {
             for (size_t i = 0; i < x->length; i++) {

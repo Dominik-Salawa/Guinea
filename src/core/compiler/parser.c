@@ -565,7 +565,99 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
 
 
 
-G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, bool is_global_scope)
+
+
+
+static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, const LexTokenEnum ending)
+{
+    if (!pState) return (ASTScope){0};
+
+    ASTScope scope = init_ASTScope();
+    if (!scope.nodes) return (ASTScope){0};
+
+    add_ParseScopeNode(pState, scopetype);
+
+    while (true) {
+        G_AST x = parse_segment(pState, ending, false);
+        
+        if (x.error) {
+            destroy_ASTScope(&scope);
+            break;
+        }
+        if (x.nodetype == ASTNODE_END)
+            break;
+        if (x.nodetype == ASTNODE_IGNORE)
+            continue;
+
+        add_G_AST_to_ASTScope(&scope, x);
+    }
+
+    pop_ParseScopeNode(pState);
+    return scope;
+}
+
+
+
+
+
+
+
+static G_AST eval_if_statement(ParseState* pState)
+{
+    if (!pState) return (G_AST){0};
+
+    G_log("doing if statement\n");
+
+    G_AST x = (G_AST){0};
+    x.nodetype = ASTNODE_IF;
+    x.error = true;
+
+    G_log("-------------------------------------------------------\n");
+    G_log_push_layer();
+    x.ifAST.expression = eval_expression_parser(pState, TK_then, false);
+    G_log_pop_layer();
+    G_log("-------------------------------------------------------\n");
+    if (!x.ifAST.expression) return x;
+    if (x.ifAST.expression->fail) {
+        destroy_ExpressionAST_ptr(&x.ifAST.expression);
+        return x;
+    }
+
+    if (!x.ifAST.expression->top) {
+        pState->errmsg = "Expected an expression! (from if)";
+        destroy_ExpressionAST_ptr(&x.ifAST.expression);
+        return x;
+    }
+
+    G_log("Statement:\n");
+    G_log_ExpressionNodeAST(x.ifAST.expression->top);
+
+    advance_parser(pState);
+
+    G_log("-------------------------------------------------------\n");
+    G_log_push_layer();
+    x.ifAST.nodes = parser_get_scope(pState, SCOPE_IF, TK_end);
+    G_log_pop_layer();
+    G_log("-------------------------------------------------------\n");
+
+    if (!x.ifAST.nodes.nodes) {
+        destroy_ExpressionAST_ptr(&x.ifAST.expression);
+        destroy_ASTScope(&x.ifAST.nodes);
+        return x;
+    }
+
+    x.error = false;
+    return x;
+}
+
+
+
+
+
+
+
+
+G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is_global_scope)
 {
     advance_parser(pState);
     
@@ -574,7 +666,14 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, bool is_globa
 
     switch (pState_current.type) 
     {
-        case TK_var:             {  G_log_pop_layer(); return eval_variable_parser(pState, ending, is_global_scope);  }
+        case TK_var:
+            G_log_pop_layer(); 
+            return eval_variable_parser(pState, ending, is_global_scope);
+
+        case TK_if:
+            G_log_pop_layer(); 
+            return eval_if_statement(pState);
+
         default: {
             G_log_pop_layer();
 

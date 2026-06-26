@@ -172,8 +172,7 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
     return x;
 }
 
-static bool on_global_ir_convert = true;
-G_Bytecode* G_IR_CONVERT(G_IR* ir, ubyte SIZE_T_OF_PLATFORM)
+G_Bytecode* G_IR_CONVERT(G_IR* ir, ubyte SIZE_T_OF_PLATFORM, const bool on_global)
 {
     ///////////////////////////////////////////////////////////
     ///                                                     ///
@@ -188,7 +187,7 @@ G_Bytecode* G_IR_CONVERT(G_IR* ir, ubyte SIZE_T_OF_PLATFORM)
 
 if (bytecode) {
     { // MAGIC
-        if (on_global_ir_convert) add_G_Bytecode_w_byte_size(bytecode, "$GUINEA", 7);
+        if (on_global) add_G_Bytecode_w_byte_size(bytecode, "$GUINEA", 7);
     }
     bool reached_the_end = false;
     bool error = false;
@@ -209,7 +208,7 @@ if (bytecode) {
 
         switch (astnode.nodetype) 
         {
-            case ASTNODE_DECLARATION:
+            case ASTNODE_DECLARATION: {
                 ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.declarationAST.expression->top, &bytecode);
 
                 if (ir_tree == EXPRNODE_UNINIT) {
@@ -229,6 +228,20 @@ if (bytecode) {
                 add_G_Bytecode_w_byte_size(bytecode, &astnode.declarationAST.info.identifier.length, SIZE_T_OF_PLATFORM);
                 add_G_Bytecode(bytecode, (ubyte*)astnode.declarationAST.info.identifier.content, astnode.declarationAST.info.identifier.length);
                 break;
+            }
+
+            case ASTNODE_IF: {
+                ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifAST.expression->top, &bytecode);
+                if (ir_tree == EXPRNODE_UNINIT) {
+                    G_log("failed!\n");
+                    error = true;
+                    if (!pState.errmsg)
+                        pState.errmsg = "Failed to convert If Expression!";
+                    destroy_G_Bytecode_ptr(&bytecode);
+                    break;
+                }
+                break;
+            }
 
             case ASTNODE_IGNORE:
                 break;
