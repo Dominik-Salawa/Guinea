@@ -65,7 +65,7 @@ bool is_valid_number(char* str)
 bool is_valid_identifier_string(char* str)
 {
     bool found = false;
-    for (ubyte i = 0; i < sizeof(alphabet)/sizeof(char)-1; i++) {
+    for (G_ubyte i = 0; i < sizeof(alphabet)/sizeof(char)-1; i++) {
         if (alphabet[i] == lower(str[0]) || str[0] == '_') {
             found = true;
             break;

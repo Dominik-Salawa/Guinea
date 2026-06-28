@@ -25,8 +25,8 @@ typedef struct ParseScopeNode {
 
     struct {
         VariableInfoAST* arr;
-        size_t var_info_size;
-        size_t var_info_len;
+        size_t size;
+        size_t length;
     } var_info;
 } ParseScopeNode;
 

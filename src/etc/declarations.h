@@ -2,26 +2,27 @@
 #define DECLARATIONS_H
 
 #include <inttypes.h>
-typedef unsigned char uchar;
-typedef int8_t        byte;
-typedef uint8_t       ubyte;
+typedef unsigned char G_uchar;
 
-typedef int16_t       int16;
-typedef uint16_t      uint16;
-typedef int32_t       int32;
-typedef uint32_t      uint32;
-typedef int64_t       int64;
-typedef uint64_t      uint64;
+typedef int8_t        G_byte;
+typedef uint8_t       G_ubyte;
 
-typedef float         number32;
-typedef double        number64;
+typedef int16_t       G_int16;
+typedef uint16_t      G_uint16;
+typedef int32_t       G_int32;
+typedef uint32_t      G_uint32;
+typedef int64_t       G_int64;
+typedef uint64_t      G_uint64;
+
+typedef float         G_number32;
+typedef double        G_number64;
 typedef void (*RawFuncPointer)(void*);
 
-number32 __G_NaN()
+G_number32 __G_NaN()
 {
     union {
-        uint32 i;
-        number32 n;
+        G_uint32 i;
+        G_number32 n;
     } u;
 
     u.i = 0x7FF80000;

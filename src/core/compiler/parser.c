@@ -5,33 +5,57 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../../etc/strings.h"
-#include "../../etc/G_stdio.h"
+#include "../../etc/log.h"
 #include "lexer.h"
 #include "parser.h"
 #include "ast.h"
 
-ParseScopeNode init_ParseScopeNode(ScopeType scopetype)
+ParseScopeNode* init_ParseScopeNode_ptr(ScopeType scopetype)
 {
-    ParseScopeNode x = {0};
-    x.scopetype = scopetype;
+    ParseScopeNode* x = malloc(sizeof(ParseScopeNode));
+    if (!x) return NULL;
+
+    ParseScopeNode y = {0};
+    y.scopetype = scopetype;
+    y.var_info.size = 4;
+    y.var_info.arr = malloc(sizeof(VariableInfoAST) * y.var_info.size);
+    if (!y.var_info.arr) {
+        free(x);
+        return NULL;
+    }
+
+    for (size_t i = 0; i < y.var_info.size; i++)
+        y.var_info.arr[i] = (VariableInfoAST){0};
+
+    *x = y;
     return x;
 }
 
 void destroy_ParseScopeNode(ParseScopeNode** pScope)
 {
-    for (size_t i = 0; i < (*pScope)->var_info.var_info_len; i++)
-        destroy_VariableInfoAST(&(*pScope)->var_info.arr[i]);
+    if (!pScope)    return;
+    if (!(*pScope)) return;
 
-    free((*pScope)->var_info.arr);
-    free(*pScope);
+    ParseScopeNode* pScope_ref = *pScope;
+
+    for (size_t i = 0; i < pScope_ref->var_info.length; ++i) {
+        destroy_VariableInfoAST(&pScope_ref->var_info.arr[i]);
+    }
+
+    free(pScope_ref->var_info.arr);
+    pScope_ref->var_info.arr = NULL;
+    free(pScope_ref);
     *pScope = NULL;
 }
 
 bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype)
 {
-    ParseScopeNode* x = malloc(sizeof(ParseScopeNode));
+    ParseScopeNode* x = init_ParseScopeNode_ptr(scopetype);
     if (!x) return false;
-    *x = init_ParseScopeNode(scopetype);
+
+    x->prev = pState->scope_top;
+    pState->scope_top = x;
+
     return true;
 }
 
@@ -39,22 +63,67 @@ bool pop_ParseScopeNode(ParseState* pState)
 {
     if (!pState) return false;
 
-    ParseScopeNode* x = pState->scope_top;
-
     // invalid
-    if (!x) return false;
-
+    if (!pState->scope_top) return false;
     // this means we are in the global scope
-    if (!x->prev) return false;
- 
+    if (!pState->scope_top->prev) return false;
+
     // delete
-    pState->scope_top = x->prev;
-    destroy_ParseScopeNode(&x);
+    ParseScopeNode* current = pState->scope_top;
+    pState->scope_top = current->prev;
+    destroy_ParseScopeNode(&current);
     return true;
 }
 
-VariableInfoAST* get_var_info(char* name)
+// deep copies the string
+bool add_ParseScopeNode_variable(ParseState* pState, String* identifier, ASTDatatype datatype)
 {
+    if (!pState || !identifier) return false;
+
+    if (!pState->scope_top) {
+        G_log("there is no scope top!\n");
+        return false;
+    }
+
+    G_log("doing %zu %zu\n", pState->scope_top->var_info.length, pState->scope_top->var_info.size);
+
+    while (pState->scope_top->var_info.length >= pState->scope_top->var_info.size) {
+        pState->scope_top->var_info.size *= 2;
+        VariableInfoAST* tmp = realloc(pState->scope_top->var_info.arr, pState->scope_top->var_info.size * sizeof(VariableInfoAST));
+        if (!tmp) {
+            pState->scope_top->var_info.size /= 2;
+            return false;
+        }
+        pState->scope_top->var_info.arr = tmp;
+    }
+
+
+    VariableInfoAST x = (VariableInfoAST){
+        .datatype = datatype,
+        .identifier = copystring(identifier)
+    };
+
+    pState->scope_top->var_info.arr[pState->scope_top->var_info.length++] = x;
+    G_log("done making it bigger %d %d 0x%p\n", pState->scope_top->var_info.length, pState->scope_top->var_info.size, pState->scope_top->var_info.arr);
+
+    return true;
+}
+
+// DO NOT FREE
+VariableInfoAST* get_var_info(ParseState* pState, char* name)
+{
+    if (!pState || !name) return NULL;
+    ParseScopeNode* current = pState->scope_top;
+    while (current) {
+        G_log("checking %zu %zu %p\n", current->var_info.length, current->var_info.size, current->var_info.arr);
+        for (size_t i = 0; i < current->var_info.length; ++i) {
+            G_log("comparing %s... %d 0x%p\n", current->var_info.arr[i].identifier.content, i, current->var_info.arr);
+            if (strcmp(current->var_info.arr[i].identifier.content, name) == 0) {
+                return &current->var_info.arr[i];
+            }
+        }
+        current = current->prev;
+    }
     return NULL;
 }
 
@@ -64,6 +133,8 @@ ParseState init_ParseState(String* file_content)
 {
     ParseState x = {0};
     x.lState = init_LexState(file_content);
+    x.scope_top = init_ParseScopeNode_ptr(SCOPE_GLOBAL);
+    x.scope_base_aka_global = &x.scope_top;
     return x;
 }
 
@@ -73,7 +144,7 @@ void destroy_ParseState(ParseState* pState)
 
     while (top) {
         ParseScopeNode* next = top->prev;
-        destroy_ParseScopeNode(&next);
+        destroy_ParseScopeNode(&top);
         top = next;
     }
 
@@ -115,7 +186,7 @@ static LexTokenEnum valid_Operations[] = {
 };
 
 struct ExpressionPrecedenceStruct {
-    byte rank;
+    G_ubyte rank;
     ExpressionNodeType type;
 };
 
@@ -173,7 +244,7 @@ ExpressionNodeType LexTokenEnum_to_ValidExpressionNodeType_Operation(LexTokenEnu
 }
 
 // 0 == (literal value like int or string)
-static byte get_Precedence_level(ExpressionNodeType type)
+static G_ubyte get_Precedence_level(ExpressionNodeType type)
 {
     for (size_t i = 0; i < sizeof(exprNodeOps)/sizeof(struct ExpressionPrecedenceStruct); i++)
         if (exprNodeOps[i].type == type) return exprNodeOps[i].rank;
@@ -221,13 +292,11 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
         switch (pState_current.type)
         {
             case TK_nil:
-                G_log("nil\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_NIL);
                 dont_break = false;
                 break;
 
             case TK_Int_val:
-                G_log("int val\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_INT);
                 (*current)->data.integer = pState_current.integer;
                 dont_break = false;
@@ -235,26 +304,22 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
 
             
             case TK_SUB: // AUTO ASSUME ITS AT THE START OF A CHAIN OF NEG
-                G_log("neg\n");
                 on_negative = !on_negative;
                 break;
 
             case TK_Number_val:
-                G_log("num val\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_NUMBER);
                 (*current)->data.number = pState_current.number;
                 dont_break = false;
                 break;
 
             case TK_Identifier:
-                G_log("identifier");
                 assign_ExpressionNodeAST(current, EXPRNODE_IDENTIFIER);
                 (*current)->data.string_identifier = copystring(&pState_current.string);
                 dont_break = false;
                 break;
 
             case TK_String_val:
-                G_log("str val\n");
                 assign_ExpressionNodeAST(current, EXPRNODE_STRING);
                 (*current)->data.string_identifier = copystring(&pState_current.string);
                 dont_break = false;
@@ -266,10 +331,7 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 exprAST = eval_expression_parser(pState, TK_PARENTHESIS_R, is_global_scope);
                 G_log_pop_layer();
                 
-                G_log("failed to get paren? %d\n", !exprAST);
                 if (!exprAST)      return NULL;    // failed alloc
-
-                G_log("paren fail? %d\n", exprAST->fail);
                 if (exprAST->fail) return exprAST; // pass the state over
 
                 ExpressionNodeAST* tmp = exprAST->top;
@@ -283,7 +345,6 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 break;
 
             case TK_UNKNOWN:
-                G_log("UNKNOWN token\n");
                 destroy_ExpressionNodeAST_ptr(&exprAST->top);
                 exprAST->fail = true;
                 pState->errmsg = pState->lState.errmsg;
@@ -291,7 +352,6 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 break;
 
             case TK_ERR:
-                G_log("ERR token\n");
                 destroy_ExpressionNodeAST_ptr(&exprAST->top);
                 exprAST->fail = true;
                 pState->errmsg = pState->lState.errmsg;
@@ -328,7 +388,6 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
 
     advance_parser(pState);
 
-    G_log("getting value...\n");
     G_log_push_layer();
     ExpressionAST* value = get_value_expression_parser(pState, token_to_signify_end, is_global_scope);
     G_log_pop_layer();
@@ -343,14 +402,12 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
             //pState->errmsg = "Expression was not finished!";
             exprAST->fail = true;
             destroy_ExpressionAST_ptr(&value);
-            G_log("done destroying!\n");
             return exprAST;
 
         } else if (!value->top) {
             G_log("value doesnt exist!\n");
             destroy_ExpressionAST_ptr(&value);
             exprAST->fail = true;
-            G_log("done destroying value!\n");
             return exprAST;
         }
     }
@@ -358,19 +415,16 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
     { // Checking if its not just negative symbols like this: <val> + -- (nothing after) 
         ExpressionNodeAST* check = value->top;
 
-        G_log("checking if its an invalid expression... (if its just negs or logic not)\n");
         while (check) {
             if (check->type == EXPRNODE_NEG) check = check->right;
             else break;
         }
-        G_log("done checking invalid expression\n");
         if (!check) {
             G_log("check doesnt exist so its invalid!\n");
             pState->errmsg = "Expression was not finished!";
             exprAST->fail = true;
             destroy_ExpressionNodeAST_ptr(&exprAST->top);
             destroy_ExpressionAST_ptr(&value);
-            G_log("done destroying Expression stuff\n");
             return exprAST;
         }
     }
@@ -385,9 +439,7 @@ static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexToke
             value->top = NULL;
             destroy_ExpressionAST_ptr(&value);
         }
-        G_log("is op: merged value and exprAST\n");
     } else {
-        G_log("not an operation!\n");
         exprAST->top = value->top;
         value->top = NULL;
         destroy_ExpressionAST_ptr(&value);
@@ -425,11 +477,7 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
         ExpressionAST* right;
         
         { // fetching right
-            G_log("--------------\n");
-            G_log_push_layer();
             right = eval_expression_parser_section(pState, token_to_signify_end, is_global_scope);
-            G_log_pop_layer();
-            G_log("--------------\n");
 
             if (!right) {
                 destroy_ExpressionAST_ptr(&right);
@@ -446,24 +494,20 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
         }
 
         ExpressionNodeAST* c_ref = *current;
-        byte current_precedence  = get_Precedence_level(c_ref->type);
-        byte right_precedence    = get_Precedence_level(right->top->type);
+        G_byte current_precedence  = get_Precedence_level(c_ref->type);
+        G_byte right_precedence    = get_Precedence_level(right->top->type);
 
         if (current_precedence >= right_precedence && right_precedence != 0) {
-            G_log("current >= right && right != 0\n");
-
             // we position main to be on the left side of the lesser/equ right
             c_ref->right     = right->top->left;
             right->top->left = c_ref;
             *current = right->top;
         }
         else if (right_precedence == 0) {
-            G_log("right == 0\n");
             c_ref->right = right->top;
             current = NULL;
         }
         else { // current_precedence < right_precedence
-            G_log("current < right\n");
             c_ref->right = right->top;
             current = &c_ref->right;
         }
@@ -512,8 +556,15 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
         return ASTNode;
     }
     ASTNode.declarationAST.info.identifier = copystring(&pState_current.string);
-
     G_log("-------------------------------------------------------\n");
+    G_log("done copying string %s\n", ASTNode.declarationAST.info.identifier.content);
+
+    if (get_var_info(pState, ASTNode.declarationAST.info.identifier.content)) {
+        pState->errmsg = "Identifier name already exists!";
+        ASTNode.error = true;
+        return ASTNode;
+    }
+
     G_log("PARSING DECLARATION FOR [%s]\n", ASTNode.declarationAST.info.identifier.content);
 
     advance_parser(pState);
@@ -547,7 +598,9 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
     {
         G_log("Expression tree:\n");
         G_log("-------------------\n");
+        G_log_push_layer();
         G_log_ExpressionNodeAST(ASTNode.declarationAST.expression->top);
+        G_log_pop_layer();
         G_log("-------------------\n");
     }
     G_log("determining if its invalid\n");
@@ -558,6 +611,8 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
     else if (ASTNode.declarationAST.expression->fail) {
         ASTNode.error = true;
     }
+    G_log("status of adding: %d\n", add_ParseScopeNode_variable(pState, &ASTNode.declarationAST.info.identifier, ASTNode.declarationAST.info.datatype));
+    G_log("done adding name\n");
     G_log("-------------------------------------------------------\n");
 
     return ASTNode;
@@ -577,8 +632,10 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
 
     add_ParseScopeNode(pState, scopetype);
 
+    // DO NOT AND I MEAN NOT DESTROY X
+    G_AST x;
     while (true) {
-        G_AST x = parse_segment(pState, ending, false);
+        x = parse_segment(pState, ending, false);
         
         if (x.error) {
             destroy_ASTScope(&scope);
@@ -593,6 +650,7 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
     }
 
     pop_ParseScopeNode(pState);
+    G_log("return scope\n");
     return scope;
 }
 
@@ -646,6 +704,7 @@ static G_AST eval_if_statement(ParseState* pState)
         return x;
     }
 
+    G_log("returing x...\n");
     x.error = false;
     return x;
 }
@@ -664,26 +723,30 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
     G_log("parsing a new segment\n");
     G_log_push_layer();
 
-    switch (pState_current.type) 
+    switch (pState_current.type)
     {
         case TK_var:
+            G_log("doing var\n");
             G_log_pop_layer(); 
             return eval_variable_parser(pState, ending, is_global_scope);
 
         case TK_if:
+            G_log("doing if\n");
             G_log_pop_layer(); 
             return eval_if_statement(pState);
 
         default: {
             G_log_pop_layer();
 
-            if (pState_current.type == TK_SEMI_COLON) {
+            if (pState_current.type == TK_SEMI_COLON && ending != TK_SEMI_COLON) {
+                G_log("is semi\n");
                 G_AST x = (G_AST){0};
                 return x;
             }
 
             // to tell the IR to stop looping, the scope has closed or the end of the file
             if (pState_current.type == ending) {
+                G_log("is ending\n");
                 G_AST x = (G_AST){0};
                 x.nodetype = ASTNODE_END;
                 return x;

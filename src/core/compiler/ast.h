@@ -73,7 +73,7 @@ typedef enum ExpressionNodeType {
     EXPRNODE_IDENTIFIER,
     EXPRNODE_NIL
 } ExpressionNodeType;
-byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type);
+G_byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type);
 char* ExpressionNodeType_to_string(ExpressionNodeType dt);
 
 
@@ -117,8 +117,8 @@ typedef struct ExpressionNodeAST {
     } info;
 
     union {
-        number64 number;
-        int64  integer;
+        G_number64 number;
+        G_int64  integer;
         String string_identifier;
         char ch;
         bool bl;

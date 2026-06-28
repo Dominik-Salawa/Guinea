@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include "etc/log.c"
 #include "etc/strings.c"
 #include "etc/string_manipulation.c"
-#include "etc/input.c"
-#include "etc/G_stdio.c"
+#include "etc/stdlib/G_stdio.c"
 
 #include "core/ver.h"
 
@@ -20,8 +21,62 @@
 
 #define SIZE_T 8
 
+int numlen(size_t number)
+{
+    int i = 1;
+    while (number / 10 != 0) {
+        number /= 10;
+        ++i;
+    }
+    return i;
+}
+
+// 1. Forward-declare the exact Windows types and functions manually
+typedef struct _EXCEPTION_RECORD {
+    unsigned long ExceptionCode;
+    // (Other OS fields exist here, but we only need to map the layout sizes)
+    unsigned long ExceptionFlags;
+    struct _EXCEPTION_RECORD* ExceptionRecord;
+    void* ExceptionAddress;
+    unsigned long NumberParameters;
+    unsigned __int64 ExceptionInformation[15];
+} EXCEPTION_RECORD, *PEXCEPTION_RECORD;
+
+typedef struct _CONTEXT CONTEXT, *PCONTEXT;
+
+typedef struct _EXCEPTION_POINTERS {
+    PEXCEPTION_RECORD ExceptionRecord;
+    PCONTEXT ContextRecord;
+} EXCEPTION_POINTERS, *PEXCEPTION_POINTERS;
+
+typedef long (__stdcall* PVECTORED_EXCEPTION_HANDLER)(PEXCEPTION_POINTERS);
+
+// 2. Link the core Windows DLL functions directly
+__declspec(dllimport) void* __stdcall AddVectoredExceptionHandler(
+    unsigned long First, 
+    PVECTORED_EXCEPTION_HANDLER Handler
+) __attribute__((dllimport)); // Attribute helps MinGW link correctly
+
+__declspec(dllimport) int __stdcall MessageBoxA(
+    void* hWnd, 
+    const char* lpText, 
+    const char* lpCaption, 
+    unsigned int uType
+) __attribute__((dllimport));
+
+// 3. Define the crash watcher callback
+long __stdcall CustomCrashWatcher(PEXCEPTION_POINTERS ExceptionInfo) {
+    // 0xC0000005 is the Windows NT status code for an Access Violation (Segfault)
+    if (ExceptionInfo->ExceptionRecord->ExceptionCode == 0xC0000005) {
+        // 0x00000010L maps to MB_ICONERROR | MB_OK
+        MessageBoxA(NULL, "Application crashed with a Segmentation Fault!", "Segfault Intercepted", 0x00000010L);
+    }
+    return 1; // 1 maps to EXCEPTION_EXECUTE_HANDLER (allows normal exit after popup)
+}
+
 int main(int argc, char** argv)
 {
+    AddVectoredExceptionHandler(1, CustomCrashWatcher);
     size_t i = 1;
 
     if (argc == 1) {
@@ -36,7 +91,7 @@ int main(int argc, char** argv)
         }
     }
 
-    ubyte mode = 0;
+    G_ubyte mode = 0;
 
     if (argc > i + 1) {
         if (strcmp(argv[i], "run") == 0) {
@@ -79,9 +134,18 @@ int main(int argc, char** argv)
             }
             putchar(10);
 
-            freopen("file.gs", "w", stdout);
+            //freopen("file.gs", "w", stdout);
 
+            int len = 8;
+            if (numlen(x->length) > len) {
+                len = numlen(x->length);
+            }
             for (size_t i = 7; i < x->length;) {
+                for (char j = 0; j < len - numlen(i); ++j)
+                    putchar('0');
+
+                printf("%zu   ", i-6);
+
                 switch (x->bytecode[i])
                 {
                     case GINSTR_DECLARE_GLOBAL: {
@@ -99,7 +163,7 @@ int main(int argc, char** argv)
                         }
 
                         i += 8 + name->length; // varname len + int size
-                        fwrite(name->content, sizeof(ubyte), name->length, stdout);
+                        fwrite(name->content, sizeof(G_ubyte), name->length, stdout);
                         printf("\n");
 
                         clearstring_ptr(&name);
@@ -190,13 +254,29 @@ int main(int argc, char** argv)
 
                             default:
                             {
-                                printf("[unknown type: %d:%lld]\n", immediatedatatype, i+1);
+                                printf("[unknown type: %d:%zu]", immediatedatatype, i+1);
                                 break;
                             }
                         }
                         printf("\n");
                         break;
                     
+                    case GINSTR_JNTS:
+                        printf("JNTS ");
+                        ++i;
+                        printf("%d\n", x->bytecode[i]);
+                        ++i;
+                        break;
+
+                    case GINSTR_JNT:
+                        printf("JNT ");
+                        ++i;
+                        G_int64 size;
+                        memcpy(&size, &x->bytecode[i], sizeof(G_int64));
+                        printf("%lld\n", size);
+                        i += sizeof(G_int64);//sizeof(G_int64);
+                        break;
+
                     case GINSTR_ADD:
                         printf("ADD\n");
                         ++i;
@@ -291,13 +371,13 @@ int main(int argc, char** argv)
 
             FILE* tosave = fopen("file.gbc", "w");
             if (tosave) {
-                fwrite(x->bytecode, sizeof(ubyte), x->length, tosave);
+                fwrite(x->bytecode, sizeof(G_ubyte), x->length, tosave);
                 fclose(tosave);
             }
         }
 
         //FILE* save = fopen("file.gbc", "w");
-        //if (save) fwrite(x->bytecode, sizeof(ubyte), x->length, save);
+        //if (save) fwrite(x->bytecode, sizeof(G_ubyte), x->length, save);
 
         destroy_G_Bytecode_ptr(&x);
         clearstring(&inp);

@@ -6,15 +6,13 @@
 
 typedef enum GINSTR {
     GINSTR_NULL = 0,
-    GINSTR_DECLARE_GLOBAL = 0x10,
-
-    GINSTR_PUSH_GLOBAL = 0x20,
+    GINSTR_DECLARE_GLOBAL = 0x01,
+    GINSTR_PUSH_GLOBAL,
     GINSTR_PUSH_LOCAL,
     GINSTR_PUSH_IMMEDIATE,
 
-
     // operations
-    GINSTR_ADD = 0x30,
+    GINSTR_ADD = 0x10,
     GINSTR_SUB,
     GINSTR_MUL,
     GINSTR_DIV,
@@ -34,6 +32,9 @@ typedef enum GINSTR {
     GINSTR_LT,
     GINSTR_GT_EQU,
     GINSTR_LT_EQU,
+
+    GINSTR_JNT = 0x30, // Jump Not True
+    GINSTR_JNTS,       // Jump Not True SHORT (<=255 bytes away)
 } GINSTR;
 
 typedef enum GINSTR_Datatype {
@@ -50,7 +51,7 @@ typedef enum GINSTR_Datatype {
 } GINSTR_Datatype;
 
 typedef struct {
-    ubyte* bytecode;
+    G_ubyte* bytecode;
     size_t length;
     size_t size;
 } G_Bytecode;
@@ -74,8 +75,8 @@ char* G_Bytecode_Datatype_to_str(GINSTR_Datatype x)
 }
 
 G_Bytecode init_G_Bytecode();
-G_Bytecode* add_G_Bytecode(G_Bytecode* x, const ubyte* data, const size_t data_length);
-G_Bytecode* add_G_Bytecode_one_byte(G_Bytecode* x, const ubyte data);
+G_Bytecode* add_G_Bytecode(G_Bytecode* x, const G_ubyte* data, const size_t data_length);
+G_Bytecode* add_G_Bytecode_one_byte(G_Bytecode* x, const G_ubyte data);
 G_Bytecode* add_G_Bytecode_w_byte_size(G_Bytecode* x, const void* data, const size_t length);
 G_Bytecode* add_G_Bytecode_String_no_size_embedded(G_Bytecode* x, const String* str);
 bool double_G_Bytecode_size(G_Bytecode* x);

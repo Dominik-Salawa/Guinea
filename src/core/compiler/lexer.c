@@ -176,9 +176,9 @@ static void set_token_type(LexToken* token, LexState* lState) // for true/false 
             token->type = (found) ? TK_Number_val : TK_Int_val;
         }
 
-        int64 integer = 0;
-        number64  number  = 0;
-        number64  decimal = 0;
+        G_int64     integer = 0;
+        G_number64  number  = 0;
+        G_number64  decimal = 0;
 
         if (token->type == TK_Int_val) {
             for (size_t i = 0; i < token->string.length; i++) {

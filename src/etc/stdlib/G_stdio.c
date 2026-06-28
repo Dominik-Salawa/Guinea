@@ -1,13 +1,13 @@
-#ifndef LOG_C
-#define LOG_C
+#ifndef GUINEA_STDIO_C
+#define GUINEA_STDIO_C
 
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include "G_stdio.h"
-#include "strings.h"
-#include "declarations.h"
+#include "../strings.h"
+#include "../declarations.h"
 
 ssize_t G_vfmt(char* buffer_addr, size_t buffer_size, char* string, va_list args)
 {
@@ -62,7 +62,7 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                         amount_of_chars_outputted += fprintf(file, "%s", (!ptr)? "(null)" : ptr);
                     } else {
                         String str = va_arg(args, String);
-                        amount_of_chars_outputted += fwrite(str.content, sizeof(char), str.length, file);
+                        amount_of_chars_outputted += fwrite(str.content, sizeof(typeof(*str.content)), str.length, file);
                         --string;
                     }
                     break;
@@ -74,38 +74,38 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 }
 
                 case 'd': {
-                    amount_of_chars_outputted += fprintf(file, "%d", va_arg(args, int32));
+                    amount_of_chars_outputted += fprintf(file, "%d", va_arg(args, G_int32));
                     break;
                 }
 
                 case 'u': {
-                    amount_of_chars_outputted += fprintf(file, "%u", va_arg(args, int32));
+                    amount_of_chars_outputted += fprintf(file, "%u", va_arg(args, G_int32));
                     break;
                 }
 
                 case 'x': {
-                    amount_of_chars_outputted += fprintf(file, "%x", va_arg(args, int32));
+                    amount_of_chars_outputted += fprintf(file, "%x", va_arg(args, G_int32));
                     break;
                 }
 
                 case 'o': {
-                    amount_of_chars_outputted += fprintf(file, "%o", va_arg(args, int32));
+                    amount_of_chars_outputted += fprintf(file, "%o", va_arg(args, G_int32));
                     break;
                 }
 
                 case 'l': {
                     ch = *++string;
                     if (ch == 'd') {
-                        amount_of_chars_outputted += fprintf(file, "%lld", va_arg(args, int64));
+                        amount_of_chars_outputted += fprintf(file, "%lld", va_arg(args, G_int64));
                     }
                     else if (ch == 'u') {
-                        amount_of_chars_outputted += fprintf(file, "%llu", va_arg(args, int64));
+                        amount_of_chars_outputted += fprintf(file, "%llu", va_arg(args, G_int64));
                     }
                     else if (ch == 'x') {
-                        amount_of_chars_outputted += fprintf(file, "%llx", va_arg(args, int64));
+                        amount_of_chars_outputted += fprintf(file, "%llx", va_arg(args, G_int64));
                     }
                     else if (ch == 'o') {
-                        amount_of_chars_outputted += fprintf(file, "%llo", va_arg(args, int64));
+                        amount_of_chars_outputted += fprintf(file, "%llo", va_arg(args, G_int64));
                     }
                     else {
                         fprintf(file, "G_vprintf error: invalid format (%%l%c)!\n", ch);
@@ -167,34 +167,57 @@ size_t G_printf(char* string, ...)
     return amount_of_chars_outputted;
 }
 
-void G_log(char* string, ...)
-{
-    if (!G_log_on) return;
 
-    for (size_t i = 0; i < G_log_layer_size; i++) {
-        putchar('\t');
+
+
+String input()
+{
+    String str = init_String();
+    if (!str.content) return (String){0};
+
+    int ch;
+    while ((ch = fgetc(stdin)) > EOF && ch != 10) {
+        if (str.length >= str.size-1) {
+            str.size *= 2;
+            str.content = realloc(str.content, str.size);
+
+            if (!str.content) {
+                str.size    = 0;
+                str.length  = 0;
+                return str;
+            }
+        }
+        str.content[str.length++] = ch;
     }
 
-    va_list args;
-    va_start(args, string);
-    vprintf(string, args);
-    va_end(args);
+    str.content[str.length] = 0;
+    return str;
 }
 
-void G_log_raw(char* string, ...)
+String readfile(FILE* file)
 {
-    if (!G_log_on) return;
+    String str = init_String();
+    if (!str.content) return (String){0};
 
-    va_list args;
-    va_start(args, string);
-    vprintf(string, args);
-    va_end(args);
+    int ch;
+    while ((ch = fgetc(file)) > EOF) {
+        if (str.length >= str.size-1) {
+            str.size *= 2;
+            str.content = realloc(str.content, str.size);
+
+            if (!str.content) {
+                str.size    = 0;
+                str.length  = 0;
+                return str;
+            }
+        }
+        str.content[str.length++] = ch;
+    }
+
+    str.content[str.length] = 0;
+    return str;
 }
 
-void G_log_write(void* origin, size_t size, size_t number, FILE* fd)
-{
-    if (!G_log_on) return;
-    fwrite(origin, size, number, fd);
-}
+
 
 #endif

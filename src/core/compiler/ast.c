@@ -3,13 +3,13 @@
 
 #include "ast.h"
 #include "../../etc/strings.h"
-#include "../../etc/G_stdio.h"
+#include "../../etc/strings.h"
 #include "../bytecode.h"
+#include "../../etc/log.h"
 
-
-byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type)
+G_byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type)
 {
-    byte pathways;
+    G_byte pathways;
     switch (type)
     {
         case EXPRNODE_ADD:          pathways = 2; break;
@@ -284,137 +284,132 @@ void G_log_ExpressionNodeAST(ExpressionNodeAST* x)
     }
 }
 
-// FOR DESTROYING ExpressionNodeAST
-void destroy_ExpressionNodeAST(ExpressionNodeAST* x)
-{
-    if (!x) return;
-
-    switch (x->type)
-    {
-        case EXPRNODE_UNINIT: break;
-
-        case EXPRNODE_ADD:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_SUB:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_MUL:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_DIV:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_POW:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_MOD:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-
-        ////////////////////////////////////////////////////////
-        // LOGIC
-        case EXPRNODE_AND:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_OR:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_EQU:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_NOT_EQU:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_GT:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_LT:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_GT_EQU:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_LT_EQU:
-            destroy_ExpressionNodeAST_ptr(&x->left);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-        ////////////////////////////////////////////////////////
-
-
-
-        case EXPRNODE_NEG:
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_PARENTHESIS:
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_CALL:
-            destroy_ExprFuncCallAST(&x->data.exprFuncCallAST);
-            destroy_ExpressionNodeAST_ptr(&x->right);
-            break;
-
-        case EXPRNODE_INT:      break;
-        case EXPRNODE_CHAR:     break;
-        case EXPRNODE_BOOL:     break;
-        case EXPRNODE_NUMBER:   break;
-
-        case EXPRNODE_STRING:
-            clearstring(&x->data.string_identifier);
-            break;
-
-        case EXPRNODE_IDENTIFIER:
-            clearstring(&x->data.string_identifier);
-            break;
-
-        case EXPRNODE_FUNCTION_LITERAL:
-            destroy_FunctionAST(&x->data.function);
-            break;
-
-        case EXPRNODE_NIL:
-            break;
-
-        default:
-            printf("Error: ExpressionNodeAST failed to destroy! (%d:%s)\n", x->type, ExpressionNodeType_to_string(x->type));
-            exit(1);
-    }
-    *x = (ExpressionNodeAST){0};
-}
-
 // FOR DESTROYING ExpressionNodeAST*
 void destroy_ExpressionNodeAST_ptr(ExpressionNodeAST** x)
 {
     if (!x) return;
-    destroy_ExpressionNodeAST(*x);
-    if (*x) free(*x);
+    ExpressionNodeAST* tmp = *x;
+
+    if (tmp) {
+        switch (tmp->type)
+        {
+            case EXPRNODE_UNINIT: break;
+
+            case EXPRNODE_ADD:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_SUB:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_MUL:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_DIV:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_POW:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_MOD:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+
+            ////////////////////////////////////////////////////////
+            // LOGIC
+            case EXPRNODE_AND:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_OR:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_EQU:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_NOT_EQU:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_GT:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_LT:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_GT_EQU:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_LT_EQU:
+                destroy_ExpressionNodeAST_ptr(&tmp->left);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+            ////////////////////////////////////////////////////////
+
+
+
+            case EXPRNODE_NEG:
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_PARENTHESIS:
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_CALL:
+                destroy_ExprFuncCallAST(&tmp->data.exprFuncCallAST);
+                destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
+            case EXPRNODE_INT:      break;
+            case EXPRNODE_CHAR:     break;
+            case EXPRNODE_BOOL:     break;
+            case EXPRNODE_NUMBER:   break;
+
+            case EXPRNODE_STRING:
+                clearstring(&tmp->data.string_identifier);
+                break;
+
+            case EXPRNODE_IDENTIFIER:
+                clearstring(&tmp->data.string_identifier);
+                break;
+
+            case EXPRNODE_FUNCTION_LITERAL:
+                destroy_FunctionAST(&tmp->data.function);
+                break;
+
+            case EXPRNODE_NIL:
+                break;
+
+            default:
+                printf("Error: ExpressionNodeAST failed to destroy! (%d:%s)\n", tmp->type, ExpressionNodeType_to_string(tmp->type));
+                exit(1);
+        }
+    }
+    if (tmp) free(tmp);
     *x = NULL;
 }
 
@@ -455,8 +450,8 @@ void destroy_VariableDeclaration(VariableDeclarationAST* x)
 void destroy_VariableInfoAST(VariableInfoAST* x)
 {
     if (!x) return;
-    //free(x->datatypes);
     clearstring(&x->identifier);
+    x->datatype = ASTDATATYPE_ERR;
 }
 
 void destroy_VariableAssignAST(VariableAssignAST* x)
@@ -495,7 +490,7 @@ ASTScope init_ASTScope()
 {
     ASTScope x = (ASTScope){0};
     x.size = 6;
-    x.nodes = calloc(x.size, sizeof(G_AST));
+    x.nodes = malloc(sizeof(G_AST) * x.size);
     if (!x.nodes) {
         return (ASTScope){0};
     }
@@ -507,7 +502,7 @@ bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd)
 {
     while (x->length >= x->size) {
         x->size *= 2;
-        G_AST* tmp = realloc(x->nodes, x->size);
+        G_AST* tmp = realloc(x->nodes, x->size * sizeof(ASTScope));
         if (!tmp) {
             x->size /= 2;
             return false;
@@ -520,10 +515,15 @@ bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd)
 
 void destroy_ASTScope(ASTScope* x)
 {
-    for (size_t i = 0; i < x->length; ++i)
+    if (!x) return;
+    if (!x->nodes) return;
+
+    for (size_t i = 0; i < x->length; ++i) {
         destroy_G_AST(&x->nodes[i]);
+    }
 
     free(x->nodes);
+    x->nodes  = NULL;
     x->length = 0;
     x->size   = 0;
 }
@@ -536,10 +536,14 @@ IfAST init_IfAST()
     x.nodes = init_ASTScope();
     return x;
 }
+
 void destroy_IfAST(IfAST* x)
 {
+    G_log("doing\n");
     destroy_ExpressionAST_ptr(&x->expression);
+    G_log("finish\n");
     destroy_ASTScope(&x->nodes);
+    G_log("finish\n");
 }
 
 
@@ -549,12 +553,13 @@ void destroy_G_AST(G_AST* g_ast)
     G_log("destroying G_AST...\n");
     switch (g_ast->nodetype)
     {
-        case ASTNODE_IGNORE:  G_log("ignore\n"); break;
-        case ASTNODE_END:     G_log("end\n");    break;
-
         case ASTNODE_DECLARATION: { G_log("declaration\n"); destroy_VariableDeclaration(&g_ast->declarationAST); break; }
         case ASTNODE_ASSIGN:      { G_log("assign\n");      destroy_VariableAssignAST(&g_ast->assignAST); break;        }
-        case ASTNODE_IF:          { G_log("if\n");           destroy_IfAST(&g_ast->ifAST); break;                       }
+        case ASTNODE_IF:          { G_log("if\n");          destroy_IfAST(&g_ast->ifAST); break;                        }
+
+        case ASTNODE_END:     G_log("end\n");    break;
+        case ASTNODE_IGNORE:  G_log("ignore\n"); break;
+        
         default: printf("err ASTNODE G_AST destroy\n"); exit(1);
     }
     g_ast->nodetype = ASTNODE_IGNORE;

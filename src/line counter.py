@@ -6,7 +6,7 @@ def read_dir(dir) -> int:
     linecount:int = 1
     for file_path in dir.rglob("*"):
         if file_path.is_file():
-            local_line_count:int = 0
+            local_line_count:int = 1
             with open(file_path, "r", encoding="utf-8") as file:
                 for char in file.read():
                     if char == '\n': local_line_count += 1

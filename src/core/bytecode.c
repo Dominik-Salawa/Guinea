@@ -5,8 +5,9 @@
 #include <stdbool.h>
 #include "bytecode.h"
 #include "../etc/strings.h"
+#include "../etc/log.h"
 
-String* get_string_in_G_Bytecode(const G_Bytecode* x, size_t i, const ubyte size_of_len_number)
+String* get_string_in_G_Bytecode(const G_Bytecode* x, size_t i, const G_ubyte size_of_len_number)
 {
     if (!x) return NULL;
     if (i + size_of_len_number -1 >= x->length) return NULL;
@@ -57,7 +58,7 @@ bool double_G_Bytecode_size(G_Bytecode* x)
     if (!x) return false;
 
     x->size *= 2;
-    ubyte* tmp = realloc(x->bytecode, x->size);
+    G_ubyte* tmp = realloc(x->bytecode, x->size * sizeof(G_ubyte));
 
     if (!tmp) {
         x->size /= 2;
@@ -68,7 +69,7 @@ bool double_G_Bytecode_size(G_Bytecode* x)
     return true;
 }
 
-G_Bytecode* add_G_Bytecode(G_Bytecode* x, const ubyte* data, const size_t data_length)
+G_Bytecode* add_G_Bytecode(G_Bytecode* x, const G_ubyte* data, const size_t data_length)
 {
     if (!x || !data || !data_length) return NULL;
 
@@ -83,7 +84,7 @@ G_Bytecode* add_G_Bytecode(G_Bytecode* x, const ubyte* data, const size_t data_l
     return x;
 }
 
-G_Bytecode* add_G_Bytecode_one_byte(G_Bytecode* x, const ubyte data)
+G_Bytecode* add_G_Bytecode_one_byte(G_Bytecode* x, const G_ubyte data)
 {
     if (!x) return NULL;
 
@@ -99,7 +100,7 @@ G_Bytecode* add_G_Bytecode_one_byte(G_Bytecode* x, const ubyte data)
 
 G_Bytecode* add_G_Bytecode_w_byte_size(G_Bytecode* x, const void* data, const size_t length)
 {
-    return add_G_Bytecode(x, (ubyte*)data, length);
+    return add_G_Bytecode(x, (G_ubyte*)data, length);
 }
 
 
@@ -131,7 +132,7 @@ G_Bytecode* convert_String_to_Bytecode_String(const String* str)
     if (!str) return NULL;
     G_Bytecode* x = init_G_Bytecode_ptr();
     if (!x) return NULL;
-    G_Bytecode* tmp = add_G_Bytecode(x, (ubyte*)str->content, str->length);
+    G_Bytecode* tmp = add_G_Bytecode(x, (G_ubyte*)str->content, str->length);
     if (!tmp) destroy_G_Bytecode_ptr(&x);
     return x;
 }
@@ -139,8 +140,8 @@ G_Bytecode* convert_String_to_Bytecode_String(const String* str)
 G_Bytecode* add_G_Bytecode_String_no_size_embedded(G_Bytecode* x, const String* str)
 {
     if (!x || !str) return NULL;
-    //if (!add_G_Bytecode_w_byte_size(x, (ubyte*)&str->length, sizeof(size_t))) return NULL;
-    if (!add_G_Bytecode(x, (ubyte*)str->content, str->length)) return NULL;
+    //if (!add_G_Bytecode_w_byte_size(x, (G_ubyte*)&str->length, sizeof(size_t))) return NULL;
+    if (!add_G_Bytecode(x, (G_ubyte*)str->content, str->length)) return NULL;
     return x;
 }
 

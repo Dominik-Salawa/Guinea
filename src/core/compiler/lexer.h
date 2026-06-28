@@ -90,11 +90,11 @@ typedef struct {
     size_t length;
 
     union {
-        bool      bl;
-        char      ch;
-        String    string;
-        int64     integer;
-        number64  number;
+        bool        bl;
+        char        ch;
+        String      string;
+        G_int64     integer;
+        G_number64  number;
     };
 } LexToken;
 
