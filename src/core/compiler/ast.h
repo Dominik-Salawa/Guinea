@@ -207,7 +207,8 @@ typedef enum ASTNodeType {
     ASTNODE_DECLARATION,
     ASTNODE_ASSIGN,
     ASTNODE_IF,
-    ASTNODE_WHILE
+    ASTNODE_WHILE,
+    ASTNODE_SCOPE
 } ASTNodeType;
 
 typedef struct G_AST {
@@ -218,6 +219,7 @@ typedef struct G_AST {
         VariableDeclarationAST declarationAST;
         VariableAssignAST      assignAST;
         IfWhileAST             ifWhileAST;
+        ASTScope               scopeAST;
     };
 } G_AST;
 void destroy_G_AST(G_AST* g_ast);

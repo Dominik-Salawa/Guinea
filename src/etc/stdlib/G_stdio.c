@@ -226,6 +226,4 @@ String readfile(FILE* file)
     return str;
 }
 
-
-
 #endif

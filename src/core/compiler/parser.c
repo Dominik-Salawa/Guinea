@@ -726,6 +726,32 @@ static G_AST eval_if_and_while_statement(ParseState* pState)
 
 
 
+static G_AST eval_scope_statement(ParseState* pState)
+{
+    if (!pState) return (G_AST){0};
+
+    G_log("doing scope statement\n");
+
+    G_AST x = (G_AST){0};
+    x.nodetype = ASTNODE_SCOPE;
+    x.error = true;
+
+    G_log("-------------------------------------------------------\n");
+    G_log_push_layer();
+    x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, TK_end);
+    G_log_pop_layer();
+    G_log("-------------------------------------------------------\n");
+
+    if (!x.scopeAST.nodes) {
+        destroy_ASTScope(&x.scopeAST);
+        return x;
+    }
+
+    x.error = false;
+    return x;
+}
+
+
 
 
 G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is_global_scope)
@@ -733,13 +759,10 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
     advance_parser(pState);
     
     G_log("parsing a new segment\n");
-    G_log_push_layer();
 
     switch (pState_current.type)
     {
         case TK_var:
-            G_log("doing var\n");
-            G_log_pop_layer(); 
             return eval_variable_parser(pState, ending, is_global_scope);
 
         case TK_if:
@@ -752,7 +775,6 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
             }
             
             G_log("doing if\n");
-            G_log_pop_layer(); 
             return eval_if_and_while_statement(pState);
 
         case TK_while:
@@ -765,12 +787,19 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
             }
 
             G_log("doing while\n");
-            G_log_pop_layer(); 
             return eval_if_and_while_statement(pState);
 
-        default: {
-            G_log_pop_layer();
+        case TK_do:
+            if (is_global_scope) {
+                pState->errmsg = "Cannot use a local-only statement in the Global scope!";
+                return (G_AST){
+                    .error=true,
+                    .nodetype=ASTNODE_IGNORE
+                };
+            }
+            return eval_scope_statement(pState);
 
+        default: {
             if (pState_current.type == TK_SEMI_COLON && ending != TK_SEMI_COLON) {
                 G_log("is semi\n");
                 G_AST x = (G_AST){0};

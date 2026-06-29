@@ -25,7 +25,6 @@ bool G_sleep(G_uint32 miliseconds)
     #else
     #error "Undefined way of handling this platform for etc/stdlib/sleep.c/G_sleep()!"
     #endif
-
     return true; // so it can be used in loops like `while sleep(100) do ... end`
 }
 

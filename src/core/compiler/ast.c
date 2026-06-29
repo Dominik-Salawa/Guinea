@@ -539,11 +539,8 @@ IfWhileAST init_IfWhileAST()
 
 void destroy_IfWhileAST(IfWhileAST* x)
 {
-    G_log("doing\n");
     destroy_ExpressionAST_ptr(&x->expression);
-    G_log("finish\n");
     destroy_ASTScope(&x->nodes);
-    G_log("finish\n");
 }
 
 
@@ -554,12 +551,13 @@ void destroy_G_AST(G_AST* g_ast)
     switch (g_ast->nodetype)
     {
         case ASTNODE_DECLARATION: { destroy_VariableDeclaration(&g_ast->declarationAST); break; }
-        case ASTNODE_ASSIGN:      { destroy_VariableAssignAST(&g_ast->assignAST); break;        }
-        case ASTNODE_IF:          { destroy_IfWhileAST(&g_ast->ifWhileAST); break;              }
-        case ASTNODE_WHILE:       { destroy_IfWhileAST(&g_ast->ifWhileAST); break;              }
+        case ASTNODE_ASSIGN:      { destroy_VariableAssignAST(&g_ast->assignAST);        break; }
+        case ASTNODE_IF:          { destroy_IfWhileAST(&g_ast->ifWhileAST);              break; }
+        case ASTNODE_WHILE:       { destroy_IfWhileAST(&g_ast->ifWhileAST);              break; }
+        case ASTNODE_SCOPE:       { destroy_ASTScope(&g_ast->scopeAST);                  break; }
 
-        case ASTNODE_END:     G_log("end\n");    break;
-        case ASTNODE_IGNORE:  G_log("ignore\n"); break;
+        case ASTNODE_END:     break;
+        case ASTNODE_IGNORE:  break;
         
         default: printf("err ASTNODE G_AST destroy\n"); exit(1);
     }

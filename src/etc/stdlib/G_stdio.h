@@ -12,6 +12,7 @@ FORMATTING RULES FOR GUINEA PRINT
 
 %z:     is size_t size, it applies to u, d, x, o like %zu or %zd etc...
 %d:     fmt int
+%f:     fmt float
 %o:     fmt octal
 %x:     fmt hex
 %s:     fmt Guinea String struct

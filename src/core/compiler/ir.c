@@ -294,6 +294,20 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
             break;
         }
 
+        case ASTNODE_SCOPE: {
+            G_Bytecode* scope_conv = G_IR_CONVERT_ASTSCOPE(&astnode.scopeAST);
+            if (!scope_conv) {
+                G_log("failed to get scope conversion!\n");
+                destroy_G_Bytecode_ptr(&scope_conv);
+                destroy_G_Bytecode_ptr(addr_to_bytecode);
+                return IR_CONVERT_FAILED;
+            }
+            add_G_Bytecode_w_byte_size(*addr_to_bytecode, scope_conv->bytecode, scope_conv->length);
+            destroy_G_Bytecode_ptr(&scope_conv);
+            break;
+        }
+
+
         case ASTNODE_IGNORE:
             break;
 
