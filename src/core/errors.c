@@ -31,8 +31,10 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
         while (source[i] != '\n' && source[i] != '\0')
             stringaddchar(&error_line, source[i++]);
 
+        int length_of_num;
         { // Print the text
-            fprintf(f, COLOR_WHITE"   |  "COLOR_CLEAR);
+            length_of_num = fprintf(f, "  %zu ", line) - 2;
+            fprintf(f, COLOR_WHITE"|  "COLOR_CLEAR);
             size_t current_column = 1;
             for (; current_column <= error_line.length; current_column++) {
                 if (current_column == column)
@@ -46,7 +48,9 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
         }
 
         { // Print the "^^^^" below
-            fprintf(f, COLOR_WHITE"   |  "COLOR_CLEAR);
+            fprintf(f, COLOR_WHITE"  ");
+            for (int i = 0; i < length_of_num; ++i) putc(' ', f);
+            fprintf(f, "|  "COLOR_CLEAR);
             size_t current_column = 1;
             while (current_column < column) {
                 char ch = (error_line.content[current_column-1] == '\t') ? '\t' : ' ';
@@ -70,7 +74,7 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
 
 bool std_err_message(FILE* f, char* filename, char* source, char* message, size_t line, size_t column, size_t len)
 {
-    int printlen = fprintf(f, COLOR_WHITE"COMPILER ERROR: %s:%zu:%zu | %s\n" , filename, line, column, message)-1;
+    int printlen = fprintf(f, COLOR_WHITE"GUINEA ERROR: %s:%zu:%zu | %s\n" , filename, line, column, message)-1;
     for (int i = 0; i < printlen-7; ++i) putc('-',f);
     fprintf(f, COLOR_CLEAR);
     putc('\n',f);

@@ -1,5 +1,6 @@
 //extern var y: int
 
+/*
 while true == true + 145 * (142562424 - 0925 + 194 / 25 % 25 ^3^4^5^9.123456) do
     var m: number = -10.6 + 5 * ---7.42 / -9.5617 % 5.7 + ---5.777777^-2^3 * 3
     var i: int = -10.6 + 5 * -7.42
@@ -19,6 +20,7 @@ if 5 == 5 then
     var asd: bool = 0 or nil
     var cxzv: bool = 0 or nil
 end
+*/
 
 var cxzv: bool = 0 or nil
 var bv: bool = 0 or nil
