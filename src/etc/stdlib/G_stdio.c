@@ -93,6 +93,11 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                     break;
                 }
 
+                case 'f': {
+                    amount_of_chars_outputted += fprintf(file, "%f", va_arg(args, G_number64));
+                    break;
+                }
+
                 case 'l': {
                     ch = *++string;
                     if (ch == 'd') {
@@ -106,6 +111,9 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                     }
                     else if (ch == 'o') {
                         amount_of_chars_outputted += fprintf(file, "%llo", va_arg(args, G_int64));
+                    }
+                    else if (ch == 'f') {
+                        amount_of_chars_outputted += fprintf(file, "%lf", va_arg(args, G_number64));
                     }
                     else {
                         fprintf(file, "G_vprintf error: invalid format (%%l%c)!\n", ch);

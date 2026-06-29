@@ -1,6 +1,6 @@
 #!/bin/bash
 
-gcc -Wall -Werror -Wno-unused-variable -Wno-unused-function -lm -o ".out" "main.c"
+clang -Wall -Werror -Wno-unused-variable -Wno-unused-function -lm -o ".out" "main.c"
 ./.out "$@"
 if [[ $EUID -eq 0 ]]; then
     listamount=$(ls -1 ./oldexecutables | wc -l)

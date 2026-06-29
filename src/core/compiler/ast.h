@@ -190,12 +190,13 @@ bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd);
 void destroy_ASTScope(ASTScope* x);
 
 
-typedef struct IfAST {
+// USED TO REPRESENT BOTH IF AND WHILE AST
+typedef struct IfWhileAST {
     ASTScope nodes;
     ExpressionAST* expression;
-} IfAST;
-IfAST init_IfAST();
-void destroy_IfAST(IfAST* x);
+} IfWhileAST;
+IfWhileAST init_IfWhileAST();
+void destroy_IfWhileAST(IfWhileAST* x);
 
 
 
@@ -205,7 +206,8 @@ typedef enum ASTNodeType {
 
     ASTNODE_DECLARATION,
     ASTNODE_ASSIGN,
-    ASTNODE_IF
+    ASTNODE_IF,
+    ASTNODE_WHILE
 } ASTNodeType;
 
 typedef struct G_AST {
@@ -215,7 +217,7 @@ typedef struct G_AST {
     union {
         VariableDeclarationAST declarationAST;
         VariableAssignAST      assignAST;
-        IfAST                  ifAST;
+        IfWhileAST             ifWhileAST;
     };
 } G_AST;
 void destroy_G_AST(G_AST* g_ast);

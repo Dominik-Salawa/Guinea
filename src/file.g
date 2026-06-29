@@ -1,8 +1,8 @@
+/*
 var m: number = -10.6 + 5 * ---7.42 / -9.5617 % 5.7 + ---5.777777^-2^3 * 3
 var i: int = -10.6 + 5 * -7.42
 var z: int = 5 * 62 + 7.66667 * 5.3
 var y: number = NaN + "\\"
-
 
 if 5 == 5 then
     if 0 == 9 + 10 then
@@ -22,3 +22,12 @@ var bv: bool = 0 or nil
 var dfccvegf: bool = 0 or nil
 var L: int = -10.6 + 5 * ---7.42 / -9.5617 % 5.7 + ---5.777777^-2^3 * 3
 var idkdk: int = nil/13
+*/
+
+while false == true do
+    var x: int = 5
+
+    if 5 then
+        var i: string = "idk" + "hi my name is marketpliers"
+    end
+end

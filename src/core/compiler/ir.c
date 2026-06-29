@@ -196,14 +196,14 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
         }
 
         case ASTNODE_IF: {
-            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifAST.expression->top, addr_to_bytecode);
+            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, addr_to_bytecode);
             if (ir_tree == EXPRNODE_UNINIT) {
                 G_log("failed ir tree!\n");
                 destroy_G_Bytecode_ptr(addr_to_bytecode);
                 return IR_CONVERT_FAILED;
             }
 
-            G_Bytecode* if_conv = G_IR_CONVERT_ASTSCOPE(&astnode.ifAST.nodes);
+            G_Bytecode* if_conv = G_IR_CONVERT_ASTSCOPE(&astnode.ifWhileAST.nodes);
             if (!if_conv) {
                 G_log("failed to get if conversion!\n");
                 destroy_G_Bytecode_ptr(addr_to_bytecode);
@@ -217,26 +217,80 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
                 THIS MEANS THAT WHEN JUMPING FORWARD, YOU *DO NOT* INCLUDE THE BYTES
                 THE OPERATION HAS
             EXAMPLE IF YOU AIM TO JUMP 63 BYTES FORWARD:
-                JNTS 63   ;not including the 2 bytes from JNTS and 63 (0x3f)
+                JNT 63   ;not including the 2 bytes from JNTS and 63 (0x3f)
                 *NOT*
-                JNTS 65   ;INCLUDING the 2 bytes
+                JNT 65   ;INCLUDING the 2 bytes
             EXAMPLE FOR GOING BACKWARDS YOU *MUST INCLUDE* IF YOU AIM TO JUMP 63 BYTES BEHIND:
-                JNTS -65  ;including the 2 bytes from JNTS and 63 (0x3f)
+                JNT -65  ;including the 2 bytes from JNTS and 63 (0x3f)
                 *NOT*
-                JNTS -63  ;NOT INCLUDING the 2 bytes 
+                JNT -63  ;NOT INCLUDING the 2 bytes 
 
             */
 
-            if (if_conv->length <= 126) {
-                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_JNTS);
-                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)if_conv->length);
-            } else {
+            if (if_conv->length <= 32767) {
                 add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_JNT);
-                add_G_Bytecode(*addr_to_bytecode, (G_ubyte*)&if_conv->length, sizeof(size_t));
+                G_int16 len = (G_int16)if_conv->length;
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, (G_ubyte*)&len, sizeof(G_int16));
+            } else {
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_JNTL);
+                G_int64 len = (G_int64)if_conv->length;
+                add_G_Bytecode(*addr_to_bytecode, (G_ubyte*)&len, sizeof(G_int64));
             }
 
             add_G_Bytecode_w_byte_size(*addr_to_bytecode, if_conv->bytecode, if_conv->length);
             destroy_G_Bytecode_ptr(&if_conv);
+            break;
+        }
+
+        case ASTNODE_WHILE: {
+            G_Bytecode* ir_tree_bc = init_G_Bytecode_ptr();
+            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, &ir_tree_bc);
+            if (ir_tree == EXPRNODE_UNINIT) {
+                G_log("failed ir tree!\n");
+                destroy_G_Bytecode_ptr(&ir_tree_bc);
+                destroy_G_Bytecode_ptr(addr_to_bytecode);
+                return IR_CONVERT_FAILED;
+            }
+
+            G_Bytecode* while_conv = G_IR_CONVERT_ASTSCOPE(&astnode.ifWhileAST.nodes);
+            if (!while_conv) {
+                G_log("failed to get while conversion!\n");
+                destroy_G_Bytecode_ptr(&ir_tree_bc);
+                destroy_G_Bytecode_ptr(addr_to_bytecode);
+                return IR_CONVERT_FAILED;
+            }
+
+            add_G_Bytecode_w_byte_size(*addr_to_bytecode, ir_tree_bc->bytecode, ir_tree_bc->length);
+            if (while_conv->length <= 32766 - (2*(sizeof(G_int16) + sizeof(G_ubyte)) + ir_tree_bc->length)) {
+                add_G_Bytecode_one_byte(while_conv, (G_ubyte)GINSTR_JMP);
+
+                // for the backwards jump
+                G_int16 len = -(while_conv->length + sizeof(G_ubyte) + 2*sizeof(G_int16) + ir_tree_bc->length);
+                add_G_Bytecode_w_byte_size(while_conv, (G_ubyte*)&len, sizeof(G_int16));
+
+                // we get rid of the size of the JNT + the IR tree in order to jump past the while scope properly
+                len = -(len + sizeof(G_ubyte) + sizeof(G_int16) + ir_tree_bc->length);
+
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_JNT);
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, (G_ubyte*)&len, sizeof(G_int16));
+            } else {
+                add_G_Bytecode_one_byte(while_conv, (G_ubyte)GINSTR_JMP);
+
+                // for the backwards jump
+                G_int64 len = -(while_conv->length + sizeof(G_ubyte) + 2*sizeof(G_int64) + ir_tree_bc->length);
+                add_G_Bytecode_w_byte_size(while_conv, (G_ubyte*)&len, sizeof(G_int64));
+
+                // we get rid of the size of the JNT + the IR tree in order to jump past the while scope properly
+                len = -(len + sizeof(G_ubyte) + sizeof(G_int64) + ir_tree_bc->length);
+
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_JNT);
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, (G_ubyte*)&len, sizeof(G_int64));
+            }
+
+
+            add_G_Bytecode_w_byte_size(*addr_to_bytecode, while_conv->bytecode, while_conv->length);
+            destroy_G_Bytecode_ptr(&while_conv);
+            destroy_G_Bytecode_ptr(&ir_tree_bc);
             break;
         }
 

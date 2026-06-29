@@ -302,6 +302,11 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 dont_break = false;
                 break;
 
+            case TK_Bool_val:
+                assign_ExpressionNodeAST(current, EXPRNODE_BOOL);
+                (*current)->data.bl = pState_current.bl;
+                dont_break = false;
+                break;
             
             case TK_SUB: // AUTO ASSUME ITS AT THE START OF A CHAIN OF NEG
                 on_negative = !on_negative;
@@ -541,7 +546,6 @@ ASTDatatype get_datatype_parser(ParseState* pState)
 
 
 // DECLARATION/ASSIGNMENT
-
 G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_global_scope)
 {
     advance_parser(pState);
@@ -660,55 +664,63 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
 
 
 
-static G_AST eval_if_statement(ParseState* pState)
+static G_AST eval_if_and_while_statement(ParseState* pState)
 {
     if (!pState) return (G_AST){0};
 
-    G_log("doing if statement\n");
+    G_log("doing if/while statement\n");
 
     G_AST x = (G_AST){0};
-    x.nodetype = ASTNODE_IF;
     x.error = true;
 
-    G_log("-------------------------------------------------------\n");
-    G_log_push_layer();
-    x.ifAST.expression = eval_expression_parser(pState, TK_then, false);
-    G_log_pop_layer();
-    G_log("-------------------------------------------------------\n");
-    if (!x.ifAST.expression) return x;
-    if (x.ifAST.expression->fail) {
-        destroy_ExpressionAST_ptr(&x.ifAST.expression);
+    if (pState_current.type == TK_if) {
+        x.nodetype = ASTNODE_IF;
+    } 
+    else if (pState_current.type == TK_while) {
+        x.nodetype = ASTNODE_WHILE;
+    }
+    else {
+        G_log("invalid current token for if/while!\n");
         return x;
     }
 
-    if (!x.ifAST.expression->top) {
+    G_log("-------------------------------------------------------\n");
+    G_log_push_layer();
+    x.ifWhileAST.expression = eval_expression_parser(pState, (x.nodetype == ASTNODE_IF)? TK_then : TK_do, false);
+    G_log_pop_layer();
+    G_log("-------------------------------------------------------\n");
+    if (!x.ifWhileAST.expression) return x;
+    if (x.ifWhileAST.expression->fail) {
+        destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
+        return x;
+    }
+
+    if (!x.ifWhileAST.expression->top) {
         pState->errmsg = "Expected an expression! (from if)";
-        destroy_ExpressionAST_ptr(&x.ifAST.expression);
+        destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
         return x;
     }
 
     G_log("Statement:\n");
-    G_log_ExpressionNodeAST(x.ifAST.expression->top);
+    G_log_ExpressionNodeAST(x.ifWhileAST.expression->top);
 
     advance_parser(pState);
 
     G_log("-------------------------------------------------------\n");
     G_log_push_layer();
-    x.ifAST.nodes = parser_get_scope(pState, SCOPE_IF, TK_end);
+    x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, TK_end);
     G_log_pop_layer();
     G_log("-------------------------------------------------------\n");
 
-    if (!x.ifAST.nodes.nodes) {
-        destroy_ExpressionAST_ptr(&x.ifAST.expression);
-        destroy_ASTScope(&x.ifAST.nodes);
+    if (!x.ifWhileAST.nodes.nodes) {
+        destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
+        destroy_ASTScope(&x.ifWhileAST.nodes);
         return x;
     }
 
-    G_log("returing x...\n");
     x.error = false;
     return x;
 }
-
 
 
 
@@ -733,7 +745,12 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
         case TK_if:
             G_log("doing if\n");
             G_log_pop_layer(); 
-            return eval_if_statement(pState);
+            return eval_if_and_while_statement(pState);
+
+        case TK_while:
+            G_log("doing while\n");
+            G_log_pop_layer(); 
+            return eval_if_and_while_statement(pState);
 
         default: {
             G_log_pop_layer();

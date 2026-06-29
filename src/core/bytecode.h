@@ -6,7 +6,9 @@
 
 typedef enum GINSTR {
     GINSTR_NULL = 0,
-    GINSTR_DECLARE_GLOBAL = 0x01,
+    GINSTR_DECLARE_GLOBAL = 0x01, // tells the interpreter to pop one from the stack, make a new symbol name in the runtime with it, and assign it the stack val
+    GINSTR_ASSIGN_GLOBAL,
+    GINSTR_ASSIGN_LOCAL, // since locals are all made in memory when the function is called, there is no such thing as declaring a local variable
     GINSTR_PUSH_GLOBAL,
     GINSTR_PUSH_LOCAL,
     GINSTR_PUSH_IMMEDIATE,
@@ -33,8 +35,12 @@ typedef enum GINSTR {
     GINSTR_GT_EQU,
     GINSTR_LT_EQU,
 
-    GINSTR_JNT = 0x30, // Jump Not True
-    GINSTR_JNTS,       // Jump Not True SHORT (<=255 bytes away)
+    GINSTR_JMP = 0x30, // Jump
+    GINSTR_JMPL,       // Jump LONG ( >(2 signed bytes) away )
+    GINSTR_JNT,        // Jump Not True
+    GINSTR_JNTL,       // Jump Not True LONG ( >(2 signed bytes) away )
+    GINSTR_JIT,        // Jump If True
+    GINSTR_JITL,       // Jump If True LONG ( >(2 signed bytes) away )
 } GINSTR;
 
 typedef enum GINSTR_Datatype {
@@ -56,23 +62,7 @@ typedef struct {
     size_t size;
 } G_Bytecode;
 
-char* G_Bytecode_Datatype_to_str(GINSTR_Datatype x)
-{
-    switch (x)
-    {
-        case GINSTRDATATYPE_NIL:        return "nil";
-        case GINSTRDATATYPE_STRING:     return "string";
-        case GINSTRDATATYPE_INT32:      return "int32";
-        case GINSTRDATATYPE_INT64:      return "int64";
-        case GINSTRDATATYPE_NUMBER32:   return "num32";
-        case GINSTRDATATYPE_NUMBER64:   return "num64";
-        case GINSTRDATATYPE_BOOL:       return "bool";
-        case GINSTRDATATYPE_CHAR:       return "char";
-        case GINSTRDATATYPE_FUNCTION:   return "function";
-        case GINSTRDATATYPE_DYNAMIC:    return "dynamic";
-        default: return "(null)";
-    }
-}
+char* G_Bytecode_Datatype_to_str(GINSTR_Datatype x);
 
 G_Bytecode init_G_Bytecode();
 G_Bytecode* add_G_Bytecode(G_Bytecode* x, const G_ubyte* data, const size_t data_length);
@@ -82,25 +72,9 @@ G_Bytecode* add_G_Bytecode_String_no_size_embedded(G_Bytecode* x, const String* 
 bool double_G_Bytecode_size(G_Bytecode* x);
 void destroy_G_Bytecode(G_Bytecode* x);
 void destroy_G_Bytecode_ptr(G_Bytecode** x);
-
+bool print_G_Bytecode_into_G_ASM(G_Bytecode* x);
 
 #include "compiler/ast.h"
-GINSTR_Datatype ASTDatatype_to_G_Bytecode_Datatype(ASTDatatype x)
-{
-    switch (x)
-    {
-        case ASTDATATYPE_NIL:           return GINSTRDATATYPE_NIL;
-        case ASTDATATYPE_STRING:        return GINSTRDATATYPE_STRING;
-        case ASTDATATYPE_INT:           return GINSTRDATATYPE_INT64;
-        case ASTDATATYPE_NUMBER:        return GINSTRDATATYPE_NUMBER64;
-        case ASTDATATYPE_BOOL:          return GINSTRDATATYPE_BOOL;
-        case ASTDATATYPE_CHAR:          return GINSTRDATATYPE_CHAR;
-        case ASTDATATYPE_FUNCTION:      return GINSTRDATATYPE_FUNCTION;
-        case ASTDATATYPE_DYNAMIC:       return GINSTRDATATYPE_DYNAMIC;
-        default:
-            printf("Couldnt find G_BytecodeDatatype equivalent of ASTDatatype %d!\n", x);
-            exit(1);
-    }
-}
+GINSTR_Datatype ASTDatatype_to_G_Bytecode_Datatype(ASTDatatype x);
 
 #endif
