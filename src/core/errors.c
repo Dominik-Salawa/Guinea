@@ -33,7 +33,7 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
 
         int length_of_num;
         { // Print the text
-            length_of_num = fprintf(f, "  %zu ", line) - 2;
+            length_of_num = fprintf(f, "  "COLOR_ERR"%zu"COLOR_CLEAR" ", line) - (strlen(COLOR_ERR) + strlen(COLOR_CLEAR));
             fprintf(f, COLOR_WHITE"|  "COLOR_CLEAR);
             size_t current_column = 1;
             for (; current_column <= error_line.length; current_column++) {
@@ -48,7 +48,7 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
         }
 
         { // Print the "^^^^" below
-            fprintf(f, COLOR_WHITE"  ");
+            fprintf(f, COLOR_WHITE);
             for (int i = 0; i < length_of_num; ++i) putc(' ', f);
             fprintf(f, "|  "COLOR_CLEAR);
             size_t current_column = 1;
