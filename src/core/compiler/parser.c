@@ -743,11 +743,27 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
             return eval_variable_parser(pState, ending, is_global_scope);
 
         case TK_if:
+            if (is_global_scope) {
+                pState->errmsg = "Cannot use a local-only statement in the Global scope!";
+                return (G_AST){
+                    .error=true,
+                    .nodetype=ASTNODE_IGNORE
+                };
+            }
+            
             G_log("doing if\n");
             G_log_pop_layer(); 
             return eval_if_and_while_statement(pState);
 
         case TK_while:
+            if (is_global_scope) {
+                pState->errmsg = "Cannot use a local-only statement in the Global scope!";
+                return (G_AST){
+                    .error=true,
+                    .nodetype=ASTNODE_IGNORE
+                };
+            }
+
             G_log("doing while\n");
             G_log_pop_layer(); 
             return eval_if_and_while_statement(pState);

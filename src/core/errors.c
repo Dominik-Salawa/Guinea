@@ -32,36 +32,36 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
             stringaddchar(&error_line, source[i++]);
 
         { // Print the text
+            fprintf(f, COLOR_WHITE"   |  "COLOR_CLEAR);
             size_t current_column = 1;
-
             for (; current_column <= error_line.length; current_column++) {
                 if (current_column == column)
                     fprintf(f, COLOR_ERR);
                 else if (current_column == column + len)
                     fprintf(f, COLOR_CLEAR);
                 
-                fprintf(f, "%c", error_line.content[current_column-1]);
+                putc(error_line.content[current_column-1], f);
             }
-
-            fprintf(f, "\n");
+            putc('\n', f);
         }
 
         { // Print the "^^^^" below
+            fprintf(f, COLOR_WHITE"   |  "COLOR_CLEAR);
             size_t current_column = 1;
             while (current_column < column) {
                 char ch = (error_line.content[current_column-1] == '\t') ? '\t' : ' ';
-                fprintf(f, "%c", ch);
+                putc(ch, f);
                 ++current_column;
             }
 
             fprintf(f, COLOR_ERR);
             while (current_column < column + len) {
-                fprintf(f, "^");
+                putc('^', f);
                 ++current_column;
             }
             fprintf(f, COLOR_CLEAR);
+            putc('\n', f);
         }
-        fprintf(f, "\n");
     }
     
     clearstring(&error_line);
@@ -70,10 +70,12 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
 
 bool std_err_message(FILE* f, char* filename, char* source, char* message, size_t line, size_t column, size_t len)
 {
-    fprintf(f, "GUINEA ERROR: %s:%zu:%zu\n- %s\n", filename, line, column, message);
-    fprintf(f, "----------------------------------\n");
+    int printlen = fprintf(f, COLOR_WHITE"COMPILER ERROR: %s:%zu:%zu | %s\n" , filename, line, column, message)-1;
+    for (int i = 0; i < printlen-7; ++i) putc('-',f);
+    fprintf(f, COLOR_CLEAR);
+    putc('\n',f);
     bool exit = point_to_error(f, source, line, column, len);
-    //printf(    "----------------------------------\n");
+    fprintf(f, COLOR_WHITE"1 error generated.\n"COLOR_CLEAR);
     return exit;
 }
 

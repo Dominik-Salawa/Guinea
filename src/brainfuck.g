@@ -9,7 +9,7 @@ function main(): int
     const stack: {int}    = {1024}
     var cursor_stack: int = 0
 
-    for var i: int = 0; i < length(bf); i = i + 1 do
+    for var i: int = 0; i < bf.length; i = i + 1 do
         if bf[i] == "+" then
             cells[cursor] = cells[cursor] + 1
             continue
