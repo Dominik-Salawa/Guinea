@@ -19,9 +19,34 @@
 #include "core/compiler/parser.c"
 #include "core/compiler/ir.c"
 
+#if defined(_WIN32)
+#include <windows.h>
+
+LONG WINAPI CrashHandler(EXCEPTION_POINTERS* exceptionInfo) {
+    if (exceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
+        MessageBoxA(NULL, "Guinea crashed: Access Violation (Segfault)", "Crash Alert", MB_ICONERROR | MB_OK);
+    }
+    return EXCEPTION_EXECUTE_HANDLER;
+}
+#else
+#include <signal.h>
+#include <unistd.h>
+
+int seghandle(int handle)
+{
+    write(1, "Guinea: segfault\n", 17);
+    _exit(1);
+}
+#endif
+
 int main(int argc, char** argv)
 {
     size_t i = 1;
+    #if defined(_WIN32)
+    SetUnhandledExceptionFilter(CrashHandler);
+    #else
+    signal(SIGSEGV, seghandle);
+    #endif
 
     if (argc == 1) {
         printf("Guinea v%d.%d.%d\n", MAJOR_VER, MINOR_VER, BUGFIX_VER);
@@ -78,7 +103,7 @@ int main(int argc, char** argv)
             }
             putchar('\n');
 
-            //freopen("file.gs", "w", stdout);
+            freopen("file.gs", "w", stdout);
             print_G_Bytecode_into_G_ASM(x);
 
             FILE* tosave = fopen("file.gbc", "w");
@@ -87,8 +112,6 @@ int main(int argc, char** argv)
                 fclose(tosave);
             }
         }
-
-        printf("\n\n\nMAKE IT SO WHEN THE PARSER POPS A PARSESCOPE IT ALSO MAKES IT SO IT ASSIGNS ALL THE VARIABLES IN THAT SCOPE NIL IN ORDER TO PREVENT HUGE MEMORY HOLDS FOR THE GC PLSSSS!!!!!!\n\n\n\n\n");
 
         destroy_G_Bytecode_ptr(&x);
         clearstring(&inp);

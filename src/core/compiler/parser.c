@@ -59,7 +59,7 @@ bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype)
     return true;
 }
 
-bool pop_ParseScopeNode(ParseState* pState)
+bool pop_ParseScopeNode(ParseState* pState, ASTScope* x)
 {
     if (!pState) return false;
 
@@ -71,6 +71,29 @@ bool pop_ParseScopeNode(ParseState* pState)
     // delete
     ParseScopeNode* current = pState->scope_top;
     pState->scope_top = current->prev;
+
+    for (size_t i = 0; i < current->var_info.length; ++i) {
+        G_log("slot:%d\n", current->var_info.arr[i].slot);
+        G_AST toadd = (G_AST){
+            .nodetype=ASTNODE_CLEAR_LOCAL_SLOT,
+            .clearLocalSlotAST.slot = current->var_info.arr[i].slot-1
+        };
+        add_G_AST_to_ASTScope(x, toadd);
+    }
+
+    for (size_t i = 0; i < x->length; ++i) {
+        switch (x->nodes[i].nodetype) {
+            case ASTNODE_IGNORE:                 G_log("ignore\n"); break;
+            case ASTNODE_END:                    G_log("end\n"); break;
+            case ASTNODE_ASSIGN:                 G_log("assign\n"); break;
+            case ASTNODE_CLEAR_LOCAL_SLOT:       G_log("CLEAR_LOCAL_SLOT\n"); break;
+            case ASTNODE_IF:                     G_log("if\n"); break;
+            case ASTNODE_WHILE:                  G_log("while\n"); break;
+            case ASTNODE_SCOPE:                  G_log("scope\n"); break;
+            case ASTNODE_DECLARATION:            G_log("declaration\n"); break;
+        }
+    }
+
     destroy_ParseScopeNode(&current);
     return true;
 }
@@ -138,9 +161,9 @@ VariableInfoAST* get_var_info(ParseState* pState, char* name)
     if (!pState || !name) return NULL;
     ParseScopeNode* current = pState->scope_top;
     while (current) {
-        G_log("checking %zu %zu %p\n", current->var_info.length, current->var_info.size, current->var_info.arr);
+        G_log("checking %zu %zu\n", current->var_info.length, current->var_info.size);
         for (size_t i = 0; i < current->var_info.length; ++i) {
-            G_log("comparing %s... %d 0x%p\n", current->var_info.arr[i].identifier.content, i, current->var_info.arr);
+            G_log("comparing %s... %d\n", current->var_info.arr[i].identifier.content);
             if (strcmp(current->var_info.arr[i].identifier.content, name) == 0) {
                 return &current->var_info.arr[i];
             }
@@ -683,7 +706,8 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
         add_G_AST_to_ASTScope(&scope, x);
     }
 
-    pop_ParseScopeNode(pState);
+    G_log("add all existing variables to nuke\n");
+    pop_ParseScopeNode(pState, &scope);
     G_log("return scope\n");
     return scope;
 }

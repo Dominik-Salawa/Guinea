@@ -14,9 +14,12 @@ typedef uint32_t      G_uint32;
 typedef int64_t       G_int64;
 typedef uint64_t      G_uint64;
 
+
 typedef float         G_number32;
 typedef double        G_number64;
 typedef void (*RawFuncPointer)(void*);
+
+typedef G_uint16 G_LOCAL_SLOT_INT;
 
 G_number32 __G_NaN()
 {

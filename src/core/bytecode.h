@@ -7,15 +7,22 @@
 typedef enum GINSTR {
     GINSTR_NULL = 0,
     GINSTR_DECLARE_GLOBAL = 0x01, // tells the interpreter to pop one from the stack, make a new symbol name in the runtime with it, and assign it the stack val
-    GINSTR_ASSIGN_GLOBAL,
     GINSTR_DECLARE_LOCAL,
-    GINSTR_ASSIGN_LOCAL,
-    GINSTR_PUSH_GLOBAL,
-    GINSTR_PUSH_LOCAL,
+    GINSTR_CLEAR_LOCAL,
+
+    // in order to change the value we are pointing to
+    GINSTR_LOAD_GLOBAL,
+    GINSTR_LOAD_LOCAL,
+    GINSTR_LOAD_INDEX,
+    GINSTR_LOAD_FIELD,
+    GINSTR_WRITE_LOAD,
+
+    // pushing values
+    GINSTR_PUSH_LOAD,
     GINSTR_PUSH_IMMEDIATE,
 
     // operations
-    GINSTR_ADD = 0x10,
+    GINSTR_ADD = 0x30,
     GINSTR_SUB,
     GINSTR_MUL,
     GINSTR_DIV,
@@ -36,7 +43,8 @@ typedef enum GINSTR {
     GINSTR_GT_EQU,
     GINSTR_LT_EQU,
 
-    GINSTR_JMP = 0x30, // Jump
+    // control flow
+    GINSTR_JMP = 0x60, // Jump
     GINSTR_JMPL,       // Jump LONG ( >(2 signed bytes) away )
     GINSTR_JNT,        // Jump Not True
     GINSTR_JNTL,       // Jump Not True LONG ( >(2 signed bytes) away )
@@ -65,7 +73,7 @@ typedef struct {
 
 char* G_Bytecode_Datatype_to_str(GINSTR_Datatype x);
 
-G_Bytecode init_G_Bytecode();
+G_Bytecode  init_G_Bytecode();
 G_Bytecode* add_G_Bytecode(G_Bytecode* x, const G_ubyte* data, const size_t data_length);
 G_Bytecode* add_G_Bytecode_one_byte(G_Bytecode* x, const G_ubyte data);
 G_Bytecode* add_G_Bytecode_w_byte_size(G_Bytecode* x, const void* data, const size_t length);

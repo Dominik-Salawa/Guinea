@@ -138,19 +138,11 @@ void destroy_ExpressionAST(ExpressionAST* x);
 void destroy_ExpressionAST_ptr(ExpressionAST** x);
 
 
-typedef enum StructureType {
-    STRUCTYPE_SINGLE = 0,
-    STRUCTYPE_DYNAMIC,
-    STRUCTYPE_ARRAY,
-    //STRUCTYPE_CLASS
-} StructureType;
-
-
 typedef struct VariableInfoAST {
     String identifier; // the name attached to this variable
     //ubyte structure_type; // the structure of this variable
     //bool is_ptr;
-    G_uint16 slot;
+    G_LOCAL_SLOT_INT slot;
 
     union {
         ASTDatatype datatype; // for single datatype
@@ -164,7 +156,7 @@ void destroy_VariableInfoAST(VariableInfoAST* x);
 typedef struct VariableDeclarationAST {
     VariableInfoAST info;
     ExpressionAST* expression;
-    G_uint16 slot;
+    G_LOCAL_SLOT_INT slot;
 } VariableDeclarationAST;
 void destroy_VariableDeclarationAST(VariableDeclarationAST* x);
 
@@ -194,10 +186,21 @@ IfWhileAST init_IfWhileAST();
 void destroy_IfWhileAST(IfWhileAST* x);
 
 
+typedef struct AssignAST {
+    ExpressionNodeAST* top;
+    ExpressionAST* assignment;
+} AssignAST;
+
+
+typedef struct ClearLocalSlotAST {
+    G_LOCAL_SLOT_INT slot;
+} ClearLocalSlotAST;
+
 
 typedef enum ASTNodeType {
     ASTNODE_IGNORE = 0,  // FOR THE IR TO SIMPLY IGNORE
     ASTNODE_END,         // PARSER HAS REACHED THE END of its desired token (like end for a function or EOF for a file)
+    ASTNODE_CLEAR_LOCAL_SLOT,
 
     ASTNODE_DECLARATION,
     ASTNODE_ASSIGN,
@@ -214,6 +217,8 @@ typedef struct G_AST {
         VariableDeclarationAST declarationAST;
         IfWhileAST             ifWhileAST;
         ASTScope               scopeAST;
+        AssignAST              assignAST;
+        ClearLocalSlotAST      clearLocalSlotAST;
     };
 } G_AST;
 void destroy_G_AST(G_AST* g_ast);

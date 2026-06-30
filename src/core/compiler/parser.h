@@ -45,7 +45,7 @@ typedef struct {
 ParseScopeNode init_ParseScopeNode(ScopeType scopetype);
 void destroy_ParseScopeNode(ParseScopeNode** pScope);
 bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype);
-bool pop_ParseScopeNode(ParseState* pState);
+bool pop_ParseScopeNode(ParseState* pState, ASTScope* x);
 
 
 ParseState init_ParseState(String* file_content);

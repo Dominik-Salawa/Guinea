@@ -493,11 +493,12 @@ ASTScope init_ASTScope()
 // does NOT deepcopy pointers in it, just a lightcopy, BEWARE
 bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd)
 {
-    while (x->length >= x->size) {
-        x->size *= 2;
-        G_AST* tmp = realloc(x->nodes, x->size * sizeof(ASTScope));
+    if (x->length >= x->size) {
+        size_t original_size = x->size;
+        while (x->length >= x->size) x->size *= 2;
+        G_AST* tmp = realloc(x->nodes, x->size * sizeof(G_AST));
         if (!tmp) {
-            x->size /= 2;
+            x->size = original_size;
             return false;
         }
         x->nodes = tmp;
@@ -548,8 +549,9 @@ void destroy_G_AST(G_AST* g_ast)
         case ASTNODE_WHILE:       { destroy_IfWhileAST(&g_ast->ifWhileAST);                 break; }
         case ASTNODE_SCOPE:       { destroy_ASTScope(&g_ast->scopeAST);                     break; }
 
-        case ASTNODE_END:     break;
-        case ASTNODE_IGNORE:  break;
+        case ASTNODE_CLEAR_LOCAL_SLOT:      break;
+        case ASTNODE_END:                   break;
+        case ASTNODE_IGNORE:                break;
         
         default: printf("err ASTNODE G_AST destroy\n"); exit(1);
     }

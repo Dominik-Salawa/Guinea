@@ -244,16 +244,89 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 
                 ++i;
 
-                G_uint16 slotnum;
-                memcpy(&slotnum, &x->bytecode[i], sizeof(G_uint16));
+                G_LOCAL_SLOT_INT slotnum;
+                memcpy(&slotnum, &x->bytecode[i], sizeof(G_LOCAL_SLOT_INT));
 
-                i += sizeof(G_uint16); // varname len + int size
+                i += sizeof(G_LOCAL_SLOT_INT); // varname len + int size
                 G_printf("%u: %sc\n", slotnum, G_Bytecode_Datatype_to_str(globaldatatype));
                 break;
             }
 
-            case GINSTR_PUSH_GLOBAL: {
-                printf("PUSH GLOBAL\n");
+            case GINSTR_CLEAR_LOCAL: {
+                ++i;
+
+                G_LOCAL_SLOT_INT slot;
+                memcpy(&slot, &x->bytecode[i], sizeof(G_LOCAL_SLOT_INT));
+                G_printf("CLEAR LOCAL: %d\n", slot);
+
+                i += sizeof(G_LOCAL_SLOT_INT); // varname len + int size
+                break;
+            }
+
+            case GINSTR_LOAD_GLOBAL: {
+                G_printf("LOAD GLOBAL: ");
+                ++i;
+
+                String* name = get_string_in_G_Bytecode(x, i, sizeof(size_t));
+                if (!name) {
+                    G_printf("no name\n");
+                    valid = false;
+                } else {
+                    G_printf("%s\n", *name);
+                }
+
+                i += sizeof(size_t) + name->length; // varname len + int size
+                clearstring_ptr(&name);
+                break;
+            }
+
+            case GINSTR_LOAD_LOCAL: {
+                ++i;
+
+                G_LOCAL_SLOT_INT slot;
+                memcpy(&slot, &x->bytecode[i], sizeof(G_LOCAL_SLOT_INT));
+                G_printf("LOAD LOCAL: %d\n", slot);
+
+                i += sizeof(G_LOCAL_SLOT_INT); // varname len + int size
+                break;
+            }
+
+            case GINSTR_LOAD_INDEX: {
+                ++i;
+
+                size_t slot;
+                memcpy(&slot, &x->bytecode[i], sizeof(size_t));
+                G_printf("LOAD INDEX: %zu\n", slot);
+
+                i += sizeof(size_t); // varname len + int size
+                break;
+            }
+
+            case GINSTR_LOAD_FIELD: {
+                G_printf("LOAD FIELD ");
+                ++i;
+
+                String* name = get_string_in_G_Bytecode(x, i, sizeof(size_t));
+                if (!name) {
+                    G_printf("no name\n");
+                    valid = false;
+                } else {
+                    G_printf("%s\n", *name);
+                }
+
+                i += sizeof(size_t) + name->length; // varname len + int size
+                clearstring_ptr(&name);
+                break;
+            }
+
+            case GINSTR_WRITE_LOAD: {
+                G_printf("WRITE LOAD\n");
+                ++i;
+                break;
+            }
+
+            case GINSTR_PUSH_LOAD: {
+                G_printf("PUSH LOAD\n");
                 ++i;
                 break;
             }
@@ -286,7 +359,7 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 
                     case GINSTRDATATYPE_INT32:
                     {
-                        int32_t val;
+                        G_int32 val;
                         memcpy(&val, &x->bytecode[i], 4);
                         G_printf("%d", val);
                         i += 4;
@@ -295,7 +368,7 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 
                     case GINSTRDATATYPE_INT64:
                     {
-                        int64_t val;
+                        G_int64 val;
                         memcpy(&val, &x->bytecode[i], 8);
                         G_printf("%ld", val);
                         i += 8;
@@ -304,7 +377,7 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 
                     case GINSTRDATATYPE_NUMBER32:
                     {
-                        float val;
+                        G_number32 val;
                         memcpy(&val, &x->bytecode[i], 4);
                         G_printf("%f", val);
                         i += 4;
@@ -313,7 +386,7 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 
                     case GINSTRDATATYPE_NUMBER64:
                     {
-                        double val;
+                        G_number64 val;
                         memcpy(&val, &x->bytecode[i], 8);
 
                         G_printf("%lf", val);
@@ -343,7 +416,7 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
                         break;
                     }
                 }
-                putchar(10);
+                putchar('\n');
                 break;
             }
            
@@ -506,8 +579,8 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
     }
 
     for (char j = 0; j < numberlen - numlen(i-6); ++j)
-            putchar('0');
-        G_printf("%zu   END OF BYTECODE", i-6);
+        putchar('0');
+    G_printf("%zu   END OF BYTECODE", i-6);
     return valid;
 }
 

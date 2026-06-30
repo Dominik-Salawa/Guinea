@@ -200,9 +200,9 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
                 add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)ASTDatatype_to_G_Bytecode_Datatype(astnode.declarationAST.info.datatype));
 
                 // designate the slot we plan to target
-                G_uint16 slotnum = astnode.declarationAST.slot-1;
+                G_LOCAL_SLOT_INT slotnum = astnode.declarationAST.slot-1;
                 // DO NOT FORGET TO CHANGE BELOW sizeof(datatype) FOR slotnum PLEASE
-                add_G_Bytecode_w_byte_size(*addr_to_bytecode, &slotnum, sizeof(G_uint16));
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, &slotnum, sizeof(G_LOCAL_SLOT_INT));
             }
             break;
         }
@@ -319,6 +319,12 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
             break;
         }
 
+
+        case ASTNODE_CLEAR_LOCAL_SLOT: {
+            G_log("CLEAR\n");
+            add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_CLEAR_LOCAL);
+            add_G_Bytecode_w_byte_size(*addr_to_bytecode, &astnode.clearLocalSlotAST.slot, sizeof(G_LOCAL_SLOT_INT));
+        }
 
         case ASTNODE_IGNORE:
             break;
