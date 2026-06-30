@@ -24,11 +24,11 @@ def main(argv:list):
         return 1
 
     if compiler:
-        subprocess.run(f"{compiler} {flags} -o {main_file_name} main.c")
+        subprocess.run(f"{compiler} {flags} -o {main_file_name} src/main.c")
     elif shutil.which("clang"):
-        subprocess.run(f"clang {flags} -o {main_file_name} main.c")
+        subprocess.run(f"clang {flags} -o {main_file_name} src/main.c")
     elif shutil.which("gcc"):
-        subprocess.run(f"gcc {flags} -o {main_file_name} main.c")
+        subprocess.run(f"gcc {flags} -o {main_file_name} src/main.c")
     else:
         print("Error: No known compiler to use, recommended to state what compiler to use flag --<compiler name>\nnexample: py execute.py --gcc")
         return 1
