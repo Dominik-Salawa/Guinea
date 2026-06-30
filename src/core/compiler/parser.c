@@ -304,6 +304,8 @@ static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len)
 
 static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope);
 
+
+// IF IT RETURNS ExpressionAST->error, EXPECT THAT MEANS ExpressionAST->top HAS BEEN DEALT WITH AND IS FREED
 static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
 {
     if (!pState || !token_to_signify_end) return NULL;
@@ -352,11 +354,31 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 dont_break = false;
                 break;
 
-            case TK_Identifier:
-                assign_ExpressionNodeAST(current, EXPRNODE_IDENTIFIER);
-                (*current)->data.string_identifier = copystring(&pState_current.string);
+            case TK_Identifier: {
+                VariableInfoAST* info = get_var_info(pState, pState_current.string.content);
+
+                if (!info) {
+                    pState->errmsg = "Variable name does not exist!";
+                    exprAST->fail = true;
+                    break;
+                }
+
+                if (is_global_scope && !info->allowed_in_global_expression) {
+                    pState->errmsg = "Variable cannot be used in a global expression!";
+                    exprAST->fail = true;
+                    break;
+                }
+
+                if (info->slot == 0) {
+                    assign_ExpressionNodeAST(current, EXPRNODE_GLOBAL_IDENTIFIER);
+                    (*current)->data.string_identifier = copystring(&pState_current.string);
+                } else {
+                    assign_ExpressionNodeAST(current, EXPRNODE_LOCAL_IDENTIFIER);
+                    (*current)->data.slot_num = info->slot-1;
+                }
                 dont_break = false;
                 break;
+            }
 
             case TK_String_val:
                 assign_ExpressionNodeAST(current, EXPRNODE_STRING);
@@ -402,16 +424,19 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
                 dont_break = false;
                 break;
         }
-        if (!dont_break) break;
+        if (!dont_break || exprAST->fail) break;
         advance_parser(pState);
     }
 
-    if (on_negative) {
+    if (on_negative && !exprAST->fail) {
         ExpressionNodeAST* tmp = NULL;
         assign_ExpressionNodeAST(&tmp, EXPRNODE_NEG);
         tmp->right = exprAST->top;
         exprAST->top = tmp;
     }
+
+    if (exprAST->fail)
+        destroy_ExpressionNodeAST_ptr(&exprAST->top);
 
     return exprAST;
 }

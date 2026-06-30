@@ -69,7 +69,8 @@ char* ExpressionNodeType_to_string(ExpressionNodeType dt)
         case EXPRNODE_BOOL:                 return "(bool)";
         case EXPRNODE_CHAR:                 return "(char)";
         case EXPRNODE_FUNCTION_LITERAL:     return "(function)";
-        case EXPRNODE_IDENTIFIER:           return "(identifier)";
+        case EXPRNODE_GLOBAL_IDENTIFIER:    return "(global identifier)";
+        case EXPRNODE_LOCAL_IDENTIFIER:     return "(local identifier)";
         case EXPRNODE_NIL:                  return "nil";
         default:                            return "NULL";
     }
@@ -267,8 +268,12 @@ void G_log_ExpressionNodeAST(ExpressionNodeAST* x)
             G_log("\"%s\"\n", x->data.string_identifier.content);
             return;
 
-        case EXPRNODE_IDENTIFIER:
-            G_log("%s\n", x->data.string_identifier.content);
+        case EXPRNODE_GLOBAL_IDENTIFIER:
+            G_log("(global) %s\n", x->data.string_identifier.content);
+            return;
+
+        case EXPRNODE_LOCAL_IDENTIFIER:
+            G_log("(local) %s\n", x->data.string_identifier.content);
             return;
 
         case EXPRNODE_FUNCTION_LITERAL:
@@ -393,8 +398,11 @@ void destroy_ExpressionNodeAST_ptr(ExpressionNodeAST** x)
                 clearstring(&tmp->data.string_identifier);
                 break;
 
-            case EXPRNODE_IDENTIFIER:
+            case EXPRNODE_GLOBAL_IDENTIFIER:
                 clearstring(&tmp->data.string_identifier);
+                break;
+
+            case EXPRNODE_LOCAL_IDENTIFIER:
                 break;
 
             case EXPRNODE_FUNCTION_LITERAL:

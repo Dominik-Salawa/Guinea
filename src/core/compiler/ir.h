@@ -2,6 +2,7 @@
 #define IR_H
 
 #include "parser.h"
+#include "ast.h"
 #include "../bytecode.h"
 
 typedef struct G_IR {

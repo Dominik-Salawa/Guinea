@@ -70,7 +70,8 @@ typedef enum ExpressionNodeType {
     EXPRNODE_BOOL,
     EXPRNODE_CHAR,
     EXPRNODE_FUNCTION_LITERAL,
-    EXPRNODE_IDENTIFIER,
+    EXPRNODE_GLOBAL_IDENTIFIER,
+    EXPRNODE_LOCAL_IDENTIFIER,
     EXPRNODE_NIL
 } ExpressionNodeType;
 G_byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type);
@@ -120,6 +121,7 @@ typedef struct ExpressionNodeAST {
         G_number64 number;
         G_int64  integer;
         String string_identifier;
+        G_LOCAL_SLOT_INT slot_num;
         char ch;
         bool bl;
         FunctionAST     function;
@@ -142,6 +144,7 @@ typedef struct VariableInfoAST {
     String identifier; // the name attached to this variable
     //ubyte structure_type; // the structure of this variable
     //bool is_ptr;
+    bool allowed_in_global_expression;
     G_LOCAL_SLOT_INT slot;
 
     union {

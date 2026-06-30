@@ -174,6 +174,16 @@ G_Bytecode* convert_String_to_Bytecode_String(const String* str)
     return x;
 }
 
+G_Bytecode* add_G_Bytecode_String(G_Bytecode* x, const String* str)
+{
+    if (!x || !str) return NULL;
+    //if (!add_G_Bytecode_w_byte_size(x, (G_ubyte*)&str->length, sizeof(size_t))) return NULL;
+    if (!add_G_Bytecode(x, (G_ubyte*)&str->length, sizeof(size_t))) return NULL;
+    if (!add_G_Bytecode(x, (G_ubyte*)str->content, str->length))    return NULL;
+    return x;
+}
+
+
 G_Bytecode* add_G_Bytecode_String_no_size_embedded(G_Bytecode* x, const String* str)
 {
     if (!x || !str) return NULL;

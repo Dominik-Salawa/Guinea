@@ -47,8 +47,8 @@ GINSTR ExpressionNodeType_to_GINSTR(ExpressionNodeType x)
 
 #define is_number_int_expr(expr) (expr == EXPRNODE_INT || expr == EXPRNODE_NUMBER)
 #define is_immediate_value(expr) (is_number_int_expr(expr) || expr == EXPRNODE_BOOL || expr == EXPRNODE_CHAR || expr == EXPRNODE_STRING || expr == EXPRNODE_NIL || expr == EXPRNODE_FUNCTION_LITERAL)
-// please leave arg2 as just NULL, its just for chaining
-static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Bytecode** addr_to_bytecode)
+// please leave arg3 as false, its just for chaining, NOT LISTENING TO THIS MESSAGE WILL MESS UP THE FUNCTION
+static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Bytecode** addr_to_bytecode, bool dont_push_load)
 {
     ExpressionNodeType x = EXPRNODE_UNINIT;
 
@@ -63,8 +63,8 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
         case 2:
         {
             x = expr->type;
-            G_IR_CONVERT_expression(expr->left,  addr_to_bytecode);
-            G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+            G_IR_CONVERT_expression(expr->left,  addr_to_bytecode, false);
+            G_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
             add_G_Bytecode_one_byte(bytecode, (G_ubyte)ExpressionNodeType_to_GINSTR(expr->type));
             break;
         }
@@ -80,27 +80,27 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
 
                     if (child == EXPRNODE_INT) {
                         expr->right->data.integer = -expr->right->data.integer;
-                        G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                        G_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
                         break;
                     }
                     else if (child == EXPRNODE_NUMBER) {
                         expr->right->data.number = -expr->right->data.number;
-                        G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                        G_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
                         break;
                     }
 
                     // if it doesnt meet the requirements above, it is expected to do the same as default
-                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
                     add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTR_NEG);
                     break;
                 }
 
                 case EXPRNODE_PARENTHESIS:
-                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
                     break;
 
                 default:
-                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode);
+                    G_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
                     add_G_Bytecode_one_byte(bytecode, (G_ubyte)ExpressionNodeType_to_GINSTR(expr->type));
                     break;
             }
@@ -114,45 +114,58 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
             {
                 case EXPRNODE_STRING:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
-                    add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTRDATATYPE_STRING);
+                    add_G_Bytecode_one_byte(bytecode, GINSTRDATATYPE_STRING);
                     add_G_Bytecode_w_byte_size(bytecode, &expr->data.string_identifier.length, sizeof(size_t));
                     add_G_Bytecode_String_no_size_embedded(bytecode, &expr->data.string_identifier);
                     break;
 
                 case EXPRNODE_INT:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
-                    add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTRDATATYPE_INT64);
+                    add_G_Bytecode_one_byte(bytecode, GINSTRDATATYPE_INT64);
                     add_G_Bytecode_w_byte_size(bytecode, &expr->data.integer, sizeof(G_int64));
                     break;
 
                 case EXPRNODE_NUMBER:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
-                    add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTRDATATYPE_NUMBER64);
+                    add_G_Bytecode_one_byte(bytecode, GINSTRDATATYPE_NUMBER64);
                     add_G_Bytecode_w_byte_size(bytecode, &expr->data.number, sizeof(G_number64));
                     break;
 
                 case EXPRNODE_BOOL:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
-                    add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTRDATATYPE_BOOL);
+                    add_G_Bytecode_one_byte(bytecode, GINSTRDATATYPE_BOOL);
                     add_G_Bytecode_one_byte(bytecode, (G_ubyte)expr->data.bl);
                     break;
 
                 case EXPRNODE_CHAR:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
-                    add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTRDATATYPE_CHAR);
+                    add_G_Bytecode_one_byte(bytecode, GINSTRDATATYPE_CHAR);
                     add_G_Bytecode_one_byte(bytecode, (G_ubyte)expr->data.ch);
                     break;
                 
                 case EXPRNODE_NIL:
                     add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
-                    add_G_Bytecode_one_byte(bytecode, (G_ubyte)GINSTRDATATYPE_NIL);
+                    add_G_Bytecode_one_byte(bytecode, GINSTRDATATYPE_NIL);
                     break;
 
-                case EXPRNODE_IDENTIFIER:
+                case EXPRNODE_GLOBAL_IDENTIFIER:
+                    add_G_Bytecode_one_byte(bytecode, GINSTR_LOAD_GLOBAL);
+                    add_G_Bytecode_String(bytecode, &expr->data.string_identifier);
+                    if (!dont_push_load) {
+                        add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_LOAD);
+                    }
+                    break;
+
+                case EXPRNODE_LOCAL_IDENTIFIER:
+                    add_G_Bytecode_one_byte(bytecode, GINSTR_LOAD_LOCAL);
+                    add_G_Bytecode_w_byte_size(bytecode, &expr->data.slot_num, sizeof(G_LOCAL_SLOT_INT));
+                    if (!dont_push_load) {
+                        add_G_Bytecode_one_byte(bytecode, GINSTR_PUSH_LOAD);
+                    }
                     break;
 
                 default:
-                    printf("expr G_IR_CONVERT_expression err %d:%s\n", expr->type, ExpressionNodeType_to_string(expr->type));
+                    G_log("expr G_IR_CONVERT_expression err %d:%s\n", expr->type, ExpressionNodeType_to_string(expr->type));
                     x = EXPRNODE_UNINIT;
                     destroy_G_Bytecode_ptr(addr_to_bytecode);
                     return x;
@@ -176,7 +189,7 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
     switch (astnode.nodetype) 
     {
         case ASTNODE_DECLARATION: {
-            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.declarationAST.expression->top, addr_to_bytecode);
+            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.declarationAST.expression->top, addr_to_bytecode, false);
 
             if (ir_tree == EXPRNODE_UNINIT) {
                 G_log("failed!\n");
@@ -209,7 +222,7 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
         }
 
         case ASTNODE_IF: {
-            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, addr_to_bytecode);
+            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, addr_to_bytecode, false);
             if (ir_tree == EXPRNODE_UNINIT) {
                 G_log("failed ir tree!\n");
                 destroy_G_Bytecode_ptr(addr_to_bytecode);
@@ -257,7 +270,7 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
 
         case ASTNODE_WHILE: {
             G_Bytecode* ir_tree_bc = init_G_Bytecode_ptr();
-            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, &ir_tree_bc);
+            ExpressionNodeType ir_tree = G_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, &ir_tree_bc, false);
             if (ir_tree == EXPRNODE_UNINIT) {
                 G_log("failed ir tree!\n");
                 destroy_G_Bytecode_ptr(&ir_tree_bc);
