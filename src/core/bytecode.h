@@ -8,7 +8,8 @@ typedef enum GINSTR {
     GINSTR_NULL = 0,
     GINSTR_DECLARE_GLOBAL = 0x01, // tells the interpreter to pop one from the stack, make a new symbol name in the runtime with it, and assign it the stack val
     GINSTR_ASSIGN_GLOBAL,
-    GINSTR_ASSIGN_LOCAL, // since locals are all made in memory when the function is called, there is no such thing as declaring a local variable
+    GINSTR_DECLARE_LOCAL,
+    GINSTR_ASSIGN_LOCAL,
     GINSTR_PUSH_GLOBAL,
     GINSTR_PUSH_LOCAL,
     GINSTR_PUSH_IMMEDIATE,

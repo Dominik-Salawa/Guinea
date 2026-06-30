@@ -440,7 +440,7 @@ void destroy_ExpressionAST_ptr(ExpressionAST** x)
 
 
 
-void destroy_VariableDeclaration(VariableDeclarationAST* x)
+void destroy_VariableDeclarationAST(VariableDeclarationAST* x)
 {
     if (!x) return;
     destroy_ExpressionAST_ptr(&x->expression);
@@ -452,13 +452,6 @@ void destroy_VariableInfoAST(VariableInfoAST* x)
     if (!x) return;
     clearstring(&x->identifier);
     x->datatype = ASTDATATYPE_ERR;
-}
-
-void destroy_VariableAssignAST(VariableAssignAST* x)
-{
-    if (!x) return;
-    destroy_ExpressionAST_ptr(&x->expression);
-    clearstring(&x->to_assign);
 }
 
 void destroy_ExprFuncCallAST(ExprFuncCallAST* x)
@@ -550,11 +543,10 @@ void destroy_G_AST(G_AST* g_ast)
     G_log("destroying G_AST...\n");
     switch (g_ast->nodetype)
     {
-        case ASTNODE_DECLARATION: { destroy_VariableDeclaration(&g_ast->declarationAST); break; }
-        case ASTNODE_ASSIGN:      { destroy_VariableAssignAST(&g_ast->assignAST);        break; }
-        case ASTNODE_IF:          { destroy_IfWhileAST(&g_ast->ifWhileAST);              break; }
-        case ASTNODE_WHILE:       { destroy_IfWhileAST(&g_ast->ifWhileAST);              break; }
-        case ASTNODE_SCOPE:       { destroy_ASTScope(&g_ast->scopeAST);                  break; }
+        case ASTNODE_DECLARATION: { destroy_VariableDeclarationAST(&g_ast->declarationAST); break; }
+        case ASTNODE_IF:          { destroy_IfWhileAST(&g_ast->ifWhileAST);                 break; }
+        case ASTNODE_WHILE:       { destroy_IfWhileAST(&g_ast->ifWhileAST);                 break; }
+        case ASTNODE_SCOPE:       { destroy_ASTScope(&g_ast->scopeAST);                     break; }
 
         case ASTNODE_END:     break;
         case ASTNODE_IGNORE:  break;

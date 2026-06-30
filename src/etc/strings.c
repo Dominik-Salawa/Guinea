@@ -1,6 +1,10 @@
 #ifndef STRINGS_C
 #define STRINGS_C
 
+#if defined(__cplusplus)
+#extern "C" {
+#endif
+
 #include "strings.h"
 #include <string.h>
 
@@ -133,5 +137,9 @@ bool stringcompare(String* string1, String* string2)
 
     return true;
 }
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

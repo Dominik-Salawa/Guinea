@@ -88,6 +88,8 @@ int main(int argc, char** argv)
             }
         }
 
+        printf("\n\n\nMAKE IT SO WHEN THE PARSER POPS A PARSESCOPE IT ALSO MAKES IT SO IT ASSIGNS ALL THE VARIABLES IN THAT SCOPE NIL IN ORDER TO PREVENT HUGE MEMORY HOLDS FOR THE GC PLSSSS!!!!!!\n\n\n\n\n");
+
         destroy_G_Bytecode_ptr(&x);
         clearstring(&inp);
     }

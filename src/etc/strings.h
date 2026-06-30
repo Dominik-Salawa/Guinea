@@ -1,6 +1,10 @@
 #ifndef STRINGS_H
 #define STRINGS_H
 
+#if defined(__cplusplus)
+#extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -25,5 +29,9 @@ String* stringconcat(String* toconcat, String* toadd);
 String* stringconcat_char_w_len(String* toconcat, char* toadd, size_t length);
 String* stringconcat_charptr(String* toconcat, char* toadd);
 bool stringcompare(String* string1, String* string2);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif

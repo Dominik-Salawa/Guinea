@@ -150,6 +150,7 @@ typedef struct VariableInfoAST {
     String identifier; // the name attached to this variable
     //ubyte structure_type; // the structure of this variable
     //bool is_ptr;
+    G_uint16 slot;
 
     union {
         ASTDatatype datatype; // for single datatype
@@ -163,15 +164,9 @@ void destroy_VariableInfoAST(VariableInfoAST* x);
 typedef struct VariableDeclarationAST {
     VariableInfoAST info;
     ExpressionAST* expression;
+    G_uint16 slot;
 } VariableDeclarationAST;
-void destroy_VariableDeclarationAST(VariableInfoAST* x);
-
-
-typedef struct VariableAssignAST {
-    String to_assign;
-    ExpressionAST* expression;
-} VariableAssignAST;
-void destroy_VariableAssignAST(VariableAssignAST* x);
+void destroy_VariableDeclarationAST(VariableDeclarationAST* x);
 
 
 
@@ -217,7 +212,6 @@ typedef struct G_AST {
 
     union {
         VariableDeclarationAST declarationAST;
-        VariableAssignAST      assignAST;
         IfWhileAST             ifWhileAST;
         ASTScope               scopeAST;
     };

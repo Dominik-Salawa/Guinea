@@ -21,6 +21,7 @@ if 5 == 5 then
     var cxzv: bool = 0 or nil
 end
 */
+var d: int = 0
 
 do 
     var i: int = 0
@@ -42,6 +43,14 @@ do
             end
         end
     end
+    var idk: int = 0
+    do 
+        var iii: number = 5.5
+        do
+            var iwdad: int = 0
+        end
+    end
+    var da: int = 0
 end
 
 var i: int = 0

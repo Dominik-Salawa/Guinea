@@ -195,6 +195,7 @@ static int numlen(size_t number)
     return i;
 }
 
+#include <string.h>
 bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 {
     bool valid = true;
@@ -232,6 +233,22 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
                 G_printf("%sc\n", G_Bytecode_Datatype_to_str(globaldatatype));
 
                 clearstring_ptr(&name);
+                break;
+            }
+
+            case GINSTR_DECLARE_LOCAL: {
+                ++i;
+                GINSTR_Datatype globaldatatype = x->bytecode[i];
+
+                G_printf("DECLARE LOCAL ");
+
+                ++i;
+
+                G_uint16 slotnum;
+                memcpy(&slotnum, &x->bytecode[i], sizeof(G_uint16));
+
+                i += sizeof(G_uint16); // varname len + int size
+                G_printf("%u: %sc\n", slotnum, G_Bytecode_Datatype_to_str(globaldatatype));
                 break;
             }
 

@@ -85,27 +85,50 @@ bool add_ParseScopeNode_variable(ParseState* pState, String* identifier, ASTData
         return false;
     }
 
-    G_log("doing %zu %zu\n", pState->scope_top->var_info.length, pState->scope_top->var_info.size);
+    ParseScopeNode* top = pState->scope_top;
 
-    while (pState->scope_top->var_info.length >= pState->scope_top->var_info.size) {
-        pState->scope_top->var_info.size *= 2;
-        VariableInfoAST* tmp = realloc(pState->scope_top->var_info.arr, pState->scope_top->var_info.size * sizeof(VariableInfoAST));
+    if (top->var_info.length >= top->var_info.size) {
+        size_t original_size = top->var_info.size;
+        while (top->var_info.length >= top->var_info.size) top->var_info.size *= 2;
+        VariableInfoAST* tmp = realloc(top->var_info.arr, top->var_info.size * sizeof(VariableInfoAST));
         if (!tmp) {
-            pState->scope_top->var_info.size /= 2;
+            top->var_info.size = original_size;
             return false;
         }
-        pState->scope_top->var_info.arr = tmp;
+        top->var_info.arr = tmp;
     }
 
+    // we can assume theres at least one Global name, due to main() function being needed in order to run a file
+    int slot_number;
+
+    if (top->prev) {
+        // a local scope value only here
+        while (true) {
+            if (top->var_info.length > 0 && top->prev) {
+                slot_number = top->var_info.arr[top->var_info.length-1].slot+1;
+                break;
+            } 
+            else if (!top->prev) { 
+                // this means we have gone so far down that it required us to reach the global scope, 
+                // meaning its the only local variable currently existing
+                slot_number = 1;
+                break;
+            }
+            else {
+                top = top->prev;
+            }
+        }
+        top = pState->scope_top;
+    } else {
+        slot_number = 0;
+    }
 
     VariableInfoAST x = (VariableInfoAST){
         .datatype = datatype,
-        .identifier = copystring(identifier)
+        .identifier = copystring(identifier),
+        .slot = slot_number
     };
-
-    pState->scope_top->var_info.arr[pState->scope_top->var_info.length++] = x;
-    G_log("done making it bigger %d %d 0x%p\n", pState->scope_top->var_info.length, pState->scope_top->var_info.size, pState->scope_top->var_info.arr);
-
+    top->var_info.arr[top->var_info.length++] = x;
     return true;
 }
 
@@ -615,10 +638,17 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
     else if (ASTNode.declarationAST.expression->fail) {
         ASTNode.error = true;
     }
-    G_log("status of adding: %d\n", add_ParseScopeNode_variable(pState, &ASTNode.declarationAST.info.identifier, ASTNode.declarationAST.info.datatype));
-    G_log("done adding name\n");
-    G_log("-------------------------------------------------------\n");
-
+    bool adding_var_status = add_ParseScopeNode_variable(pState, &ASTNode.declarationAST.info.identifier, ASTNode.declarationAST.info.datatype);
+    if (adding_var_status) {
+        G_log("done adding name\n");
+        G_log("-------------------------------------------------------\n");
+    } else {
+        G_log("failed adding name!\n");
+        G_log("-------------------------------------------------------\n");
+        ASTNode.error = true;
+        return ASTNode;
+    }
+    ASTNode.declarationAST.slot = pState->scope_top->var_info.arr[pState->scope_top->var_info.length-1].slot;
     return ASTNode;
 }
 
@@ -770,7 +800,7 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
                 return (G_AST){
                     .error=true,
-                    .nodetype=ASTNODE_IGNORE
+                    .nodetype=ASTNODE_IF
                 };
             }
             
@@ -782,7 +812,7 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
                 return (G_AST){
                     .error=true,
-                    .nodetype=ASTNODE_IGNORE
+                    .nodetype=ASTNODE_WHILE
                 };
             }
 
@@ -790,13 +820,15 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
             return eval_if_and_while_statement(pState);
 
         case TK_do:
+            /*
             if (is_global_scope) {
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
                 return (G_AST){
                     .error=true,
-                    .nodetype=ASTNODE_IGNORE
+                    .nodetype=ASTNODE_SCOPE
                 };
             }
+                */
             return eval_scope_statement(pState);
 
         default: {

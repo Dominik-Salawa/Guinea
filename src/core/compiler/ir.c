@@ -149,8 +149,6 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
                     break;
 
                 case EXPRNODE_IDENTIFIER:
-                    printf("identifier not yet implemented...\n");
-                    //add_G_Bytecode_one_byte(bytecode, GINSTR)
                     break;
 
                 default:
@@ -185,13 +183,27 @@ static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_
                 return IR_CONVERT_FAILED;
             }
 
-            add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_DECLARE_GLOBAL);
+            if (astnode.declarationAST.slot == 0) {
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_DECLARE_GLOBAL);
 
-            // metadata for the declaration
-            add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)ASTDatatype_to_G_Bytecode_Datatype(astnode.declarationAST.info.datatype));
-            // str of global name
-            add_G_Bytecode_w_byte_size(*addr_to_bytecode, &astnode.declarationAST.info.identifier.length, sizeof(size_t));
-            add_G_Bytecode(*addr_to_bytecode, (G_ubyte*)astnode.declarationAST.info.identifier.content, astnode.declarationAST.info.identifier.length);
+                // metadata for the declaration
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)ASTDatatype_to_G_Bytecode_Datatype(astnode.declarationAST.info.datatype));
+                // str of global name
+                G_uint64 length = astnode.declarationAST.info.identifier.length;
+                // DO NOT FORGET TO CHANGE BELOW sizeof(datatype) FOR length PLEASE
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, &length, sizeof(G_uint64));
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, astnode.declarationAST.info.identifier.content, length);
+            } else {
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)GINSTR_DECLARE_LOCAL);
+
+                // metadata for the declaration
+                add_G_Bytecode_one_byte(*addr_to_bytecode, (G_ubyte)ASTDatatype_to_G_Bytecode_Datatype(astnode.declarationAST.info.datatype));
+
+                // designate the slot we plan to target
+                G_uint16 slotnum = astnode.declarationAST.slot-1;
+                // DO NOT FORGET TO CHANGE BELOW sizeof(datatype) FOR slotnum PLEASE
+                add_G_Bytecode_w_byte_size(*addr_to_bytecode, &slotnum, sizeof(G_uint16));
+            }
             break;
         }
 
