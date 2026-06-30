@@ -8,7 +8,7 @@
 #include "../etc/strings.h"
 #include "../etc/color.h"
 
-bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t len)
+bool point_to_error(FILE* f, char* source, char* msg_next_to_ptr, size_t line, size_t column, size_t len)
 {
     String error_line = init_String();
 
@@ -63,8 +63,11 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
                 putc('^', f);
                 ++current_column;
             }
-            fprintf(f, COLOR_CLEAR);
-            putc('\n', f);
+            if (msg_next_to_ptr) {
+                fprintf(f, " %s"COLOR_CLEAR"\n", msg_next_to_ptr);
+            } else {
+                fprintf(f, COLOR_CLEAR"\n");
+            }
         }
     }
     
@@ -72,13 +75,13 @@ bool point_to_error(FILE* f, char* source, size_t line, size_t column, size_t le
     return current_line == line;
 }
 
-bool std_err_message(FILE* f, char* filename, char* source, char* message, size_t line, size_t column, size_t len)
+bool std_err_message(FILE* f, char* filename, char* source, char* message, char* msg_next_to_ptr, size_t line, size_t column, size_t len)
 {
     int printlen = fprintf(f, COLOR_WHITE"GUINEA ERROR: %s:%zu:%zu | %s\n" , filename, line, column, message)-1;
     for (int i = 0; i < printlen-7; ++i) putc('-',f);
     fprintf(f, COLOR_CLEAR);
     putc('\n',f);
-    bool exit = point_to_error(f, source, line, column, len);
+    bool exit = point_to_error(f, source, msg_next_to_ptr, line, column, len);
     fprintf(f, COLOR_WHITE"1 error generated.\n"COLOR_CLEAR);
     return exit;
 }

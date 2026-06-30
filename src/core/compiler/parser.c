@@ -79,19 +79,7 @@ bool pop_ParseScopeNode(ParseState* pState, ASTScope* x)
             .clearLocalSlotAST.slot = current->var_info.arr[i].slot-1
         };
         add_G_AST_to_ASTScope(x, toadd);
-    }
-
-    for (size_t i = 0; i < x->length; ++i) {
-        switch (x->nodes[i].nodetype) {
-            case ASTNODE_IGNORE:                 G_log("ignore\n"); break;
-            case ASTNODE_END:                    G_log("end\n"); break;
-            case ASTNODE_ASSIGN:                 G_log("assign\n"); break;
-            case ASTNODE_CLEAR_LOCAL_SLOT:       G_log("CLEAR_LOCAL_SLOT\n"); break;
-            case ASTNODE_IF:                     G_log("if\n"); break;
-            case ASTNODE_WHILE:                  G_log("while\n"); break;
-            case ASTNODE_SCOPE:                  G_log("scope\n"); break;
-            case ASTNODE_DECLARATION:            G_log("declaration\n"); break;
-        }
+        G_log("added toadd\n");
     }
 
     destroy_ParseScopeNode(&current);
@@ -695,6 +683,7 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
         x = parse_segment(pState, ending, false);
         
         if (x.error) {
+            G_log("has error\n");
             destroy_ASTScope(&scope);
             break;
         }
@@ -702,13 +691,15 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
             break;
         if (x.nodetype == ASTNODE_IGNORE)
             continue;
-
+        
         add_G_AST_to_ASTScope(&scope, x);
     }
 
-    G_log("add all existing variables to nuke\n");
-    pop_ParseScopeNode(pState, &scope);
-    G_log("return scope\n");
+    if (!x.error) {
+        G_log("add all existing variables to nuke\n");
+        pop_ParseScopeNode(pState, &scope);
+        G_log("return scope\n");
+    }
     return scope;
 }
 
@@ -817,6 +808,7 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
     switch (pState_current.type)
     {
         case TK_var:
+            G_log("doing var\n");
             return eval_variable_parser(pState, ending, is_global_scope);
 
         case TK_if:
@@ -827,7 +819,6 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                     .nodetype=ASTNODE_IF
                 };
             }
-            
             G_log("doing if\n");
             return eval_if_and_while_statement(pState);
 
@@ -839,7 +830,6 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                     .nodetype=ASTNODE_WHILE
                 };
             }
-
             G_log("doing while\n");
             return eval_if_and_while_statement(pState);
 
@@ -853,6 +843,7 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                 };
             }
                 */
+            G_log("doing scope\n");
             return eval_scope_statement(pState);
 
         default: {
@@ -871,7 +862,12 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
             }
 
             G_log("no matches!\n");
-            pState->errmsg = "Expected a valid statement!";
+
+            if (ending == TK_end) {
+                pState->errmsg = "Expected an end to the scope!";
+            } else {
+                pState->errmsg = "Expected a valid statement!";
+            }
 
             G_AST x = (G_AST){0};
             x.error = true;

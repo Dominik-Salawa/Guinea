@@ -493,9 +493,15 @@ ASTScope init_ASTScope()
 // does NOT deepcopy pointers in it, just a lightcopy, BEWARE
 bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd)
 {
+    if (!x) return false;
+
     if (x->length >= x->size) {
         size_t original_size = x->size;
-        while (x->length >= x->size) x->size *= 2;
+        if (x->size > 0) {
+            while (x->length >= x->size) x->size *= 2;
+        } else {
+            return false;
+        }
         G_AST* tmp = realloc(x->nodes, x->size * sizeof(G_AST));
         if (!tmp) {
             x->size = original_size;

@@ -19,7 +19,7 @@ do
             end
         end
     end
-    var idk: int = 0
+    var idk: int = 0/*
     do 
         var iii: number = 5.5
         do

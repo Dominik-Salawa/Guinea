@@ -171,6 +171,7 @@ static ExpressionNodeType G_IR_CONVERT_expression(ExpressionNodeAST* expr, G_Byt
 static int G_IR_ADD_G_AST_TO_BYTECODE(const G_AST astnode, G_Bytecode** addr_to_bytecode)
 {
     if (!addr_to_bytecode) return IR_CONVERT_FAILED;
+    if (astnode.error)     return IR_CONVERT_FAILED;
 
     switch (astnode.nodetype) 
     {
@@ -394,9 +395,9 @@ if (bytecode) {
 
         if (astnode.error) {
             if (pState.current.type == TK_Identifier)
-                std_err_message(stdout, ir->filename, ir->source.content, pState.errmsg, pState.current.line, pState.current.column, pState.current.string.length);
+                std_err_message(stdout, ir->filename, ir->source.content, pState.errmsg, "", pState.current.line, pState.current.column, pState.current.string.length);
             else
-                std_err_message(stdout, ir->filename, ir->source.content, pState.errmsg, pState.current.line, pState.current.column, pState.current.length);
+                std_err_message(stdout, ir->filename, ir->source.content, pState.errmsg, "", pState.current.line, pState.current.column, pState.current.length);
             error = true;
             destroy_G_Bytecode_ptr(&bytecode);
             break;
