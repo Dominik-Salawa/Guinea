@@ -414,7 +414,7 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
 
                     case GINSTRDATATYPE_BOOL:
                     {
-                        printf((x->bytecode[i] != 0)? "true" : "false");
+                        G_printf("%b", x->bytecode[i]);
                         ++i;
                         break;
                     }
@@ -429,8 +429,8 @@ bool print_G_Bytecode_into_G_ASM(G_Bytecode* x)
                 putchar('\n');
                 break;
             }
-           
-            
+
+
 
             case GINSTR_JMP: {
                 G_printf("JMP ");

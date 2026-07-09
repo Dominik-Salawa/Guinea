@@ -16,25 +16,25 @@ def main(argv:list):
     main_file_name:str = ""
 
     if os.name == 'posix':
-        main_file_name = "main.out"
+        main_file_name = "guinea"
     elif os.name == 'nt':
-        main_file_name = "main.exe"
+        main_file_name = "guinea.exe"
     else:
         print("Error: Unknown OS")
         return 1
 
     if compiler:
-        subprocess.run(f"{compiler} {flags} -o {main_file_name} src/main.c")
+        subprocess.run(f"{compiler} {flags} -o {main_file_name} src/main.c", shell=True)
     elif shutil.which("clang"):
-        subprocess.run(f"clang {flags} -o {main_file_name} src/main.c")
+        subprocess.run(f"clang {flags} -o {main_file_name} src/main.c", shell=True)
     elif shutil.which("gcc"):
-        subprocess.run(f"gcc {flags} -o {main_file_name} src/main.c")
+        subprocess.run(f"gcc {flags} -o {main_file_name} src/main.c", shell=True)
     else:
         print("Error: No known compiler to use, recommended to state what compiler to use flag --<compiler name>\nnexample: py execute.py --gcc")
         return 1
     command:str = main_file_name
     for arg in argv:command += f" {arg}"
-    subprocess.run(command)
+    subprocess.run(command, shell=True)
     return 0
 
 try:

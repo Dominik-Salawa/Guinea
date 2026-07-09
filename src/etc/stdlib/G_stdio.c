@@ -5,8 +5,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include "G_stdio.h"
-#include "../strings.h"
+#include "../strings.c"
 #include "../declarations.h"
 
 ssize_t G_vfmt(char* buffer_addr, size_t buffer_size, char* string, va_list args)
@@ -29,15 +30,15 @@ ssize_t G_fmt(char* buffer_addr, size_t buffer_size, char* string, ...)
 
 size_t G_vprintf(FILE* file, char* string, va_list args)
 {
-    ssize_t amount_of_chars_outputted = 0; 
+    ssize_t amount_of_chars_outputted = 0;
     while (true) {
         char ch = *string;
         if (ch == 0) break;
 
         if (ch == '%') {
             ch = *++string;
-                
-            switch (ch) 
+
+            switch (ch)
             {
                 case '%': {
                     putc('%', file);
@@ -46,8 +47,9 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 }
 
                 case 'b': {
-                    amount_of_chars_outputted += fprintf(file, (va_arg(args, int) != 0)? "true" : "false");
-                }
+                    amount_of_chars_outputted += fputs((va_arg(args, int) != false)? "true" : "false", file);
+                    break;
+		}
 
                 case 'c': {
                     putc(va_arg(args, int), file);
@@ -62,7 +64,10 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                         amount_of_chars_outputted += fprintf(file, "%s", (!ptr)? "(null)" : ptr);
                     } else {
                         String str = va_arg(args, String);
-                        amount_of_chars_outputted += fwrite(str.content, sizeof(typeof(*str.content)), str.length, file);
+                        if (!str.content)
+				amount_of_chars_outputted += fputs("(null)", file);
+			else
+				amount_of_chars_outputted += fwrite(str.content, sizeof(typeof(*str.content)), str.length, file);
                         --string;
                     }
                     break;
@@ -74,22 +79,22 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 }
 
                 case 'd': {
-                    amount_of_chars_outputted += fprintf(file, "%d", va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRId32, va_arg(args, G_int32));
                     break;
                 }
 
                 case 'u': {
-                    amount_of_chars_outputted += fprintf(file, "%u", va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRIu32, va_arg(args, G_int32));
                     break;
                 }
 
                 case 'x': {
-                    amount_of_chars_outputted += fprintf(file, "%x", va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRIx32, va_arg(args, G_int32));
                     break;
                 }
 
                 case 'o': {
-                    amount_of_chars_outputted += fprintf(file, "%o", va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRIo32, va_arg(args, G_int32));
                     break;
                 }
 
@@ -101,16 +106,16 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 case 'l': {
                     ch = *++string;
                     if (ch == 'd') {
-                        amount_of_chars_outputted += fprintf(file, "%lld", va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRId64, va_arg(args, G_int64));
                     }
                     else if (ch == 'u') {
-                        amount_of_chars_outputted += fprintf(file, "%llu", va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRIu64, va_arg(args, G_int64));
                     }
                     else if (ch == 'x') {
-                        amount_of_chars_outputted += fprintf(file, "%llx", va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRIx64, va_arg(args, G_int64));
                     }
                     else if (ch == 'o') {
-                        amount_of_chars_outputted += fprintf(file, "%llo", va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRIo64, va_arg(args, G_int64));
                     }
                     else if (ch == 'f') {
                         amount_of_chars_outputted += fprintf(file, "%lf", va_arg(args, G_number64));
@@ -146,7 +151,7 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 default:
                     return -1;
             }
-        } 
+        }
         else {
             putc(ch, file);
             ++amount_of_chars_outputted;
