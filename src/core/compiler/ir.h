@@ -12,6 +12,6 @@ typedef struct G_IR {
 } G_IR;
 
 GINSTR ExpressionNodeType_to_GINSTR(ExpressionNodeType x);
-G_Bytecode* G_IR_CONVERT(G_IR* ir, G_ubyte SIZE_T_OF_PLATFORM, const bool on_global);
+G_Bytecode* G_IR_CONVERT(G_IR* ir, const bool on_global);
 
 #endif

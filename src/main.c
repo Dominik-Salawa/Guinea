@@ -8,10 +8,11 @@
 
 #include "core/ver.h"
 
-#include "core/value.c"
+#include "core/interpreter/value.c"
 #include "core/bytecode.c"
 #include "core/errors.c"
 
+#include "core/interpreter/stacks.c"
 #include "core/interpreter/runtime.c"
 
 #include "core/compiler/ast.c"
@@ -21,7 +22,7 @@
 
 int main(int argc, char** argv)
 {
-    size_t i = 1;
+    int i = 1;
 
     if (argc == 1) {
         printf("Guinea v%d.%d.%d\n", MAJOR_VER, MINOR_VER, BUGFIX_VER);
@@ -51,46 +52,41 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    for (; i < argc; i++) {
-        FILE* f = fopen(argv[i], "r");
+    FILE* f = fopen(argv[i], "r");
 
-        //printf("%s\n", argv[i]);
+    //printf("%s\n", argv[i]);
 
-        if (!f) {
-            printf("Failed to open file!\n");
-            return 1;
-        }
-
-        
-        String inp = readfile(f);
-
-        if (!inp.content || inp.length == 0) return 0;
-
-        G_IR ir = (G_IR){0};
-        ir.filename = argv[i];
-        ir.source = inp;
-
-        G_Bytecode* x = G_IR_CONVERT(&ir, sizeof(size_t), true);
-
-        if (x) {
-            for (size_t i = 0; i < x->length; i++) {
-                printf("%d ", x->bytecode[i]);
-            }
-            putchar('\n');
-
-            freopen("file.gs", "w", stdout);
-            print_G_Bytecode_into_G_ASM(x);
-
-            FILE* tosave = fopen("file.gbc", "w");
-            if (tosave) {
-                fwrite(x->bytecode, sizeof(G_ubyte), x->length, tosave);
-                fclose(tosave);
-            }
-        }
-
-        destroy_G_Bytecode_ptr(&x);
-        clearstring(&inp);
+    if (!f) {
+        printf("Failed to open file!\n");
+        return 1;
     }
+
+    
+    String inp = readfile(f);
+    fclose(f);
+
+    if (!inp.content || inp.length == 0) return 0;
+
+    G_IR ir = (G_IR){0};
+    ir.filename = argv[i];
+    ir.source = inp;
+
+    G_Bytecode* x = G_IR_CONVERT(&ir, true);
+
+    if (x) {
+        print_G_Bytecode_into_G_ASM(x);
+        freopen("file.gs", "w", stdout);
+        print_G_Bytecode_into_G_ASM(x);
+
+        FILE* tosave = fopen("file.gbc", "w");
+        if (tosave) {
+            fwrite(x->bytecode, sizeof(G_ubyte), x->length, tosave);
+            fclose(tosave);
+        }
+    }
+
+    destroy_G_Bytecode_ptr(&x);
+    clearstring(&inp);
 
     return 0;
 }

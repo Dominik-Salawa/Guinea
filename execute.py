@@ -1,6 +1,6 @@
 import os,sys,shutil,subprocess
 
-flags:str = "-Wall -Werror -Wno-unused-variable -Wno-unused-function -O3 -lm"
+flags:str = "-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -O3 -lm"
 
 def main(argv:list):
     argv.pop(0)
@@ -16,9 +16,9 @@ def main(argv:list):
     main_file_name:str = ""
 
     if os.name == 'posix':
-        main_file_name = "guinea"
+        main_file_name = "./guinea"
     elif os.name == 'nt':
-        main_file_name = "guinea.exe"
+        main_file_name = "./guinea.exe"
     else:
         print("Error: Unknown OS")
         return 1

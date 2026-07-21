@@ -2,7 +2,9 @@
 #define BYTECODE_H
 
 #include "../etc/declarations.h"
+#include "../etc/strings.h"
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef enum GINSTR {
     GINSTR_NULL = 0,

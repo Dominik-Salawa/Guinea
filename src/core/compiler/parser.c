@@ -287,7 +287,7 @@ static G_ubyte get_Precedence_level(ExpressionNodeType type)
 
 static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len) 
 {
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
         if (x == array[i]) return true;
     }
     return false;
@@ -298,7 +298,7 @@ static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len)
 #define pState_ahead   (pState->ahead)
 
 #define is_op(LexTokenType)                                   (is_in(LexTokenType, valid_Operations, sizeof(valid_Operations)/sizeof(LexTokenEnum)))
-#define is_EOF_or_end(LexTokenType)                           (LexTokenType == TK_EOF || LexTokenType == TK_end)
+#define is_EOF_or_end(LexTokenType)                           (LexTokenType == TK_EOF || LexTokenType == TK_CURLY_R)
 #define is_function_end(LexTokenType)                         (token_to_signify_end == TK_COMMA && (LexTokenType == TK_PARENTHESIS_R || LexTokenType == TK_COMMA))
 #define is_valid_Expr_end(LexTokenType, current_tk_type)      (is_EOF_or_end(LexTokenType) || current_tk_type == LexTokenType)
 
@@ -756,7 +756,8 @@ static G_AST eval_if_and_while_statement(ParseState* pState)
 
     G_log("-------------------------------------------------------\n");
     G_log_push_layer();
-    x.ifWhileAST.expression = eval_expression_parser(pState, (x.nodetype == ASTNODE_IF)? TK_then : TK_do, false);
+    //x.ifWhileAST.expression = eval_expression_parser(pState, (x.nodetype == ASTNODE_IF)? TK_then : TK_do, false);
+    x.ifWhileAST.expression = eval_expression_parser(pState, TK_CURLY_L, false);
     G_log_pop_layer();
     G_log("-------------------------------------------------------\n");
     if (!x.ifWhileAST.expression) return x;
@@ -778,7 +779,8 @@ static G_AST eval_if_and_while_statement(ParseState* pState)
 
     G_log("-------------------------------------------------------\n");
     G_log_push_layer();
-    x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, TK_end);
+    //x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, TK_end);
+    x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, TK_CURLY_R);
     G_log_pop_layer();
     G_log("-------------------------------------------------------\n");
 
@@ -808,7 +810,8 @@ static G_AST eval_scope_statement(ParseState* pState)
 
     G_log("-------------------------------------------------------\n");
     G_log_push_layer();
-    x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, TK_end);
+    //x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, TK_end);
+    x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, TK_CURLY_R);
     G_log_pop_layer();
     G_log("-------------------------------------------------------\n");
 
@@ -858,7 +861,8 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
             G_log("doing while\n");
             return eval_if_and_while_statement(pState);
 
-        case TK_do:
+        //case TK_do:
+        case TK_CURLY_L:
             /*
             if (is_global_scope) {
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
@@ -868,7 +872,7 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                 };
             }
                 */
-            G_log("doing scope\n");
+            G_log("doing scope NEW\n");
             return eval_scope_statement(pState);
 
         default: {
@@ -888,7 +892,7 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
 
             G_log("no matches!\n");
 
-            if (ending == TK_end) {
+            if (ending == TK_CURLY_R) {
                 pState->errmsg = "Expected an end to the scope!";
             } else {
                 pState->errmsg = "Expected a valid statement!";

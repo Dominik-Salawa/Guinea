@@ -382,15 +382,13 @@ static G_Bytecode* G_IR_CONVERT_ASTSCOPE(const ASTScope* astscope)
     return bytecode;
 }
 
-G_Bytecode* G_IR_CONVERT(G_IR* ir, G_ubyte SIZE_T_OF_PLATFORM, const bool on_global)
+G_Bytecode* G_IR_CONVERT(G_IR* ir, const bool on_global)
 {
     ///////////////////////////////////////////////////////////
     ///                                                     ///
     /// SIZE_T_OF_PLATFORM GETS TEMP CHANGE PLS CHANGE BACK ///
     ///                                                     ///
     ///////////////////////////////////////////////////////////
-    SIZE_T_OF_PLATFORM = 8;
-
     ParseState pState = init_ParseState(&ir->source);
     G_Bytecode* bytecode = init_G_Bytecode_ptr();
     G_AST astnode = (G_AST){0};
