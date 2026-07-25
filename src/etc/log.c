@@ -1,15 +1,15 @@
-#ifndef LOG_C
-#define LOG_C
+#ifndef GUIN_LOG_C
+#define GUIN_LOG_C
 
 #include <stdarg.h>
 #include <stdio.h>
 #include "log.h"
 
-void G_log(char* string, ...)
+void GUIN_log(char* string, ...)
 {
-    if (!G_log_on) return;
+    if (!GUIN_log_on) return;
 
-    for (size_t i = 0; i < G_log_layer_size; i++) {
+    for (size_t i = 0; i < GUIN_log_layer_size; i++) {
         putchar('\t');
     }
 
@@ -19,9 +19,9 @@ void G_log(char* string, ...)
     va_end(args);
 }
 
-void G_log_raw(char* string, ...)
+void GUIN_log_raw(char* string, ...)
 {
-    if (!G_log_on) return;
+    if (!GUIN_log_on) return;
 
     va_list args;
     va_start(args, string);
@@ -29,9 +29,9 @@ void G_log_raw(char* string, ...)
     va_end(args);
 }
 
-void G_log_write(void* origin, size_t size, size_t number, FILE* fd)
+void GUIN_log_write(void* origin, size_t size, size_t number, FILE* fd)
 {
-    if (!G_log_on) return;
+    if (!GUIN_log_on) return;
     fwrite(origin, size, number, fd);
 }
 

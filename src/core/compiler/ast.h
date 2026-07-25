@@ -3,113 +3,103 @@
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include "../../etc/declarations.h"
+#include "../../../include/declarations.h"
 #include "../../etc/strings.h"
 #include "../bytecode.h"
 
-typedef struct G_AST G_AST;
+typedef struct GUIN_AST GUIN_AST;
 
-typedef enum ASTDatatype {
-    ASTDATATYPE_ERR = 0, // FOR ERRORS
-    ASTDATATYPE_NIL,
-    ASTDATATYPE_INT,
-    ASTDATATYPE_NUMBER,
-    ASTDATATYPE_BOOL,
-    ASTDATATYPE_FUNCTION,
-    ASTDATATYPE_STRING,
-    ASTDATATYPE_CHAR,
-    ASTDATATYPE_DYNAMIC
-} ASTDatatype;
-char* Datatype_to_string(ASTDatatype dt)
-{
-    switch (dt)
-    {
-        case ASTDATATYPE_ERR:          return "err";
-        case ASTDATATYPE_NIL:          return "nil";
-        case ASTDATATYPE_INT:          return "int";
-        case ASTDATATYPE_NUMBER:       return "number";
-        case ASTDATATYPE_BOOL:         return "bool";
-        case ASTDATATYPE_FUNCTION:     return "function";
-        case ASTDATATYPE_STRING:       return "string";
-        case ASTDATATYPE_CHAR:         return "char";
-        case ASTDATATYPE_DYNAMIC:      return "dynamic";
-    }
-    return NULL;
-}
+typedef enum GUIN_ASTDatatype {
+    GUIN_ASTDATATYPE_ERR = 0, // FOR ERRORS
+    GUIN_ASTDATATYPE_VOID,
+    GUIN_ASTDATATYPE_NIL,
+    GUIN_ASTDATATYPE_INT,
+    GUIN_ASTDATATYPE_NUMBER,
+    GUIN_ASTDATATYPE_BOOL,
+    GUIN_ASTDATATYPE_FUNCTION,
+    GUIN_ASTDATATYPE_STRING,
+    GUIN_ASTDATATYPE_CHAR,
+    GUIN_ASTDATATYPE_DYNAMIC
+} GUIN_ASTDatatype;
+char* GUIN_ASTDatatype_to_string(GUIN_ASTDatatype dt);
 
-typedef enum ExpressionNodeType {
-    EXPRNODE_UNINIT = 0,
-    EXPRNODE_PARENTHESIS,
+
+typedef enum GUIN_ExpressionNodeType {
+    GUIN_EXPRNODE_UNINIT = 0,
+    GUIN_EXPRNODE_PARENTHESIS,
 
     // OPERATION
-    EXPRNODE_ADD,
-    EXPRNODE_SUB,
-    EXPRNODE_MUL,
-    EXPRNODE_DIV,
-    EXPRNODE_POW,
-    EXPRNODE_MOD,
-    EXPRNODE_NEG,  // make stuff negative, only on the right side it continues (SHOULD ONLY BE FOR VARIABLES!!! NOT NUMBERS OR INTS)
-    EXPRNODE_CALL, // func call, the right side is where it continues
+    GUIN_EXPRNODE_ADD,
+    GUIN_EXPRNODE_SUB,
+    GUIN_EXPRNODE_MUL,
+    GUIN_EXPRNODE_DIV,
+    GUIN_EXPRNODE_POW,
+    GUIN_EXPRNODE_MOD,
+    GUIN_EXPRNODE_NEG,  // make stuff negative, only on the right side it continues (SHOULD ONLY BE FOR VARIABLES!!! NOT NUMBERS OR INTS)
+    GUIN_EXPRNODE_CALL, // func call, the right side is where it continues
 
     // MORE OPERATIONS
-    EXPRNODE_EQU,
-    EXPRNODE_NOT_EQU,
-    EXPRNODE_GT,
-    EXPRNODE_LT,
-    EXPRNODE_GT_EQU,
-    EXPRNODE_LT_EQU,
+    GUIN_EXPRNODE_EQU,
+    GUIN_EXPRNODE_NOT_EQU,
+    GUIN_EXPRNODE_GT,
+    GUIN_EXPRNODE_LT,
+    GUIN_EXPRNODE_GT_EQU,
+    GUIN_EXPRNODE_LT_EQU,
 
-    EXPRNODE_NOT,
-    EXPRNODE_AND,
-    EXPRNODE_OR,
+    GUIN_EXPRNODE_NOT,
+    GUIN_EXPRNODE_AND,
+    GUIN_EXPRNODE_OR,
 
     // DATATYPES
-    EXPRNODE_INT,
-    EXPRNODE_NUMBER,
-    EXPRNODE_STRING,
-    EXPRNODE_BOOL,
-    EXPRNODE_CHAR,
-    EXPRNODE_FUNCTION_LITERAL,
-    EXPRNODE_GLOBAL_IDENTIFIER,
-    EXPRNODE_LOCAL_IDENTIFIER,
-    EXPRNODE_NIL
-} ExpressionNodeType;
-G_byte get_pathway_count_of_ExpressionNodeAST(ExpressionNodeType type);
-char* ExpressionNodeType_to_string(ExpressionNodeType dt);
+    GUIN_EXPRNODE_INT,
+    GUIN_EXPRNODE_NUMBER,
+    GUIN_EXPRNODE_STRING,
+    GUIN_EXPRNODE_BOOL,
+    GUIN_EXPRNODE_CHAR,
+    GUIN_EXPRNODE_FUNCTION_LITERAL,
+    GUIN_EXPRNODE_GLOBAL_IDENTIFIER,
+    GUIN_EXPRNODE_LOCAL_IDENTIFIER,
+    GUIN_EXPRNODE_NIL
+} GUIN_ExpressionNodeType;
+GUIN_byte GUIN_get_pathway_count_of_ExpressionNodeAST(GUIN_ExpressionNodeType type);
+char* GUIN_ExpressionNodeType_to_string(GUIN_ExpressionNodeType dt);
 
 
-typedef struct ExpressionAST ExpressionAST;
+typedef struct GUIN_ExpressionAST GUIN_ExpressionAST;
 
-typedef struct ExprFuncCallAST {
-    ExpressionAST* expression_args;
+typedef struct GUIN_ExprFuncCallAST {
+    GUIN_ExpressionAST** expression_args;
     size_t expression_args_length;
-} ExprFuncCallAST;
-void destroy_ExprFuncCallAST(ExprFuncCallAST* x);
+    size_t expression_args_size;
+} GUIN_ExprFuncCallAST;
+GUIN_ExprFuncCallAST GUIN_init_ExprFuncCallAST(void);
+bool GUIN_add_ExpressionAST_ptr_to_ExprFuncCallAST(GUIN_ExprFuncCallAST* x, GUIN_ExpressionAST* toadd);
+void GUIN_destroy_ExprFuncCallAST(GUIN_ExprFuncCallAST* x);
 
 
 
-typedef struct FuncArgsAST {
-    ASTDatatype type;
-} FuncArgsAST;
+typedef struct GUIN_FuncArgsAST {
+    GUIN_ASTDatatype type;
+} GUIN_FuncArgsAST;
 
 typedef struct FunctionAST {
-    G_Bytecode bytecode;
-    ASTDatatype return_type;
+    GUIN_Bytecode bytecode;
+    GUIN_ASTDatatype return_type;
 
     struct {
-        FuncArgsAST* args;
+        GUIN_FuncArgsAST* args;
         size_t size;
         size_t length;
     } args;
-} FunctionAST;
-void destroy_FunctionAST(FunctionAST* x);
+} GUIN_FunctionAST;
+void GUIN_destroy_FunctionAST(GUIN_FunctionAST* x);
 
 
 
-typedef struct ExpressionNodeAST {
-    struct ExpressionNodeAST* left;
-    struct ExpressionNodeAST* right;
-    ExpressionNodeType type;
+typedef struct GUIN_ExpressionNodeAST {
+    struct GUIN_ExpressionNodeAST* left;
+    struct GUIN_ExpressionNodeAST* right;
+    GUIN_ExpressionNodeType type;
 
     struct {
         size_t line;
@@ -118,112 +108,111 @@ typedef struct ExpressionNodeAST {
     } info;
 
     union {
-        G_number64 number;
-        G_int64  integer;
-        String string_identifier;
-        G_LOCAL_SLOT_INT slot_num;
+        GUIN_number64 number;
+        GUIN_int64  integer;
+        GUIN_String string_identifier;
+        GUIN_LOCAL_SLOT_INT slot_num;
         char ch;
         bool bl;
-        FunctionAST     function;
-        ExprFuncCallAST exprFuncCallAST;
+        GUIN_FunctionAST     function;
+        GUIN_ExprFuncCallAST exprFuncCallAST;
     } data;
-} ExpressionNodeAST;
-bool assign_ExpressionNodeAST(ExpressionNodeAST** x, ExpressionNodeType type);
-void destroy_ExpressionNodeAST(ExpressionNodeAST* x);
-void destroy_ExpressionNodeAST_ptr(ExpressionNodeAST** x);
+} GUIN_ExpressionNodeAST;
+bool GUIN_assign_ExpressionNodeAST(GUIN_ExpressionNodeAST** x, GUIN_ExpressionNodeType type);
+void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x);
 
-typedef struct ExpressionAST {
+typedef struct GUIN_ExpressionAST {
     bool fail;
-    ExpressionNodeAST* top;
-} ExpressionAST;
-void destroy_ExpressionAST(ExpressionAST* x);
-void destroy_ExpressionAST_ptr(ExpressionAST** x);
+    GUIN_ExpressionNodeAST* top;
+} GUIN_ExpressionAST;
+void GUIN_destroy_ExpressionAST(GUIN_ExpressionAST* x);
+void GUIN_destroy_ExpressionAST_ptr(GUIN_ExpressionAST** x);
 
 
-typedef struct VariableInfoAST {
-    String identifier; // the name attached to this variable
+typedef struct GUIN_VariableInfoAST {
+    GUIN_String identifier; // the name attached to this variable
     //ubyte structure_type; // the structure of this variable
     //bool is_ptr;
     bool allowed_in_global_expression;
-    G_LOCAL_SLOT_INT slot;
+    GUIN_LOCAL_SLOT_INT slot;
 
     union {
-        ASTDatatype datatype; // for single datatype
+        GUIN_ASTDatatype datatype; // for single datatype
         //ubyte* datatypes; // for multiple datatypes
         //size_t data_types_size; // size of multiple datatypes
     };
-} VariableInfoAST;
-void destroy_VariableInfoAST(VariableInfoAST* x);
+} GUIN_VariableInfoAST;
+void GUIN_destroy_VariableInfoAST(GUIN_VariableInfoAST* x);
 
 
-typedef struct VariableDeclarationAST {
-    VariableInfoAST info;
-    ExpressionAST* expression;
-    G_LOCAL_SLOT_INT slot;
-} VariableDeclarationAST;
-void destroy_VariableDeclarationAST(VariableDeclarationAST* x);
-
-
-
+typedef struct GUIN_VariableDeclarationAST {
+    GUIN_VariableInfoAST info;
+    GUIN_ExpressionAST* expression;
+    GUIN_LOCAL_SLOT_INT slot;
+} GUIN_VariableDeclarationAST;
+void GUIN_destroy_VariableDeclarationAST(GUIN_VariableDeclarationAST* x);
 
 
 
-typedef struct ASTScope {
+
+
+
+typedef struct GUIN_ASTScope {
     size_t size;
     size_t length;
-    G_AST* nodes;
-} ASTScope;
+    GUIN_AST* nodes;
+} GUIN_ASTScope;
 
-ASTScope init_ASTScope();
+GUIN_ASTScope GUIN_init_ASTScope(void);
 // does NOT deepcopy pointers in it, just a lightcopy, BEWARE
-bool add_G_AST_to_ASTScope(ASTScope* x, G_AST toadd);
-void destroy_ASTScope(ASTScope* x);
+bool GUIN_add_AST_to_ASTScope(GUIN_ASTScope* x, GUIN_AST toadd);
+void GUIN_destroy_ASTScope(GUIN_ASTScope* x);
 
 
 // USED TO REPRESENT BOTH IF AND WHILE AST
-typedef struct IfWhileAST {
-    ASTScope nodes;
-    ExpressionAST* expression;
-} IfWhileAST;
-IfWhileAST init_IfWhileAST();
-void destroy_IfWhileAST(IfWhileAST* x);
+typedef struct GUIN_IfWhileAST {
+    GUIN_ASTScope nodes;
+    GUIN_ExpressionAST* expression;
+} GUIN_IfWhileAST;
+GUIN_IfWhileAST GUIN_init_IfWhileAST(void);
+void GUIN_destroy_IfWhileAST(GUIN_IfWhileAST* x);
 
 
 typedef struct AssignAST {
-    ExpressionNodeAST* top;
-    ExpressionAST* assignment;
-} AssignAST;
+    GUIN_ExpressionNodeAST* top;
+    GUIN_ExpressionAST* assignment;
+} GUIN_AssignAST;
 
 
-typedef struct ClearLocalSlotAST {
-    G_LOCAL_SLOT_INT slot;
-} ClearLocalSlotAST;
+typedef struct GUIN_ClearLocalSlotAST {
+    GUIN_LOCAL_SLOT_INT slot;
+} GUIN_ClearLocalSlotAST;
 
 
-typedef enum ASTNodeType {
-    ASTNODE_IGNORE = 0,  // FOR THE IR TO SIMPLY IGNORE
-    ASTNODE_END,         // PARSER HAS REACHED THE END of its desired token (like end for a function or EOF for a file)
-    ASTNODE_CLEAR_LOCAL_SLOT,
+typedef enum GUIN_ASTNodeType {
+    GUIN_ASTNODE_IGNORE = 0,  // FOR THE IR TO SIMPLY IGNORE
+    GUIN_ASTNODE_END,         // PARSER HAS REACHED THE END of its desired token (like end for a function or EOF for a file)
+    GUIN_ASTNODE_CLEAR_LOCAL_SLOT,
 
-    ASTNODE_DECLARATION,
-    ASTNODE_ASSIGN,
-    ASTNODE_IF,
-    ASTNODE_WHILE,
-    ASTNODE_SCOPE
-} ASTNodeType;
+    GUIN_ASTNODE_DECLARATION,
+    GUIN_ASTNODE_ASSIGN,
+    GUIN_ASTNODE_IF,
+    GUIN_ASTNODE_WHILE,
+    GUIN_ASTNODE_SCOPE,
+} GUIN_ASTNodeType;
 
-typedef struct G_AST {
-    ASTNodeType nodetype;
+typedef struct GUIN_AST {
+    GUIN_ASTNodeType nodetype;
     bool error;
 
     union {
-        VariableDeclarationAST declarationAST;
-        IfWhileAST             ifWhileAST;
-        ASTScope               scopeAST;
-        AssignAST              assignAST;
-        ClearLocalSlotAST      clearLocalSlotAST;
+        GUIN_VariableDeclarationAST declarationAST;
+        GUIN_IfWhileAST             ifWhileAST;
+        GUIN_ASTScope               scopeAST;
+        GUIN_AssignAST              assignAST;
+        GUIN_ClearLocalSlotAST      clearLocalSlotAST;
     };
-} G_AST;
-void destroy_G_AST(G_AST* g_ast);
+} GUIN_AST;
+void GUIN_destroy_AST(GUIN_AST* g_ast);
 
 #endif

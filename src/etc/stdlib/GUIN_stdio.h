@@ -16,17 +16,18 @@ FORMATTING RULES FOR GUINEA PRINT
 %f:     fmt float
 %o:     fmt octal
 %x:     fmt hex
-%s:     fmt Guinea String struct
+%p:     fmt pointer
+%s:     fmt Guinea String pointer
 %sc:    fmt char*
 
 */
 
 
-size_t G_vprintf(FILE* file, char* string, va_list args);
-size_t G_fprintf(FILE* file, char* string, ...);
-size_t G_printf(char* string, ...);
+size_t GUIN_vprintf(FILE* file, char* string, va_list args);
+size_t GUIN_fprintf(FILE* file, char* string, ...);
+size_t GUIN_printf(char* string, ...);
 
-String input();
-String readfile(FILE* file);
+GUIN_String GUIN_input(void);
+GUIN_String GUIN_readfile(FILE* file);
 
 #endif

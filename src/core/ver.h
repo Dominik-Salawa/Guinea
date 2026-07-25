@@ -1,9 +1,9 @@
-#ifndef GUINEA_VER_H
-#define GUINEA_VER_H
+#ifndef GUIN_VER_H
+#define GUIN_VER_H
 
-#include "../etc/declarations.h"
-#define MAJOR_VER   ((G_ubyte)0)
-#define MINOR_VER   ((G_ubyte)1)
-#define BUGFIX_VER  ((G_ubyte)0)
+#include "../../include/declarations.h"
+#define GUIN_MAJOR_VER   ((GUIN_ubyte)0)
+#define GUIN_MINOR_VER   ((GUIN_ubyte)2)
+#define GUIN_BUGFIX_VER  ((GUIN_ubyte)0)
 
 #endif

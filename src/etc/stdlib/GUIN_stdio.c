@@ -6,11 +6,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include "G_stdio.h"
+#include "GUIN_stdio.h"
 #include "../strings.c"
-#include "../declarations.h"
+#include "../../../include/declarations.h"
 
-ssize_t G_vfmt(char* buffer_addr, size_t buffer_size, char* string, va_list args)
+int GUIN_vfmt(char* buffer_addr, size_t buffer_size, char* string, va_list args)
 {
     bool no_write = buffer_addr && buffer_size;
 
@@ -19,18 +19,18 @@ ssize_t G_vfmt(char* buffer_addr, size_t buffer_size, char* string, va_list args
     return 0;
 }
 
-ssize_t G_fmt(char* buffer_addr, size_t buffer_size, char* string, ...)
+int GUIN_fmt(char* buffer_addr, size_t buffer_size, char* string, ...)
 {
     va_list args;
     va_start(args, string);
-    ssize_t size = G_vfmt(buffer_addr, buffer_size, string, args);
+    int size = GUIN_vfmt(buffer_addr, buffer_size, string, args);
     va_end(args);
     return size;
 }
 
-size_t G_vprintf(FILE* file, char* string, va_list args)
+size_t GUIN_vprintf(FILE* file, char* string, va_list args)
 {
-    ssize_t amount_of_chars_outputted = 0;
+    int amount_of_chars_outputted = 0;
     while (true) {
         char ch = *string;
         if (ch == 0) break;
@@ -49,7 +49,7 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 case 'b': {
                     amount_of_chars_outputted += fputs((va_arg(args, int) != false)? "true" : "false", file);
                     break;
-		}
+		        }
 
                 case 'c': {
                     putc(va_arg(args, int), file);
@@ -62,12 +62,20 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                     if (ch == 'c') {
                         char* ptr = va_arg(args, char*);
                         amount_of_chars_outputted += fprintf(file, "%s", (!ptr)? "(null)" : ptr);
-                    } else {
-                        String str = va_arg(args, String);
+                    } else if (ch == 's') {
+                        GUIN_String str = va_arg(args, GUIN_String);
                         if (!str.content)
-				amount_of_chars_outputted += fputs("(null)", file);
-			else
-				amount_of_chars_outputted += fwrite(str.content, sizeof(typeof(*str.content)), str.length, file);
+                            amount_of_chars_outputted += fputs("(null)", file);
+                        else
+                            amount_of_chars_outputted += fwrite(str.content, sizeof(char), str.length, file);
+                    } else {
+                        GUIN_String* str = va_arg(args, GUIN_String*);
+                        if (!str)
+                            amount_of_chars_outputted += fputs("(null)", file);
+                        else if (!str->content)
+                            amount_of_chars_outputted += fputs("(null)", file);
+                        else
+                            amount_of_chars_outputted += fwrite(str->content, sizeof(char), str->length, file);
                         --string;
                     }
                     break;
@@ -79,49 +87,49 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                 }
 
                 case 'd': {
-                    amount_of_chars_outputted += fprintf(file, "%"PRId32, va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRId32, va_arg(args, GUIN_int32));
                     break;
                 }
 
                 case 'u': {
-                    amount_of_chars_outputted += fprintf(file, "%"PRIu32, va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRIu32, va_arg(args, GUIN_int32));
                     break;
                 }
 
                 case 'x': {
-                    amount_of_chars_outputted += fprintf(file, "%"PRIx32, va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRIx32, va_arg(args, GUIN_int32));
                     break;
                 }
 
                 case 'o': {
-                    amount_of_chars_outputted += fprintf(file, "%"PRIo32, va_arg(args, G_int32));
+                    amount_of_chars_outputted += fprintf(file, "%"PRIo32, va_arg(args, GUIN_int32));
                     break;
                 }
 
                 case 'f': {
-                    amount_of_chars_outputted += fprintf(file, "%f", va_arg(args, G_number64));
+                    amount_of_chars_outputted += fprintf(file, "%f", va_arg(args, GUIN_number64));
                     break;
                 }
 
                 case 'l': {
                     ch = *++string;
                     if (ch == 'd') {
-                        amount_of_chars_outputted += fprintf(file, "%"PRId64, va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRId64, va_arg(args, GUIN_int64));
                     }
                     else if (ch == 'u') {
-                        amount_of_chars_outputted += fprintf(file, "%"PRIu64, va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRIu64, va_arg(args, GUIN_int64));
                     }
                     else if (ch == 'x') {
-                        amount_of_chars_outputted += fprintf(file, "%"PRIx64, va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRIx64, va_arg(args, GUIN_int64));
                     }
                     else if (ch == 'o') {
-                        amount_of_chars_outputted += fprintf(file, "%"PRIo64, va_arg(args, G_int64));
+                        amount_of_chars_outputted += fprintf(file, "%"PRIo64, va_arg(args, GUIN_int64));
                     }
                     else if (ch == 'f') {
-                        amount_of_chars_outputted += fprintf(file, "%lf", va_arg(args, G_number64));
+                        amount_of_chars_outputted += fprintf(file, "%lf", va_arg(args, GUIN_number64));
                     }
                     else {
-                        fprintf(file, "G_vprintf error: invalid format (%%l%c)!\n", ch);
+                        fprintf(file, "GUIN_vprintf error: invalid format (%%l%c)!\n", ch);
                         exit(1);
                     }
                     break;
@@ -142,7 +150,7 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
                         amount_of_chars_outputted += fprintf(file, "%zo", va_arg(args, size_t));
                     }
                     else {
-                        fprintf(file, "G_vprintf error: invalid format (%%z%c)!\n", ch);
+                        fprintf(file, "GUIN_vprintf error: invalid format (%%z%c)!\n", ch);
                         exit(1);
                     }
                     break;
@@ -162,20 +170,20 @@ size_t G_vprintf(FILE* file, char* string, va_list args)
     return amount_of_chars_outputted;
 }
 
-size_t G_fprintf(FILE* file, char* string, ...)
+size_t GUIN_fprintf(FILE* file, char* string, ...)
 {
     va_list args;
     va_start(args, string);
-    size_t amount_of_chars_outputted = G_vprintf(file, string, args);
+    size_t amount_of_chars_outputted = GUIN_vprintf(file, string, args);
     va_end(args);
     return amount_of_chars_outputted;
 }
 
-size_t G_printf(char* string, ...)
+size_t GUIN_printf(char* string, ...)
 {
     va_list args;
     va_start(args, string);
-    size_t amount_of_chars_outputted = G_vprintf(stdout, string, args);
+    size_t amount_of_chars_outputted = GUIN_vprintf(stdout, string, args);
     va_end(args);
     return amount_of_chars_outputted;
 }
@@ -183,10 +191,10 @@ size_t G_printf(char* string, ...)
 
 
 
-String input()
+GUIN_String GUIN_input(void)
 {
-    String str = init_String();
-    if (!str.content) return (String){0};
+    GUIN_String str = GUIN_init_String();
+    if (!str.content) return (GUIN_String){0};
 
     int ch;
     while ((ch = fgetc(stdin)) > EOF && ch != 10) {
@@ -207,10 +215,10 @@ String input()
     return str;
 }
 
-String readfile(FILE* file)
+GUIN_String GUIN_readfile(FILE* file)
 {
-    String str = init_String();
-    if (!str.content) return (String){0};
+    GUIN_String str = GUIN_init_String();
+    if (!str.content) return (GUIN_String){0};
 
     int ch;
     while ((ch = fgetc(file)) > EOF) {

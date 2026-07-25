@@ -1,0 +1,19 @@
+var yay: int = 2;
+var d: int = nil;
+var fetch: func = nil;
+var length: func = nil;
+
+//func main(): int  <--- intented to work later, but for now it doesnt work
+{
+    var x: int = fetch();
+    var i: int = 5 + -d(-8, yay(149, 90 ^(-d(78*(88+60), yay, yay, yay, yay))), nil);
+    var y: int = i + (d / yay)^yay;
+
+    if length(d) == 5 {
+        var gk: int = 999;;;;;
+    }
+    while y()() + 6 > 15 {
+        var s: int = 0;
+    }
+    //return 0;  <--- intented to work later, but for now it doesnt work
+}

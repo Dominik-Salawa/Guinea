@@ -8,22 +8,22 @@
 #include "strings.h"
 #include <string.h>
 
-String init_String()
+GUIN_String GUIN_init_String(void)
 {
-    String s = (String){.content=malloc(32),.length=0,.size=32};
+    GUIN_String s = (GUIN_String){.content=malloc(32),.length=0,.size=32};
     s.content[0] = 0;
     return s;
 }
 
-String* init_String_ptr()
+GUIN_String* GUIN_init_String_ptr(void)
 {
-    String* x = malloc(sizeof(String));
+    GUIN_String* x = malloc(sizeof(GUIN_String));
     if (!x) return NULL;
-    *x = init_String();
+    *x = GUIN_init_String();
     return x;
 }
 
-String* stringaddchar(String* str, char ch)
+GUIN_String* GUIN_stringaddchar(GUIN_String* str, char ch)
 {
     if (str->length >= str->size-1) {
         str->size *= 2;
@@ -37,7 +37,7 @@ String* stringaddchar(String* str, char ch)
     return str;
 }
 
-void clearstring(String* str)
+void GUIN_clearstring(GUIN_String* str)
 {
     if (!str) return;
 
@@ -51,15 +51,15 @@ void clearstring(String* str)
 }
 
 // THIS IS IF YOU WANT TO free() A PTR STRING
-void clearstring_ptr(String** str)
+void GUIN_clearstring_ptr(GUIN_String** str)
 {
     if (!str) return;
-    clearstring(*str);
+    GUIN_clearstring(*str);
     free(*str);
     *str = NULL;
 }
 
-String* stringconcat(String* toconcat, String* toadd)
+GUIN_String* GUIN_stringconcat(GUIN_String* toconcat, GUIN_String* toadd)
 {
     while (toconcat->length + toadd->length + 1 > toconcat->size) {
         toconcat->size = toconcat->length + toadd->length + 1;
@@ -78,39 +78,40 @@ String* stringconcat(String* toconcat, String* toadd)
     return toconcat;
 }
 
-String copystring(String* str)
+GUIN_String GUIN_copystring(GUIN_String* str)
 {
-    String x;
+    GUIN_String x;
 
     x.size    = str->size;
     x.length  = 0;
     x.content = malloc(x.size);
-    if (!x.content) return (String){0};
+    if (!x.content) return (GUIN_String){0};
 
-    stringconcat(&x, str);
+    GUIN_stringconcat(&x, str);
     x.content[x.length] = 0;
     return x;
 }
 
-String* copystring_as_ptr(String* str)
+GUIN_String* GUIN_copystring_as_ptr(GUIN_String* str)
 {
     if (!str) return NULL;
-    String* x = init_String_ptr();
+    GUIN_String* x = GUIN_init_String_ptr();
     if (!x) return NULL;
-    stringconcat(x, str);
+    GUIN_stringconcat(x, str);
     return x;
 }
 
 // FOR RAW char* WITH A DEFINED length
-String* stringconcat_char_w_len(String* toconcat, char* toadd, size_t toadd_len)
+GUIN_String* GUIN_stringconcat_char_w_len(GUIN_String* toconcat, const char* toadd, size_t toadd_len)
 {
     if (toconcat->length + toadd_len + 1 > toconcat->size) {
-        toconcat->size = toconcat->length + toadd_len + 1;
-        char* tmp = realloc(toconcat->content, toconcat->size);
+        size_t newsize = toconcat->length + toadd_len + 1;
+        char* tmp = realloc(toconcat->content, newsize);
 
         if (!tmp)
             return NULL;
 
+        toconcat->size = newsize;
         toconcat->content = tmp;
     }
 
@@ -122,12 +123,12 @@ String* stringconcat_char_w_len(String* toconcat, char* toadd, size_t toadd_len)
 }
 
 
-String* stringconcat_charptr(String* toconcat, char* toadd)
+GUIN_String* GUIN_stringconcat_charptr(GUIN_String* toconcat, const char* toadd)
 {
-    return stringconcat_char_w_len(toconcat, toadd, strlen(toadd));
+    return GUIN_stringconcat_char_w_len(toconcat, toadd, strlen(toadd));
 }
 
-bool stringcompare(String* string1, String* string2)
+bool GUIN_stringcompare(GUIN_String* string1, GUIN_String* string2)
 {
     if (string1->length != string2->length) return false;
 

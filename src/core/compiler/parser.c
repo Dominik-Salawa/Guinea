@@ -10,36 +10,36 @@
 #include "parser.h"
 #include "ast.h"
 
-ParseScopeNode* init_ParseScopeNode_ptr(ScopeType scopetype)
+GUIN_ParseScopeNode* GUIN_init_ParseScopeNode_ptr(GUIN_ScopeType scopetype)
 {
-    ParseScopeNode* x = malloc(sizeof(ParseScopeNode));
+    GUIN_ParseScopeNode* x = malloc(sizeof(GUIN_ParseScopeNode));
     if (!x) return NULL;
 
-    ParseScopeNode y = {0};
+    GUIN_ParseScopeNode y = {0};
     y.scopetype = scopetype;
     y.var_info.size = 4;
-    y.var_info.arr = malloc(sizeof(VariableInfoAST) * y.var_info.size);
+    y.var_info.arr = malloc(sizeof(GUIN_VariableInfoAST) * y.var_info.size);
     if (!y.var_info.arr) {
         free(x);
         return NULL;
     }
 
     for (size_t i = 0; i < y.var_info.size; i++)
-        y.var_info.arr[i] = (VariableInfoAST){0};
+        y.var_info.arr[i] = (GUIN_VariableInfoAST){0};
 
     *x = y;
     return x;
 }
 
-void destroy_ParseScopeNode(ParseScopeNode** pScope)
+void GUIN_destroy_ParseScopeNode(GUIN_ParseScopeNode** pScope)
 {
     if (!pScope)    return;
     if (!(*pScope)) return;
 
-    ParseScopeNode* pScope_ref = *pScope;
+    GUIN_ParseScopeNode* pScope_ref = *pScope;
 
     for (size_t i = 0; i < pScope_ref->var_info.length; ++i) {
-        destroy_VariableInfoAST(&pScope_ref->var_info.arr[i]);
+        GUIN_destroy_VariableInfoAST(&pScope_ref->var_info.arr[i]);
     }
 
     free(pScope_ref->var_info.arr);
@@ -48,9 +48,9 @@ void destroy_ParseScopeNode(ParseScopeNode** pScope)
     *pScope = NULL;
 }
 
-bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype)
+bool GUIN_add_ParseScopeNode(GUIN_ParseState* pState, GUIN_ScopeType scopetype)
 {
-    ParseScopeNode* x = init_ParseScopeNode_ptr(scopetype);
+    GUIN_ParseScopeNode* x = GUIN_init_ParseScopeNode_ptr(scopetype);
     if (!x) return false;
 
     x->prev = pState->scope_top;
@@ -59,7 +59,7 @@ bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype)
     return true;
 }
 
-bool pop_ParseScopeNode(ParseState* pState, ASTScope* x)
+bool GUIN_pop_ParseScopeNode(GUIN_ParseState* pState, GUIN_ASTScope* x)
 {
     if (!pState) return false;
 
@@ -69,39 +69,39 @@ bool pop_ParseScopeNode(ParseState* pState, ASTScope* x)
     if (!pState->scope_top->prev) return false;
 
     // delete
-    ParseScopeNode* current = pState->scope_top;
+    GUIN_ParseScopeNode* current = pState->scope_top;
     pState->scope_top = current->prev;
 
     for (size_t i = 0; i < current->var_info.length; ++i) {
-        G_log("slot:%d\n", current->var_info.arr[i].slot);
-        G_AST toadd = (G_AST){
-            .nodetype=ASTNODE_CLEAR_LOCAL_SLOT,
+        GUIN_log("slot:%d\n", current->var_info.arr[i].slot);
+        GUIN_AST toadd = (GUIN_AST){
+            .nodetype=GUIN_ASTNODE_CLEAR_LOCAL_SLOT,
             .clearLocalSlotAST.slot = current->var_info.arr[i].slot-1
         };
-        add_G_AST_to_ASTScope(x, toadd);
-        G_log("added toadd\n");
+        GUIN_add_AST_to_ASTScope(x, toadd);
+        GUIN_log("added toadd\n");
     }
 
-    destroy_ParseScopeNode(&current);
+    GUIN_destroy_ParseScopeNode(&current);
     return true;
 }
 
 // deep copies the string
-bool add_ParseScopeNode_variable(ParseState* pState, String* identifier, ASTDatatype datatype)
+bool GUIN_add_ParseScopeNode_variable(GUIN_ParseState* pState, GUIN_String* identifier, GUIN_ASTDatatype datatype)
 {
     if (!pState || !identifier) return false;
 
     if (!pState->scope_top) {
-        G_log("there is no scope top!\n");
+        GUIN_log("there is no scope top!\n");
         return false;
     }
 
-    ParseScopeNode* top = pState->scope_top;
+    GUIN_ParseScopeNode* top = pState->scope_top;
 
     if (top->var_info.length >= top->var_info.size) {
         size_t original_size = top->var_info.size;
         while (top->var_info.length >= top->var_info.size) top->var_info.size *= 2;
-        VariableInfoAST* tmp = realloc(top->var_info.arr, top->var_info.size * sizeof(VariableInfoAST));
+        GUIN_VariableInfoAST* tmp = realloc(top->var_info.arr, top->var_info.size * sizeof(GUIN_VariableInfoAST));
         if (!tmp) {
             top->var_info.size = original_size;
             return false;
@@ -109,9 +109,7 @@ bool add_ParseScopeNode_variable(ParseState* pState, String* identifier, ASTData
         top->var_info.arr = tmp;
     }
 
-    // we can assume theres at least one Global name, due to main() function being needed in order to run a file
     int slot_number;
-
     if (top->prev) {
         // a local scope value only here
         while (true) {
@@ -134,9 +132,9 @@ bool add_ParseScopeNode_variable(ParseState* pState, String* identifier, ASTData
         slot_number = 0;
     }
 
-    VariableInfoAST x = (VariableInfoAST){
+    GUIN_VariableInfoAST x = (GUIN_VariableInfoAST){
         .datatype = datatype,
-        .identifier = copystring(identifier),
+        .identifier = GUIN_copystring(identifier),
         .slot = slot_number
     };
     top->var_info.arr[top->var_info.length++] = x;
@@ -144,14 +142,14 @@ bool add_ParseScopeNode_variable(ParseState* pState, String* identifier, ASTData
 }
 
 // DO NOT FREE
-VariableInfoAST* get_var_info(ParseState* pState, char* name)
+GUIN_VariableInfoAST* GUIN_get_var_info(GUIN_ParseState* pState, char* name)
 {
     if (!pState || !name) return NULL;
-    ParseScopeNode* current = pState->scope_top;
+    GUIN_ParseScopeNode* current = pState->scope_top;
     while (current) {
-        G_log("checking %zu %zu\n", current->var_info.length, current->var_info.size);
+        GUIN_log("checking %zu %zu\n", current->var_info.length, current->var_info.size);
         for (size_t i = 0; i < current->var_info.length; ++i) {
-            G_log("comparing %s... %d\n", current->var_info.arr[i].identifier.content);
+            GUIN_log("comparing %s... %d\n", current->var_info.arr[i].identifier.content);
             if (strcmp(current->var_info.arr[i].identifier.content, name) == 0) {
                 return &current->var_info.arr[i];
             }
@@ -163,129 +161,129 @@ VariableInfoAST* get_var_info(ParseState* pState, char* name)
 
 
 
-ParseState init_ParseState(String* file_content)
+GUIN_ParseState GUIN_init_ParseState(GUIN_String* file_content)
 {
-    ParseState x = {0};
-    x.lState = init_LexState(file_content);
-    x.scope_top = init_ParseScopeNode_ptr(SCOPE_GLOBAL);
+    GUIN_ParseState x = {0};
+    x.lState = GUIN_init_LexState(file_content);
+    x.scope_top = GUIN_init_ParseScopeNode_ptr(GUIN_SCOPE_GLOBAL);
     x.scope_base_aka_global = &x.scope_top;
     return x;
 }
 
-void destroy_ParseState(ParseState* pState)
+void GUIN_destroy_ParseState(GUIN_ParseState* pState)
 {
-    ParseScopeNode* top = pState->scope_top;
+    GUIN_ParseScopeNode* top = pState->scope_top;
 
     while (top) {
-        ParseScopeNode* next = top->prev;
-        destroy_ParseScopeNode(&top);
+        GUIN_ParseScopeNode* next = top->prev;
+        GUIN_destroy_ParseScopeNode(&top);
         top = next;
     }
 
-    destroy_LexToken(&pState->prev);
-    destroy_LexToken(&pState->current);
-    destroy_LexToken(&pState->ahead);
+    GUIN_destroy_LexToken(&pState->prev);
+    GUIN_destroy_LexToken(&pState->current);
+    GUIN_destroy_LexToken(&pState->ahead);
 }
 
-void advance_parser(ParseState* pState)
+void GUIN_advance_parser(GUIN_ParseState* pState)
 {
     if (pState->lState.index != 0) {
-        destroy_LexToken(&pState->prev);
+        GUIN_destroy_LexToken(&pState->prev);
         pState->prev    = pState->current;
         pState->current = pState->ahead;
-        pState->ahead   = advance_lexer(&pState->lState);
-    } else if (pState->current.type != TK_EOF) {
-        pState->current = advance_lexer(&pState->lState);
-        pState->ahead   = advance_lexer(&pState->lState);
+        pState->ahead   = GUIN_advance_lexer(&pState->lState);
+    } else if (pState->current.type != GUIN_TK_EOF) {
+        pState->current = GUIN_advance_lexer(&pState->lState);
+        pState->ahead   = GUIN_advance_lexer(&pState->lState);
     }
 }
 
-static LexTokenEnum valid_Operations[] = {
-    TK_ADD,
-    TK_SUB,
-    TK_MUL,
-    TK_DIV,
-    TK_MOD,
-    TK_POW,
+static GUIN_LexTokenEnum valid_Operations[] = {
+    GUIN_TK_ADD,
+    GUIN_TK_SUB,
+    GUIN_TK_MUL,
+    GUIN_TK_DIV,
+    GUIN_TK_MOD,
+    GUIN_TK_POW,
 
-    TK_and,
-    TK_or,
+    GUIN_TK_and,
+    GUIN_TK_or,
 
-    TK_EQU,
-    TK_NOT_EQU,
-    TK_GT,
-    TK_LT,
-    TK_GT_EQU,
-    TK_LT_EQU,
+    GUIN_TK_EQU,
+    GUIN_TK_NOT_EQU,
+    GUIN_TK_GT,
+    GUIN_TK_LT,
+    GUIN_TK_GT_EQU,
+    GUIN_TK_LT_EQU,
 };
 
-struct ExpressionPrecedenceStruct {
-    G_ubyte rank;
-    ExpressionNodeType type;
+struct GUIN_ExpressionPrecedenceStruct {
+    GUIN_ubyte rank;
+    GUIN_ExpressionNodeType type;
 };
 
 // 0 == (literal value like int or string)
-static struct ExpressionPrecedenceStruct exprNodeOps[] = {
-    {.rank=1,.type=EXPRNODE_AND     },
+static struct GUIN_ExpressionPrecedenceStruct exprNodeOps[] = {
+    {.rank=1,.type=GUIN_EXPRNODE_AND     },
 
-    {.rank=2,.type=EXPRNODE_OR      },
+    {.rank=2,.type=GUIN_EXPRNODE_OR      },
     
-    {.rank=3,.type=EXPRNODE_EQU     },
-    {.rank=3,.type=EXPRNODE_NOT_EQU },
-    {.rank=3,.type=EXPRNODE_GT      },
-    {.rank=3,.type=EXPRNODE_LT      },
-    {.rank=3,.type=EXPRNODE_GT_EQU  },
-    {.rank=3,.type=EXPRNODE_LT_EQU  },
+    {.rank=3,.type=GUIN_EXPRNODE_EQU     },
+    {.rank=3,.type=GUIN_EXPRNODE_NOT_EQU },
+    {.rank=3,.type=GUIN_EXPRNODE_GT      },
+    {.rank=3,.type=GUIN_EXPRNODE_LT      },
+    {.rank=3,.type=GUIN_EXPRNODE_GT_EQU  },
+    {.rank=3,.type=GUIN_EXPRNODE_LT_EQU  },
 
-    {.rank=4,.type=EXPRNODE_ADD     },
-    {.rank=4,.type=EXPRNODE_SUB     },
+    {.rank=4,.type=GUIN_EXPRNODE_ADD     },
+    {.rank=4,.type=GUIN_EXPRNODE_SUB     },
 
-    {.rank=5,.type=EXPRNODE_MUL     },
-    {.rank=5,.type=EXPRNODE_DIV     },
-    {.rank=5,.type=EXPRNODE_MOD     },
+    {.rank=5,.type=GUIN_EXPRNODE_MUL     },
+    {.rank=5,.type=GUIN_EXPRNODE_DIV     },
+    {.rank=5,.type=GUIN_EXPRNODE_MOD     },
 
-    {.rank=6,.type=EXPRNODE_POW     },
+    {.rank=6,.type=GUIN_EXPRNODE_POW     },
 };
 
-ExpressionNodeType LexTokenEnum_to_ValidExpressionNodeType_Operation(LexTokenEnum x)
+GUIN_ExpressionNodeType GUIN_LexTokenEnum_to_ValidExpressionNodeType_Operation(GUIN_LexTokenEnum x)
 {
     switch (x)
     {
-        case TK_Number_val:     return EXPRNODE_NUMBER;
-        case TK_Int_val:        return EXPRNODE_INT;
-        case TK_String_val:     return EXPRNODE_STRING;
-        case TK_Char_val:       return EXPRNODE_CHAR;
-        case TK_Bool_val:       return EXPRNODE_BOOL;
+        case GUIN_TK_Number_val:     return GUIN_EXPRNODE_NUMBER;
+        case GUIN_TK_Int_val:        return GUIN_EXPRNODE_INT;
+        case GUIN_TK_String_val:     return GUIN_EXPRNODE_STRING;
+        case GUIN_TK_Char_val:       return GUIN_EXPRNODE_CHAR;
+        case GUIN_TK_Bool_val:       return GUIN_EXPRNODE_BOOL;
 
-        case TK_ADD:            return EXPRNODE_ADD;
-        case TK_SUB:            return EXPRNODE_SUB;
-        case TK_MUL:            return EXPRNODE_MUL;
-        case TK_DIV:            return EXPRNODE_DIV;
-        case TK_MOD:            return EXPRNODE_MOD;
-        case TK_POW:            return EXPRNODE_POW;
+        case GUIN_TK_ADD:            return GUIN_EXPRNODE_ADD;
+        case GUIN_TK_SUB:            return GUIN_EXPRNODE_SUB;
+        case GUIN_TK_MUL:            return GUIN_EXPRNODE_MUL;
+        case GUIN_TK_DIV:            return GUIN_EXPRNODE_DIV;
+        case GUIN_TK_MOD:            return GUIN_EXPRNODE_MOD;
+        case GUIN_TK_POW:            return GUIN_EXPRNODE_POW;
 
-        case TK_and:            return EXPRNODE_AND;
-        case TK_or:             return EXPRNODE_OR;
+        case GUIN_TK_and:            return GUIN_EXPRNODE_AND;
+        case GUIN_TK_or:             return GUIN_EXPRNODE_OR;
 
-        case TK_GT:             return EXPRNODE_GT;
-        case TK_LT:             return EXPRNODE_LT;
-        case TK_GT_EQU:         return EXPRNODE_GT_EQU;
-        case TK_LT_EQU:         return EXPRNODE_LT_EQU;
-        case TK_EQU:            return EXPRNODE_EQU;
-        case TK_NOT_EQU:        return EXPRNODE_NOT_EQU;
-        default:                return EXPRNODE_UNINIT;
+        case GUIN_TK_GT:             return GUIN_EXPRNODE_GT;
+        case GUIN_TK_LT:             return GUIN_EXPRNODE_LT;
+        case GUIN_TK_GT_EQU:         return GUIN_EXPRNODE_GT_EQU;
+        case GUIN_TK_LT_EQU:         return GUIN_EXPRNODE_LT_EQU;
+        case GUIN_TK_EQU:            return GUIN_EXPRNODE_EQU;
+        case GUIN_TK_NOT_EQU:        return GUIN_EXPRNODE_NOT_EQU;
+        default:                     return GUIN_EXPRNODE_UNINIT;
     }
 }
 
 // 0 == (literal value like int or string)
-static G_ubyte get_Precedence_level(ExpressionNodeType type)
+GUIN_ubyte GUIN_get_Precedence_level(GUIN_ExpressionNodeType type)
 {
-    for (size_t i = 0; i < sizeof(exprNodeOps)/sizeof(struct ExpressionPrecedenceStruct); i++)
+    for (size_t i = 0; i < sizeof(exprNodeOps)/sizeof(struct GUIN_ExpressionPrecedenceStruct); i++)
         if (exprNodeOps[i].type == type) return exprNodeOps[i].rank;
     return 0;
 }
 
-static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len) 
+static bool GUIN_is_in(GUIN_LexTokenEnum x, GUIN_LexTokenEnum* array, size_t len) 
 {
     for (size_t i = 0; i < len; i++) {
         if (x == array[i]) return true;
@@ -293,28 +291,28 @@ static bool is_in(LexTokenEnum x, LexTokenEnum* array, size_t len)
     return false;
 }
 
-#define pState_prev    (pState->prev)
-#define pState_current (pState->current)
-#define pState_ahead   (pState->ahead)
+#define GUIN_pState_prev    (pState->prev)
+#define GUIN_pState_current (pState->current)
+#define GUIN_pState_ahead   (pState->ahead)
 
-#define is_op(LexTokenType)                                   (is_in(LexTokenType, valid_Operations, sizeof(valid_Operations)/sizeof(LexTokenEnum)))
-#define is_EOF_or_end(LexTokenType)                           (LexTokenType == TK_EOF || LexTokenType == TK_CURLY_R)
-#define is_function_end(LexTokenType)                         (token_to_signify_end == TK_COMMA && (LexTokenType == TK_PARENTHESIS_R || LexTokenType == TK_COMMA))
-#define is_valid_Expr_end(LexTokenType, current_tk_type)      (is_EOF_or_end(LexTokenType) || current_tk_type == LexTokenType)
+#define GUIN_is_op(LexTokenType)                                   (GUIN_is_in(LexTokenType, valid_Operations, sizeof(valid_Operations)/sizeof(GUIN_LexTokenEnum)))
+#define GUIN_is_EOF_or_end(LexTokenType)                           (LexTokenType == GUIN_TK_EOF || LexTokenType == GUIN_TK_CURLY_R)
+#define GUIN_is_function_end(LexTokenType, current_tk_type)        (LexTokenType == GUIN_TK_COMMA && (current_tk_type == GUIN_TK_PARENTHESIS_R || LexTokenType == GUIN_TK_COMMA))
+#define GUIN_is_valid_Expr_end(LexTokenType, current_tk_type)      (GUIN_is_EOF_or_end(LexTokenType) || current_tk_type == LexTokenType)
 
-static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope);
+static GUIN_ExpressionAST* GUIN_eval_expression_parser(GUIN_ParseState* pState, const GUIN_LexTokenEnum token_to_signify_end, const bool parsing_func_call_arg, const bool is_global_scope);
 
 
 // IF IT RETURNS ExpressionAST->error, EXPECT THAT MEANS ExpressionAST->top HAS BEEN DEALT WITH AND IS FREED
-static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
+static GUIN_ExpressionAST* GUIN_get_value_expression_parser(GUIN_ParseState* pState, const GUIN_LexTokenEnum token_to_signify_end, const bool parsing_func_call_arg, const bool is_global_scope)
 {
     if (!pState || !token_to_signify_end) return NULL;
 
-    ExpressionAST* exprAST = init_ExpressionAST_ptr();
+    GUIN_ExpressionAST* exprAST = GUIN_init_ExpressionAST_ptr();
     if (!exprAST) return NULL;
     exprAST->top = NULL;
     
-    ExpressionNodeAST** current = &exprAST->top; // current exprNode we are on
+    GUIN_ExpressionNodeAST** current = &exprAST->top; // current exprNode we are on
 
     // PLAN:
     // WHEN REACHES VALID POINT IT ASSIGNS
@@ -325,118 +323,217 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
     bool dont_break  = true;
     bool on_negative = false; 
     while (true) {
-        switch (pState_current.type)
+        switch (GUIN_pState_current.type)
         {
-            case TK_nil:
-                assign_ExpressionNodeAST(current, EXPRNODE_NIL);
+            case GUIN_TK_nil:
+                GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_NIL);
                 dont_break = false;
                 break;
 
-            case TK_Int_val:
-                assign_ExpressionNodeAST(current, EXPRNODE_INT);
-                (*current)->data.integer = pState_current.integer;
+            case GUIN_TK_Int_val:
+                GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_INT);
+                (*current)->data.integer = GUIN_pState_current.integer;
                 dont_break = false;
                 break;
 
-            case TK_Bool_val:
-                assign_ExpressionNodeAST(current, EXPRNODE_BOOL);
-                (*current)->data.bl = pState_current.bl;
+            case GUIN_TK_Bool_val:
+                GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_BOOL);
+                (*current)->data.bl = GUIN_pState_current.bl;
                 dont_break = false;
                 break;
             
-            case TK_SUB: // AUTO ASSUME ITS AT THE START OF A CHAIN OF NEG
+            case GUIN_TK_SUB: // AUTO ASSUME ITS AT THE START OF A CHAIN OF NEG
                 on_negative = !on_negative;
                 break;
 
-            case TK_Number_val:
-                assign_ExpressionNodeAST(current, EXPRNODE_NUMBER);
-                (*current)->data.number = pState_current.number;
+            case GUIN_TK_Number_val:
+                GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_NUMBER);
+                (*current)->data.number = GUIN_pState_current.number;
                 dont_break = false;
                 break;
 
-            case TK_Identifier: {
-                VariableInfoAST* info = get_var_info(pState, pState_current.string.content);
+            case GUIN_TK_Identifier: {
+                GUIN_VariableInfoAST* info = GUIN_get_var_info(pState, GUIN_pState_current.string.content);
 
                 if (!info) {
-                    pState->errmsg = "Variable name does not exist!";
+                    pState->errmsg = "Identifier does not exist!";
                     exprAST->fail = true;
                     break;
                 }
 
                 if (is_global_scope && !info->allowed_in_global_expression) {
-                    pState->errmsg = "Variable cannot be used in a global expression!";
+                    pState->errmsg = "Identifier cannot be used in a global expression!";
                     exprAST->fail = true;
                     break;
                 }
 
                 if (info->slot == 0) {
-                    assign_ExpressionNodeAST(current, EXPRNODE_GLOBAL_IDENTIFIER);
-                    (*current)->data.string_identifier = copystring(&pState_current.string);
+                    GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_GLOBAL_IDENTIFIER);
+                    (*current)->data.string_identifier = GUIN_copystring(&GUIN_pState_current.string);
                 } else {
-                    assign_ExpressionNodeAST(current, EXPRNODE_LOCAL_IDENTIFIER);
+                    GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_LOCAL_IDENTIFIER);
                     (*current)->data.slot_num = info->slot-1;
                 }
                 dont_break = false;
                 break;
             }
 
-            case TK_String_val:
-                assign_ExpressionNodeAST(current, EXPRNODE_STRING);
-                (*current)->data.string_identifier = copystring(&pState_current.string);
+            case GUIN_TK_String_val:
+                GUIN_assign_ExpressionNodeAST(current, GUIN_EXPRNODE_STRING);
+                (*current)->data.string_identifier = GUIN_copystring(&GUIN_pState_current.string);
                 dont_break = false;
                 break;
 
-            case TK_PARENTHESIS_L:
-                destroy_ExpressionAST_ptr(&exprAST);
-                G_log_push_layer();
-                exprAST = eval_expression_parser(pState, TK_PARENTHESIS_R, is_global_scope);
-                G_log_pop_layer();
+            case GUIN_TK_PARENTHESIS_L:
+                GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                GUIN_log_push_layer();
+                exprAST = GUIN_eval_expression_parser(pState, GUIN_TK_PARENTHESIS_R, false, is_global_scope);
+                GUIN_log_pop_layer();
                 
                 if (!exprAST)      return NULL;    // failed alloc
                 if (exprAST->fail) return exprAST; // pass the state over
 
-                ExpressionNodeAST* tmp = exprAST->top;
+                GUIN_ExpressionNodeAST* tmp = exprAST->top;
                 exprAST->top = NULL;
 
-                assign_ExpressionNodeAST(&exprAST->top, EXPRNODE_PARENTHESIS);
+                GUIN_assign_ExpressionNodeAST(&exprAST->top, GUIN_EXPRNODE_PARENTHESIS);
                 exprAST->top->right = tmp;
 
                 dont_break = false;
-                advance_parser(pState);
+                GUIN_advance_parser(pState);
                 break;
 
-            case TK_UNKNOWN:
-                destroy_ExpressionNodeAST_ptr(&exprAST->top);
+            case GUIN_TK_UNKNOWN:
+                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
                 exprAST->fail = true;
                 pState->errmsg = pState->lState.errmsg;
                 dont_break = false;
                 break;
 
-            case TK_ERR:
-                destroy_ExpressionNodeAST_ptr(&exprAST->top);
+            case GUIN_TK_ERR:
+                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
                 exprAST->fail = true;
                 pState->errmsg = pState->lState.errmsg;
                 dont_break = false;
                 break;
 
             default:
-                G_log("got no value (%s)\n", LexTokenEnum_to_string(pState_current.type));
+                GUIN_log("got no value (%s)\n", GUIN_LexTokenEnum_to_string(GUIN_pState_current.type));
+                if (!(GUIN_is_EOF_or_end(token_to_signify_end) || (parsing_func_call_arg && GUIN_is_function_end(token_to_signify_end, GUIN_pState_current.type)))) {
+                    if (GUIN_is_op(GUIN_pState_current.type))
+                        pState->errmsg = "This arithmetic cannot be located behind the value!";
+                    else
+                        pState->errmsg = "Invalid start to an expression!";
+                }
                 dont_break = false;
                 break;
         }
         if (!dont_break || exprAST->fail) break;
-        advance_parser(pState);
+        GUIN_advance_parser(pState);
     }
 
-    if (on_negative && !exprAST->fail) {
-        ExpressionNodeAST* tmp = NULL;
-        assign_ExpressionNodeAST(&tmp, EXPRNODE_NEG);
-        tmp->right = exprAST->top;
-        exprAST->top = tmp;
-    }
+    if (!exprAST->fail) {
+        do {
+            // func call
+            if (GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_L) {
+                GUIN_log("getting a function call!\n");
 
-    if (exprAST->fail)
-        destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                GUIN_ExprFuncCallAST func_call = GUIN_init_ExprFuncCallAST();
+                if (!func_call.expression_args) {
+                    GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                    return NULL; // failed alloc
+                }
+
+                GUIN_advance_parser(pState);
+                GUIN_int16 func_args = 0;
+                if (GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_R && GUIN_pState_current.type == GUIN_TK_PARENTHESIS_L) {
+                    GUIN_advance_parser(pState);
+                } else {
+                    while (GUIN_pState_current.type != GUIN_TK_PARENTHESIS_R) {
+                        ++func_args;
+                        GUIN_ExpressionAST* eAST = GUIN_eval_expression_parser(pState, GUIN_TK_COMMA, true, is_global_scope);
+
+                        if (func_args > 255) {
+                            pState->errmsg = "Overflowed the maximum function arguements allowed (255), stop making poor design choices!";
+                            GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                            GUIN_destroy_ExprFuncCallAST(&func_call);
+                            exprAST->fail = true;
+                            return exprAST;
+                        }
+                        if (!eAST) {
+                            GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                            GUIN_destroy_ExprFuncCallAST(&func_call);
+                            return NULL;
+                        }
+                        if (eAST->fail) {
+                            if (!eAST->top && GUIN_pState_current.type == GUIN_TK_COMMA)
+                                pState->errmsg = "Expected a valid arguement but it was left empty!";
+                            GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                            GUIN_destroy_ExprFuncCallAST(&func_call);
+                            exprAST->fail = true;
+                            return exprAST;
+                        }
+                        if (!eAST->top) {
+                            if (GUIN_pState_ahead.type != GUIN_TK_COMMA && GUIN_pState_ahead.type != GUIN_TK_PARENTHESIS_R) {
+                                pState->errmsg = "Expected a valid arguement but it was left empty!";
+                                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                                GUIN_destroy_ExprFuncCallAST(&func_call);
+                                exprAST->fail = true;
+                                return exprAST;
+                            }
+                        }
+                        else if (!GUIN_add_ExpressionAST_ptr_to_ExprFuncCallAST(&func_call, eAST)) {
+                            GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                            GUIN_destroy_ExprFuncCallAST(&func_call);
+                            return NULL; // failed alloc
+                        }
+
+                        GUIN_advance_parser(pState);
+
+                        if (GUIN_pState_current.type == GUIN_TK_COMMA) {
+                            if (GUIN_pState_ahead.type == GUIN_TK_COMMA || GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_R) {
+                                GUIN_advance_parser(pState); // for errmsg
+                                pState->errmsg = "Expected a valid arguement but it was left empty!";
+                                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                                GUIN_destroy_ExprFuncCallAST(&func_call);
+                                exprAST->fail = true;
+                                return exprAST;
+                            }
+                        }
+                    }
+                }
+
+                GUIN_ExpressionNodeAST* tmp = NULL;
+                GUIN_assign_ExpressionNodeAST(&tmp, GUIN_EXPRNODE_CALL);
+                if (!tmp) {
+                    GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                    return NULL;
+                }
+
+                tmp->right = exprAST->top;
+                tmp->data.exprFuncCallAST = func_call;
+                exprAST->top = tmp;
+            }
+            else { 
+                break;
+            }
+        } while (true);
+        
+
+        if (on_negative) {
+            GUIN_ExpressionNodeAST* tmp = NULL;
+            GUIN_assign_ExpressionNodeAST(&tmp, GUIN_EXPRNODE_NEG);
+            if (!tmp) {
+                GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                return NULL;
+            }
+            tmp->right = exprAST->top;
+            exprAST->top = tmp;
+        }
+    }
+    else {
+        GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+    }
 
     return exprAST;
 }
@@ -445,121 +542,125 @@ static ExpressionAST* get_value_expression_parser(ParseState* pState, LexTokenEn
 // IF YOU ONLY RECIEVE NULL, THAT MEANS IT FAILED TO ALLOC MEM
 // ELSE TO KNOW IF ITD FAIL, YOU'D CHECK ...->failed
 // EXPECT IF IT ->failed THAT ->top IS COMPLETELY INVALID
-static ExpressionAST* eval_expression_parser_section(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
+static GUIN_ExpressionAST* GUIN_eval_expression_parser_section(GUIN_ParseState* pState, const GUIN_LexTokenEnum token_to_signify_end, const bool parsing_func_call_arg, const bool is_global_scope)
 {
-    ExpressionAST* exprAST = init_ExpressionAST_ptr();
+    GUIN_ExpressionAST* exprAST = GUIN_init_ExpressionAST_ptr();
     if (!exprAST) return NULL;
 
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
 
-    G_log_push_layer();
-    ExpressionAST* value = get_value_expression_parser(pState, token_to_signify_end, is_global_scope);
-    G_log_pop_layer();
+    GUIN_log_push_layer();
+    GUIN_ExpressionAST* value = GUIN_get_value_expression_parser(pState, token_to_signify_end, parsing_func_call_arg, is_global_scope);
+    GUIN_log_pop_layer();
     { // checking the status of the current value, whether it exists or not or whatever
         if (!value) {
-            G_log("invalid! (value = NULL)\n");
+            GUIN_log("invalid! (value = NULL)\n");
             exprAST->fail = true;
             return exprAST; // this one is required to return asap
 
         } else if (value->fail) {
-            G_log("invalid! (it failed...)\n");
+            GUIN_log("invalid! (it failed...)\n");
             //pState->errmsg = "Expression was not finished!";
             exprAST->fail = true;
-            destroy_ExpressionAST_ptr(&value);
+            GUIN_destroy_ExpressionAST_ptr(&value);
             return exprAST;
 
         } else if (!value->top) {
-            G_log("value doesnt exist!\n");
-            destroy_ExpressionAST_ptr(&value);
+            GUIN_log("value doesnt exist!\n");
+            GUIN_destroy_ExpressionAST_ptr(&value);
             exprAST->fail = true;
             return exprAST;
         }
     }
     
     { // Checking if its not just negative symbols like this: <val> + -- (nothing after) 
-        ExpressionNodeAST* check = value->top;
+        GUIN_ExpressionNodeAST* check = value->top;
 
         while (check) {
-            if (check->type == EXPRNODE_NEG) check = check->right;
+            if (check->type == GUIN_EXPRNODE_NEG) check = check->right;
             else break;
         }
         if (!check) {
-            G_log("check doesnt exist so its invalid!\n");
+            GUIN_log("check doesnt exist so its invalid!\n");
             pState->errmsg = "Expression was not finished!";
             exprAST->fail = true;
-            destroy_ExpressionNodeAST_ptr(&exprAST->top);
-            destroy_ExpressionAST_ptr(&value);
+            GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+            GUIN_destroy_ExpressionAST_ptr(&value);
             return exprAST;
         }
     }
 
-    if (is_op(pState_ahead.type)) {
-        advance_parser(pState);
+    if (GUIN_is_op(GUIN_pState_ahead.type)) {
+        GUIN_advance_parser(pState);
 
         { // merge the value and exprAST variables, making value invalid
-            assign_ExpressionNodeAST(&exprAST->top, LexTokenEnum_to_ValidExpressionNodeType_Operation(pState_current.type));
+            GUIN_assign_ExpressionNodeAST(&exprAST->top, GUIN_LexTokenEnum_to_ValidExpressionNodeType_Operation(GUIN_pState_current.type));
             exprAST->top->left = value->top;
 
             value->top = NULL;
-            destroy_ExpressionAST_ptr(&value);
+            GUIN_destroy_ExpressionAST_ptr(&value);
         }
     } else {
         exprAST->top = value->top;
         value->top = NULL;
-        destroy_ExpressionAST_ptr(&value);
-
-        if (is_valid_Expr_end(token_to_signify_end, pState->ahead.type)) {
+        GUIN_destroy_ExpressionAST_ptr(&value);
+        
+        if (parsing_func_call_arg && GUIN_is_function_end(token_to_signify_end, GUIN_pState_ahead.type)) {   
+            return exprAST;
+        }
+        else if (!parsing_func_call_arg && GUIN_is_valid_Expr_end(token_to_signify_end, GUIN_pState_ahead.type)) {
             return exprAST;
         }
 
         pState->errmsg = "Expected a valid end of the expression!";
-        destroy_ExpressionNodeAST_ptr(&exprAST->top);
+        GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
         exprAST->fail = true;
-        advance_parser(pState);
+        GUIN_advance_parser(pState);
     }
     return exprAST;
 }
 
 
-static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum token_to_signify_end, bool is_global_scope)
+static GUIN_ExpressionAST* GUIN_eval_expression_parser(GUIN_ParseState* pState, const GUIN_LexTokenEnum token_to_signify_end, const bool parsing_func_arg_call, const bool is_global_scope)
 {
-    ExpressionAST* main = eval_expression_parser_section(pState, token_to_signify_end, is_global_scope);
-    ExpressionNodeAST** current = NULL; // POINTS TO THE CURRENT main BRANCH | IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
+    GUIN_ExpressionAST* main = GUIN_eval_expression_parser_section(pState, token_to_signify_end, parsing_func_arg_call, is_global_scope);
+    GUIN_ExpressionNodeAST** current = NULL; // POINTS TO THE CURRENT main BRANCH | IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
 
     if (!main)
         return NULL;
 
-    if (main->fail)
+    if (main->fail) {
         return main;
+    }
 
-    if (get_Precedence_level(main->top->type) == 0)
+    if (GUIN_get_Precedence_level(main->top->type) == 0)
         return main;
 
     current = &main->top;
 
     do { // IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
-        ExpressionAST* right;
+        GUIN_ExpressionAST* right;
         
         { // fetching right
-            right = eval_expression_parser_section(pState, token_to_signify_end, is_global_scope);
+            right = GUIN_eval_expression_parser_section(pState, token_to_signify_end, parsing_func_arg_call, is_global_scope);
 
             if (!right) {
-                destroy_ExpressionAST_ptr(&right);
-                destroy_ExpressionNodeAST_ptr(&main->top);
+                GUIN_destroy_ExpressionAST_ptr(&right);
+                GUIN_destroy_ExpressionNodeAST_ptr(&main->top);
                 main->fail = true;
                 return main;
             }
             if (!right->top || right->fail) {
-                destroy_ExpressionAST_ptr(&right);
-                destroy_ExpressionNodeAST_ptr(&main->top);
+                GUIN_destroy_ExpressionAST_ptr(&right);
+                GUIN_destroy_ExpressionNodeAST_ptr(&main->top);
                 main->fail = true;
                 return main;
             }
         }
 
-        ExpressionNodeAST* c_ref = *current;
-        G_byte current_precedence  = get_Precedence_level(c_ref->type);
-        G_byte right_precedence    = get_Precedence_level(right->top->type);
+        GUIN_ExpressionNodeAST* c_ref = *current;
+        GUIN_byte current_precedence  = GUIN_get_Precedence_level(c_ref->type);
+        GUIN_byte right_precedence    = GUIN_get_Precedence_level(right->top->type);
 
         if (current_precedence >= right_precedence && right_precedence != 0) {
             // we position main to be on the left side of the lesser/equ right
@@ -578,113 +679,123 @@ static ExpressionAST* eval_expression_parser(ParseState* pState, LexTokenEnum to
 
         // before it exits
         right->top = NULL;
-        destroy_ExpressionAST_ptr(&right);
+        GUIN_destroy_ExpressionAST_ptr(&right);
     } while (current);
 
     return main;
 }
 
 
-ASTDatatype get_datatype_parser(ParseState* pState)
+GUIN_ASTDatatype GUIN_get_current_tk_datatype_parser(GUIN_ParseState* pState)
 {
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
     
     switch (pState->current.type)
     {
-        case TK_char:       return ASTDATATYPE_CHAR;
-        case TK_string:     return ASTDATATYPE_STRING;
-        case TK_int:        return ASTDATATYPE_INT;
-        case TK_number:     return ASTDATATYPE_NUMBER;
-        case TK_bool:       return ASTDATATYPE_BOOL;
-        case TK_function:   return ASTDATATYPE_FUNCTION;
-        case TK_dynamic:    return ASTDATATYPE_DYNAMIC;
-        default:            return ASTDATATYPE_ERR;
+        case GUIN_TK_char:       return GUIN_ASTDATATYPE_CHAR;
+        case GUIN_TK_string:     return GUIN_ASTDATATYPE_STRING;
+        case GUIN_TK_int:        return GUIN_ASTDATATYPE_INT;
+        case GUIN_TK_number:     return GUIN_ASTDATATYPE_NUMBER;
+        case GUIN_TK_bool:       return GUIN_ASTDATATYPE_BOOL;
+        case GUIN_TK_func:       return GUIN_ASTDATATYPE_FUNCTION;
+        case GUIN_TK_dynamic:    return GUIN_ASTDATATYPE_DYNAMIC;
+        case GUIN_TK_void:       return GUIN_ASTDATATYPE_VOID;
+        default:                 return GUIN_ASTDATATYPE_ERR;
     }
 }
 
 
 
 // DECLARATION/ASSIGNMENT
-G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_global_scope)
+GUIN_AST GUIN_eval_variable_parser(GUIN_ParseState* pState, GUIN_LexTokenEnum ending, bool is_global_scope)
 {
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
 
-    G_AST ASTNode = {0};
-    ASTNode.nodetype = ASTNODE_DECLARATION;
+    GUIN_AST ASTNode = {0};
+    ASTNode.nodetype = GUIN_ASTNODE_DECLARATION;
     ASTNode.error = false;
 
-    if (pState_current.type != TK_Identifier) {
+    if (GUIN_pState_current.type != GUIN_TK_Identifier) {
         pState->errmsg = "Expected an identifier...";
         ASTNode.error = true;
         return ASTNode;
     }
-    ASTNode.declarationAST.info.identifier = copystring(&pState_current.string);
-    G_log("-------------------------------------------------------\n");
-    G_log("done copying string %s\n", ASTNode.declarationAST.info.identifier.content);
+    ASTNode.declarationAST.info.identifier = GUIN_copystring(&GUIN_pState_current.string);
+    GUIN_log("-------------------------------------------------------\n");
+    GUIN_log("done copying string %s\n", ASTNode.declarationAST.info.identifier.content);
 
-    if (get_var_info(pState, ASTNode.declarationAST.info.identifier.content)) {
+    if (GUIN_get_var_info(pState, ASTNode.declarationAST.info.identifier.content)) {
         pState->errmsg = "Identifier name already exists!";
         ASTNode.error = true;
         return ASTNode;
     }
 
-    G_log("PARSING DECLARATION FOR [%s]\n", ASTNode.declarationAST.info.identifier.content);
+    GUIN_log("PARSING DECLARATION FOR [%s]\n", ASTNode.declarationAST.info.identifier.content);
 
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
 
-    if (pState_current.type != TK_COLON) {
+    if (GUIN_pState_current.type != GUIN_TK_COLON) {
         pState->errmsg = "Expected a colon...";
         ASTNode.error = true;
         return ASTNode;
     }
 
-    ASTNode.declarationAST.info.datatype = get_datatype_parser(pState);
+    ASTNode.declarationAST.info.datatype = GUIN_get_current_tk_datatype_parser(pState);
     if (!ASTNode.declarationAST.info.datatype) {
         pState->errmsg = "Invalid datatype!";
         ASTNode.error = true;
         return ASTNode;
     }
+    else if (ASTNode.declarationAST.info.datatype == GUIN_ASTDATATYPE_VOID) {
+        pState->errmsg = "Cannot assign a variable as a void datatype!";
+        ASTNode.error = true;
+        return ASTNode;
+    }
 
-    if (pState_ahead.type != TK_ASSIGN) {
-        advance_parser(pState); // just for the error
+    if (GUIN_pState_ahead.type != GUIN_TK_ASSIGN) {
+        GUIN_advance_parser(pState); // just for the error
         pState->errmsg = "Expected '='!";
         ASTNode.error = true;
         return ASTNode;
     }
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
 
-    G_log("parsing...\n");
-    G_log_push_layer();
-    ASTNode.declarationAST.expression = eval_expression_parser(pState, ending, is_global_scope);
-    G_log_pop_layer();
+    GUIN_log("parsing...\n");
+    GUIN_log_push_layer();
+    ASTNode.declarationAST.expression = GUIN_eval_expression_parser(pState, ending, false, is_global_scope);
+    GUIN_log_pop_layer();
 
     {
-        G_log("Expression tree:\n");
-        G_log("-------------------\n");
-        G_log_push_layer();
-        G_log_ExpressionNodeAST(ASTNode.declarationAST.expression->top);
-        G_log_pop_layer();
-        G_log("-------------------\n");
+        GUIN_log("Expression tree:\n");
+        GUIN_log("-------------------\n");
+        GUIN_log_push_layer();
+        GUIN_log_ExpressionNodeAST(ASTNode.declarationAST.expression->top);
+        GUIN_log_pop_layer();
+        GUIN_log("-------------------\n");
     }
-    G_log("determining if its invalid\n");
+    GUIN_log("determining if its invalid\n");
     if (!ASTNode.declarationAST.expression->top) {
         ASTNode.error = true;
+        GUIN_log("missing expression tree for variable declaration!\n");
         if (!pState->errmsg) pState->errmsg = "Expected an expression! (from declaration)";
     }
     else if (ASTNode.declarationAST.expression->fail) {
         ASTNode.error = true;
     }
-    bool adding_var_status = add_ParseScopeNode_variable(pState, &ASTNode.declarationAST.info.identifier, ASTNode.declarationAST.info.datatype);
-    if (adding_var_status) {
-        G_log("done adding name\n");
-        G_log("-------------------------------------------------------\n");
-    } else {
-        G_log("failed adding name!\n");
-        G_log("-------------------------------------------------------\n");
-        ASTNode.error = true;
-        return ASTNode;
+
+    { // this is here as its assumed that this name is going to be used for other places, so not to cause cascading errors
+        bool adding_var_status = GUIN_add_ParseScopeNode_variable(pState, &ASTNode.declarationAST.info.identifier, ASTNode.declarationAST.info.datatype);
+        if (adding_var_status) {
+            GUIN_log("done adding name\n");
+            GUIN_log("-------------------------------------------------------\n");
+        } else {
+            GUIN_log("failed adding name!\n");
+            GUIN_log("-------------------------------------------------------\n");
+            ASTNode.error = true;
+            return ASTNode;
+        }
+        ASTNode.declarationAST.slot = pState->scope_top->var_info.arr[pState->scope_top->var_info.length-1].slot;
     }
-    ASTNode.declarationAST.slot = pState->scope_top->var_info.arr[pState->scope_top->var_info.length-1].slot;
     return ASTNode;
 }
 
@@ -693,37 +804,37 @@ G_AST eval_variable_parser(ParseState* pState, LexTokenEnum ending, bool is_glob
 
 
 
-static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, const LexTokenEnum ending)
+static GUIN_ASTScope GUIN_parser_get_scope(GUIN_ParseState* pState, const GUIN_ScopeType scopetype, const GUIN_LexTokenEnum ending)
 {
-    if (!pState) return (ASTScope){0};
+    if (!pState) return (GUIN_ASTScope){0};
 
-    ASTScope scope = init_ASTScope();
-    if (!scope.nodes) return (ASTScope){0};
+    GUIN_ASTScope scope = GUIN_init_ASTScope();
+    if (!scope.nodes) return (GUIN_ASTScope){0};
 
-    add_ParseScopeNode(pState, scopetype);
+    GUIN_add_ParseScopeNode(pState, scopetype);
 
     // DO NOT AND I MEAN NOT DESTROY X
-    G_AST x;
+    GUIN_AST x;
     while (true) {
-        x = parse_segment(pState, ending, false);
+        x = GUIN_parse_segment(pState, ending, false);
         
         if (x.error) {
-            G_log("has error\n");
-            destroy_ASTScope(&scope);
+            GUIN_log("has error\n");
+            GUIN_destroy_ASTScope(&scope);
             break;
         }
-        if (x.nodetype == ASTNODE_END)
+        if (x.nodetype == GUIN_ASTNODE_END)
             break;
-        if (x.nodetype == ASTNODE_IGNORE)
+        if (x.nodetype == GUIN_ASTNODE_IGNORE)
             continue;
         
-        add_G_AST_to_ASTScope(&scope, x);
+        GUIN_add_AST_to_ASTScope(&scope, x);
     }
 
     if (!x.error) {
-        G_log("add all existing variables to nuke\n");
-        pop_ParseScopeNode(pState, &scope);
-        G_log("return scope\n");
+        GUIN_log("add all existing variables to nuke\n");
+        GUIN_pop_ParseScopeNode(pState, &scope);
+        GUIN_log("return scope\n");
     }
     return scope;
 }
@@ -734,59 +845,59 @@ static ASTScope parser_get_scope(ParseState* pState, const ScopeType scopetype, 
 
 
 
-static G_AST eval_if_and_while_statement(ParseState* pState)
+static GUIN_AST GUIN_eval_if_and_while_statement(GUIN_ParseState* pState)
 {
-    if (!pState) return (G_AST){0};
+    if (!pState) return (GUIN_AST){0};
 
-    G_log("doing if/while statement\n");
+    GUIN_log("doing if/while statement\n");
 
-    G_AST x = (G_AST){0};
+    GUIN_AST x = (GUIN_AST){0};
     x.error = true;
 
-    if (pState_current.type == TK_if) {
-        x.nodetype = ASTNODE_IF;
+    if (GUIN_pState_current.type == GUIN_TK_if) {
+        x.nodetype = GUIN_ASTNODE_IF;
     } 
-    else if (pState_current.type == TK_while) {
-        x.nodetype = ASTNODE_WHILE;
+    else if (GUIN_pState_current.type == GUIN_TK_while) {
+        x.nodetype = GUIN_ASTNODE_WHILE;
     }
     else {
-        G_log("invalid current token for if/while!\n");
+        GUIN_log("invalid current token for if/while!\n");
         return x;
     }
 
-    G_log("-------------------------------------------------------\n");
-    G_log_push_layer();
-    //x.ifWhileAST.expression = eval_expression_parser(pState, (x.nodetype == ASTNODE_IF)? TK_then : TK_do, false);
-    x.ifWhileAST.expression = eval_expression_parser(pState, TK_CURLY_L, false);
-    G_log_pop_layer();
-    G_log("-------------------------------------------------------\n");
+    GUIN_log("-------------------------------------------------------\n");
+    GUIN_log_push_layer();
+    //x.ifWhileAST.expression = eval_expression_parser(pState, (x.nodetype == ASTNODE_IF)? GUIN_TK_then : GUIN_TK_do, false);
+    x.ifWhileAST.expression = GUIN_eval_expression_parser(pState, GUIN_TK_CURLY_L, false, false);
+    GUIN_log_pop_layer();
+    GUIN_log("-------------------------------------------------------\n");
     if (!x.ifWhileAST.expression) return x;
     if (x.ifWhileAST.expression->fail) {
-        destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
+        GUIN_destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
         return x;
     }
 
     if (!x.ifWhileAST.expression->top) {
         pState->errmsg = "Expected an expression! (from if)";
-        destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
+        GUIN_destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
         return x;
     }
 
-    G_log("Statement:\n");
-    G_log_ExpressionNodeAST(x.ifWhileAST.expression->top);
+    GUIN_log("Statement:\n");
+    GUIN_log_ExpressionNodeAST(x.ifWhileAST.expression->top);
 
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
 
-    G_log("-------------------------------------------------------\n");
-    G_log_push_layer();
-    //x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, TK_end);
-    x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, TK_CURLY_R);
-    G_log_pop_layer();
-    G_log("-------------------------------------------------------\n");
+    GUIN_log("-------------------------------------------------------\n");
+    GUIN_log_push_layer();
+    //x.ifWhileAST.nodes = parser_get_scope(pState, (x.nodetype == ASTNODE_IF)? SCOPE_IF : SCOPE_WHILE, GUIN_TK_end);
+    x.ifWhileAST.nodes = GUIN_parser_get_scope(pState, (x.nodetype == GUIN_ASTNODE_IF)? GUIN_SCOPE_IF : GUIN_SCOPE_WHILE, GUIN_TK_CURLY_R);
+    GUIN_log_pop_layer();
+    GUIN_log("-------------------------------------------------------\n");
 
     if (!x.ifWhileAST.nodes.nodes) {
-        destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
-        destroy_ASTScope(&x.ifWhileAST.nodes);
+        GUIN_destroy_ExpressionAST_ptr(&x.ifWhileAST.expression);
+        GUIN_destroy_ASTScope(&x.ifWhileAST.nodes);
         return x;
     }
 
@@ -798,25 +909,25 @@ static G_AST eval_if_and_while_statement(ParseState* pState)
 
 
 
-static G_AST eval_scope_statement(ParseState* pState)
+static GUIN_AST GUIN_eval_scope_statement(GUIN_ParseState* pState)
 {
-    if (!pState) return (G_AST){0};
+    if (!pState) return (GUIN_AST){0};
 
-    G_log("doing scope statement\n");
+    GUIN_log("doing scope statement\n");
 
-    G_AST x = (G_AST){0};
-    x.nodetype = ASTNODE_SCOPE;
+    GUIN_AST x = (GUIN_AST){0};
+    x.nodetype = GUIN_ASTNODE_SCOPE;
     x.error = true;
 
-    G_log("-------------------------------------------------------\n");
-    G_log_push_layer();
-    //x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, TK_end);
-    x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, TK_CURLY_R);
-    G_log_pop_layer();
-    G_log("-------------------------------------------------------\n");
+    GUIN_log("-------------------------------------------------------\n");
+    GUIN_log_push_layer();
+    //x.scopeAST = parser_get_scope(pState, SCOPE_SCOPE, GUIN_TK_end);
+    x.scopeAST = GUIN_parser_get_scope(pState, GUIN_SCOPE_SCOPE, GUIN_TK_CURLY_R);
+    GUIN_log_pop_layer();
+    GUIN_log("-------------------------------------------------------\n");
 
     if (!x.scopeAST.nodes) {
-        destroy_ASTScope(&x.scopeAST);
+        GUIN_destroy_ASTScope(&x.scopeAST);
         return x;
     }
 
@@ -827,42 +938,42 @@ static G_AST eval_scope_statement(ParseState* pState)
 
 
 
-G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is_global_scope)
+GUIN_AST GUIN_parse_segment(GUIN_ParseState* pState, const GUIN_LexTokenEnum ending, const bool is_global_scope)
 {
-    advance_parser(pState);
+    GUIN_advance_parser(pState);
     
-    G_log("parsing a new segment\n");
+    GUIN_log("parsing a new segment\n");
 
-    switch (pState_current.type)
+    switch (GUIN_pState_current.type)
     {
-        case TK_var:
-            G_log("doing var\n");
-            return eval_variable_parser(pState, ending, is_global_scope);
+        case GUIN_TK_var:
+            GUIN_log("doing var\n");
+            return GUIN_eval_variable_parser(pState, ending, is_global_scope);
 
-        case TK_if:
+        case GUIN_TK_if:
             if (is_global_scope) {
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
-                return (G_AST){
+                return (GUIN_AST){
                     .error=true,
-                    .nodetype=ASTNODE_IF
+                    .nodetype=GUIN_ASTNODE_IF
                 };
             }
-            G_log("doing if\n");
-            return eval_if_and_while_statement(pState);
+            GUIN_log("doing if\n");
+            return GUIN_eval_if_and_while_statement(pState);
 
-        case TK_while:
+        case GUIN_TK_while:
             if (is_global_scope) {
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
-                return (G_AST){
+                return (GUIN_AST){
                     .error=true,
-                    .nodetype=ASTNODE_WHILE
+                    .nodetype=GUIN_ASTNODE_WHILE
                 };
             }
-            G_log("doing while\n");
-            return eval_if_and_while_statement(pState);
+            GUIN_log("doing while\n");
+            return GUIN_eval_if_and_while_statement(pState);
 
-        //case TK_do:
-        case TK_CURLY_L:
+        //case GUIN_TK_do:
+        case GUIN_TK_CURLY_L:
             /*
             if (is_global_scope) {
                 pState->errmsg = "Cannot use a local-only statement in the Global scope!";
@@ -872,33 +983,33 @@ G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is
                 };
             }
                 */
-            G_log("doing scope NEW\n");
-            return eval_scope_statement(pState);
+            GUIN_log("doing scope NEW\n");
+            return GUIN_eval_scope_statement(pState);
 
         default: {
-            if (pState_current.type == TK_SEMI_COLON && ending != TK_SEMI_COLON) {
-                G_log("is semi\n");
-                G_AST x = (G_AST){0};
+            if (GUIN_pState_current.type == GUIN_TK_SEMI_COLON && ending != GUIN_TK_SEMI_COLON) {
+                GUIN_log("is semi\n");
+                GUIN_AST x = (GUIN_AST){0};
                 return x;
             }
 
             // to tell the IR to stop looping, the scope has closed or the end of the file
-            if (pState_current.type == ending) {
-                G_log("is ending\n");
-                G_AST x = (G_AST){0};
-                x.nodetype = ASTNODE_END;
+            if (GUIN_pState_current.type == ending) {
+                GUIN_log("is ending\n");
+                GUIN_AST x = (GUIN_AST){0};
+                x.nodetype = GUIN_ASTNODE_END;
                 return x;
             }
 
-            G_log("no matches!\n");
+            GUIN_log("no matches!\n");
 
-            if (ending == TK_CURLY_R) {
+            if (ending == GUIN_TK_CURLY_R) {
                 pState->errmsg = "Expected an end to the scope!";
             } else {
                 pState->errmsg = "Expected a valid statement!";
             }
 
-            G_AST x = (G_AST){0};
+            GUIN_AST x = (GUIN_AST){0};
             x.error = true;
             return x;
         }

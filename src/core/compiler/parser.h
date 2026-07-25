@@ -7,54 +7,53 @@
 #include "../../etc/strings.h"
 #include "lexer.h"
 #include "ast.h"
-#include "../../etc/declarations.h"
+#include "../../../include/declarations.h"
 
 typedef enum {
-    SCOPE_UNINIT = 0,
-    SCOPE_GLOBAL,
-    SCOPE_FUNCTION,
-    SCOPE_IF,
-    SCOPE_WHILE,
-    SCOPE_FOR,
-    SCOPE_SCOPE
-} ScopeType;
+    GUIN_SCOPE_UNINIT = 0,
+    GUIN_SCOPE_GLOBAL,
+    GUIN_SCOPE_FUNCTION,
+    GUIN_SCOPE_IF,
+    GUIN_SCOPE_WHILE,
+    GUIN_SCOPE_FOR,
+    GUIN_SCOPE_SCOPE
+} GUIN_ScopeType;
 
-typedef struct ParseScopeNode {
-    struct ParseScopeNode* prev;
-    ScopeType scopetype;
+typedef struct GUIN_ParseScopeNode {
+    struct GUIN_ParseScopeNode* prev;
+    GUIN_ScopeType scopetype;
 
     struct {
-        VariableInfoAST* arr;
+        GUIN_VariableInfoAST* arr;
         size_t size;
         size_t length;
     } var_info;
-} ParseScopeNode;
+} GUIN_ParseScopeNode;
 
 
-typedef struct {
-    LexToken prev;
-    LexToken current;
-    LexToken ahead;
+typedef struct GUIN_ParseState {
+    GUIN_LexToken prev;
+    GUIN_LexToken current;
+    GUIN_LexToken ahead;
 
-    ParseScopeNode*  scope_top;
-    ParseScopeNode** scope_base_aka_global;
-    LexState lState;
+    GUIN_ParseScopeNode*  scope_top;
+    GUIN_ParseScopeNode** scope_base_aka_global;
+    GUIN_LexState lState;
     char* errmsg;
-} ParseState;
+} GUIN_ParseState;
 
-ParseScopeNode init_ParseScopeNode(ScopeType scopetype);
-void destroy_ParseScopeNode(ParseScopeNode** pScope);
-bool add_ParseScopeNode(ParseState* pState, ScopeType scopetype);
-bool pop_ParseScopeNode(ParseState* pState, ASTScope* x);
+GUIN_ParseScopeNode* GUIN_init_ParseScopeNode_ptr(GUIN_ScopeType scopetype);
+void GUIN_destroy_ParseScopeNode(GUIN_ParseScopeNode** pScope);
+bool GUIN_add_ParseScopeNode(GUIN_ParseState* pState, GUIN_ScopeType scopetype);
+bool GUIN_pop_ParseScopeNode(GUIN_ParseState* pState, GUIN_ASTScope* x);
 
 
-ParseState init_ParseState(String* file_content);
-void destroy_ParseState(ParseState* pState);
-void advance_parser(ParseState* pState);
+GUIN_ParseState GUIN_init_ParseState(GUIN_String* file_content);
+void GUIN_destroy_ParseState(GUIN_ParseState* pState);
+void GUIN_advance_parser(GUIN_ParseState* pState);
 
-ExpressionNodeType LexTokenEnum_to_ValidExpressionNodeType_Operation(LexTokenEnum x);
-
-ExpressionAST* get_function_args_in_expression_parser(ParseState* pState);
-G_AST parse_segment(ParseState* pState, const LexTokenEnum ending, const bool is_global_scope);
+GUIN_ExpressionNodeType LexTokenEnum_to_ValidExpressionNodeType_Operation(GUIN_LexTokenEnum x);
+//GUIN_ExpressionAST* GUIN_get_function_args_in_expression_parser(GUIN_ParseState* pState);
+GUIN_AST GUIN_parse_segment(GUIN_ParseState* pState, const GUIN_LexTokenEnum ending, const bool is_global_scope);
 
 #endif

@@ -2,6 +2,7 @@
 #define GUINEA_SLEEP_H
 
 #include <stdbool.h>
-bool G_sleep(G_uint32 miliseconds);
+#include "../../../include/declarations.h"
+bool GUIN_sleep(GUIN_int32 miliseconds);
 
 #endif
