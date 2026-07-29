@@ -23,9 +23,9 @@ FORMATTING RULES FOR GUINEA PRINT
 */
 
 
-size_t GUIN_vprintf(FILE* file, char* string, va_list args);
-size_t GUIN_fprintf(FILE* file, char* string, ...);
-size_t GUIN_printf(char* string, ...);
+long GUIN_vprintf(FILE* file, char* string, va_list args);
+long GUIN_fprintf(FILE* file, char* string, ...);
+long GUIN_printf(char* string, ...);
 
 GUIN_String GUIN_input(void);
 GUIN_String GUIN_readfile(FILE* file);

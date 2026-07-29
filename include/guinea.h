@@ -109,6 +109,7 @@ extern "C" {
 typedef struct GUIN_VM GUIN_VM;
 GUIN_VM* GUIN_API_open_VM(void);
 void GUIN_API_print_main_stack(GUIN_VM* vm);
+void GUIN_API_print_global(GUIN_VM* vm);
 //bool GUIN_API_load_VM_w_file(GUIN_VM* vm, FILE* file);
 //bool GUIN_API_load_VM_w_dir(GUIN_VM* vm, const char* dir);
 //const char* GUIN_API_extract_error(GUIN_VM* vm);

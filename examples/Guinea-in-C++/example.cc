@@ -3,7 +3,7 @@
 
 int main()
 {
-    GUIN_VM* vm = GUIN_API_open_VM();
+    GUIN_VM* vm = GUIN_API_open_VM();/*
     GUIN_API_push_IMMEDIATE(vm, GUIN_VALUE('a'));
     GUIN_API_push_IMMEDIATE(vm, GUIN_VALUE(102));
     GUIN_API_ADD(vm);
@@ -18,9 +18,13 @@ int main()
     GUIN_API_ADD(vm);
     GUIN_API_push_IMMEDIATE(vm, GUIN_VALUE(5));
     GUIN_API_MUL(vm);
-    std::cout << "\nAfter:\n";
+    GUIN_API_EQU(vm);
+
+    std::cout << "\nAfter:\n";*/
+    GUIN_API_push_IMMEDIATE(vm, GUIN_VALUE('a'));
+    GUIN_API_push_IMMEDIATE(vm, GUIN_VALUE(97));
+    GUIN_API_EQU(vm);
     GUIN_API_print_main_stack(vm);
     GUIN_API_close_VM(&vm);
-    std::cout << "\nDone with the program runtime!" << std::endl;
     return 0;
 }

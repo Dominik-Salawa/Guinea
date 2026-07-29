@@ -31,7 +31,7 @@ bool GUIN_ERROR_point_to_error(FILE* f, char* source, char* msg_next_to_ptr, siz
         while (source[i] != '\n' && source[i] != '\0')
             GUIN_stringaddchar(&error_line, source[i++]);
 
-        int length_of_num;
+        size_t length_of_num;
         { // Print the text
             length_of_num = fprintf(f, "  "GUIN_COLOR_ERR"%zu"GUIN_COLOR_CLEAR" ", line) - (strlen(GUIN_COLOR_ERR) + strlen(GUIN_COLOR_CLEAR));
             fprintf(f, GUIN_COLOR_WHITE"|  "GUIN_COLOR_CLEAR);
@@ -49,7 +49,7 @@ bool GUIN_ERROR_point_to_error(FILE* f, char* source, char* msg_next_to_ptr, siz
 
         { // Print the "^^^^" below
             fprintf(f, GUIN_COLOR_WHITE);
-            for (int i = 0; i < length_of_num; ++i) putc(' ', f);
+            for (i = 0; i < length_of_num; ++i) putc(' ', f);
             fprintf(f, "|  "GUIN_COLOR_CLEAR);
             size_t current_column = 1;
             while (current_column < column) {

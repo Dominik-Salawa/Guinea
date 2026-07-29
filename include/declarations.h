@@ -2,6 +2,7 @@
 #define DECLARATIONS_H
 
 #include <inttypes.h>
+
 typedef unsigned char GUIN_uchar;
 
 typedef int8_t        GUIN_byte;
@@ -20,6 +21,11 @@ typedef double        GUIN_number64;
 typedef void (*RawFuncPointer)(void*);
 
 typedef GUIN_uint16 GUIN_LOCAL_SLOT_INT;
+
+#define GUIN_SUCCESS  0
+#define GUIN_FAIL     1
+#define GUIN_MEM_FAIL 2
+typedef GUIN_ubyte    GUIN_STATUS;
 
 GUIN_number32 GUIN__NaN__(void);
 

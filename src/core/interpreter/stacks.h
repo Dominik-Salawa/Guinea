@@ -10,13 +10,15 @@ const size_t GUIN_STACK_INITIAL_SIZE = 4096;
 const size_t GUIN_FRAME_STACK_INITIAL_SIZE = 4096;
 
 
-
-
-
 typedef struct GUIN_VARIABLE_HEADER {
     GINSTR_Datatype datatype;
+    char* name;
+    GUIN_ValueHeader* ptr_to_value;
 } GUIN_VARIABLE_HEADER;
-
+GUIN_VARIABLE_HEADER  GUIN_init_VARIABLE_HEADER(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr);
+GUIN_VARIABLE_HEADER* GUIN_init_VARIABLE_HEADER_ptr(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr);
+void GUIN_destroy_VARIABLE_HEADER(GUIN_VARIABLE_HEADER* x);
+void GUIN_destroy_VARIABLE_HEADER_ptr(GUIN_VARIABLE_HEADER** x);
 
 
 typedef struct GUIN_VALUE_STACK {

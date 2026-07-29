@@ -18,7 +18,7 @@ typedef struct GUIN_ValueHeader {
     GUIN_ubyte header_type; // GINSTR_Datatype
     GUIN_ubyte current_value_type;  // GINSTR_Datatype
     GUIN_ubyte GC_status;
-    GUIN_ubyte extra;
+    GUIN_ubyte struct_value_type;
     GUIN_uint32 children_count;
     union {
         bool                    bl;
@@ -34,5 +34,15 @@ typedef struct GUIN_ValueHeader {
 } GUIN_ValueHeader;
 GUIN_ValueHeader GUIN_init_ValueHeader(GINSTR_Datatype header_type);
 void GUIN_destroy_ValueHeader(GUIN_ValueHeader* x);
+
+
+typedef struct GUIN_VH_from_BC_result {
+    GUIN_ValueHeader value;
+    size_t to_jump;
+    GUIN_STATUS status;
+    char* errmsg;
+} GUIN_VH_from_BC_result;
+// make sure source starts on the datatype
+GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_ubyte* src);
 
 #endif

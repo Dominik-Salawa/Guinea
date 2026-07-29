@@ -8,5 +8,6 @@
 #include "interpreter/value.h"
 #include "interpreter/stacks.h"
 #include "interpreter/vm.h"
+#include "interpreter/gc.c"
 
 #endif

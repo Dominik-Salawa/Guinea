@@ -10,27 +10,34 @@
 #include "../strings.c"
 #include "../../../include/declarations.h"
 
-int GUIN_vfmt(char* buffer_addr, size_t buffer_size, char* string, va_list args)
+static long GUIN_print_double(FILE* file, GUIN_number64 num)
 {
-    bool no_write = buffer_addr && buffer_size;
+    long size = snprintf(NULL, 0, "%.15f", num) + 1;
+    if (size < 0) return size;
 
-    // finish
+    char* buffer = malloc(sizeof(char) * size);
+    if (!buffer) return -1;
 
-    return 0;
+    snprintf(buffer, size, "%.20f", num);
+
+    for (size_t i = size-2; i > 0; --i) {
+        if (buffer[i] == '0') {
+            buffer[i] = 0;
+        }
+        else if (buffer[i] == '.') {
+            buffer[i] = 0;
+            break;
+        } 
+        else {
+            break;
+        }
+    }
+    return fprintf(file, "%s", buffer);
 }
 
-int GUIN_fmt(char* buffer_addr, size_t buffer_size, char* string, ...)
+long GUIN_vprintf(FILE* file, char* string, va_list args)
 {
-    va_list args;
-    va_start(args, string);
-    int size = GUIN_vfmt(buffer_addr, buffer_size, string, args);
-    va_end(args);
-    return size;
-}
-
-size_t GUIN_vprintf(FILE* file, char* string, va_list args)
-{
-    int amount_of_chars_outputted = 0;
+    long amount_of_chars_outputted = 0;
     while (true) {
         char ch = *string;
         if (ch == 0) break;
@@ -107,7 +114,7 @@ size_t GUIN_vprintf(FILE* file, char* string, va_list args)
                 }
 
                 case 'f': {
-                    amount_of_chars_outputted += fprintf(file, "%f", va_arg(args, GUIN_number64));
+                    amount_of_chars_outputted += GUIN_print_double(file, va_arg(args, GUIN_number64));
                     break;
                 }
 
@@ -126,7 +133,7 @@ size_t GUIN_vprintf(FILE* file, char* string, va_list args)
                         amount_of_chars_outputted += fprintf(file, "%"PRIo64, va_arg(args, GUIN_int64));
                     }
                     else if (ch == 'f') {
-                        amount_of_chars_outputted += fprintf(file, "%lf", va_arg(args, GUIN_number64));
+                        amount_of_chars_outputted += GUIN_print_double(file, va_arg(args, GUIN_number64));
                     }
                     else {
                         fprintf(file, "GUIN_vprintf error: invalid format (%%l%c)!\n", ch);
@@ -170,20 +177,20 @@ size_t GUIN_vprintf(FILE* file, char* string, va_list args)
     return amount_of_chars_outputted;
 }
 
-size_t GUIN_fprintf(FILE* file, char* string, ...)
+long GUIN_fprintf(FILE* file, char* string, ...)
 {
     va_list args;
     va_start(args, string);
-    size_t amount_of_chars_outputted = GUIN_vprintf(file, string, args);
+    long amount_of_chars_outputted = GUIN_vprintf(file, string, args);
     va_end(args);
     return amount_of_chars_outputted;
 }
 
-size_t GUIN_printf(char* string, ...)
+long GUIN_printf(char* string, ...)
 {
     va_list args;
     va_start(args, string);
-    size_t amount_of_chars_outputted = GUIN_vprintf(stdout, string, args);
+    long amount_of_chars_outputted = GUIN_vprintf(stdout, string, args);
     va_end(args);
     return amount_of_chars_outputted;
 }

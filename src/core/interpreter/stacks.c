@@ -2,7 +2,66 @@
 #define GUIN_STACKS_C
 
 #include <stdlib.h>
+#include <string.h>
 #include "stacks.h"
+
+GUIN_VARIABLE_HEADER  GUIN_init_VARIABLE_HEADER(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr)
+{
+    GUIN_VARIABLE_HEADER x = (GUIN_VARIABLE_HEADER){0};
+    if (!datatype) return x;
+
+    x.datatype = datatype;
+    x.name = name;
+    x.ptr_to_value = ptr;
+    return x;
+}
+GUIN_VARIABLE_HEADER  GUIN_init_VARIABLE_HEADER_cp_name(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr)
+{
+    GUIN_VARIABLE_HEADER x = (GUIN_VARIABLE_HEADER){0};
+    if (!datatype) return x;
+
+    x.datatype = datatype;
+    x.name = malloc(sizeof(char) * strlen(name) + 1);
+    if (!x.name) {
+        return (GUIN_VARIABLE_HEADER){0};
+    }
+    strcpy(x.name, name);
+    x.ptr_to_value = ptr;
+    return x;
+}
+GUIN_VARIABLE_HEADER* GUIN_init_VARIABLE_HEADER_ptr(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr)
+{
+    if (!datatype) return NULL;
+
+    GUIN_VARIABLE_HEADER* x = malloc(sizeof(GUIN_VARIABLE_HEADER));
+    if (!x) return NULL;
+
+    *x = GUIN_init_VARIABLE_HEADER(datatype, name, ptr);
+    if (!x->datatype) {
+        if (x->name) free(x->name);
+        free(x);
+        return NULL;
+    }
+
+    return x;
+}
+void GUIN_destroy_VARIABLE_HEADER(GUIN_VARIABLE_HEADER* x)
+{
+    if (x->name) free(x->name);
+    *x = (GUIN_VARIABLE_HEADER){0};
+}
+void GUIN_destroy_VARIABLE_HEADER_ptr(GUIN_VARIABLE_HEADER** x)
+{
+    if (!x)  return;
+    if (!*x) return;
+    if ((*x)->name) free((*x)->name);
+    free(*x);
+    *x = NULL;
+}
+
+
+
+
 
 GUIN_VALUE_STACK GUIN_init_VALUE_STACK(void)
 {
@@ -53,7 +112,6 @@ bool GUIN_add_VALUE_to_VALUE_STACK(GUIN_VALUE_STACK* x, GUIN_ValueHeader val)
 }
 GUIN_ValueHeader GUIN_pop_VALUE_STACK(GUIN_VALUE_STACK* x)
 {
-    printf("pop\n");
     if (x->stackptr != x->baseptr) {
         --x->stackptr;
         return *x->stackptr;

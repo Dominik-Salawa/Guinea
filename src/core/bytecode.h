@@ -68,10 +68,10 @@ typedef enum GINSTR_Datatype {
     GINSTRDATATYPE_FUNCTION,
     GINSTRDATATYPE_DYNAMIC,
 } GINSTR_Datatype;
-#define GUIN_is_number_or_int(x)      (x >= GINSTRDATATYPE_INT32 && x <= GINSTRDATATYPE_NUMBER64)
-#define GUIN_is_number(x)             (x == GINSTRDATATYPE_NUMBER32 || x == GINSTRDATATYPE_NUMBER64)
-#define GUIN_is_int(x)                (x == GINSTRDATATYPE_INT32 || x == GINSTRDATATYPE_INT64)
-#define GUIN_is_number_variant(x)    (GUIN_is_number_or_int(x) || x == GINSTRDATATYPE_BOOL || x == GINSTRDATATYPE_CHAR)
+#define GUIN_is_number_or_int(x)    (x >= GINSTRDATATYPE_INT32 && x <= GINSTRDATATYPE_NUMBER64)
+#define GUIN_is_number(x)           (x == GINSTRDATATYPE_NUMBER32 || x == GINSTRDATATYPE_NUMBER64)
+#define GUIN_is_int(x)              (x == GINSTRDATATYPE_INT32 || x == GINSTRDATATYPE_INT64)
+#define GUIN_is_number_variant(x)   (GUIN_is_number_or_int(x) || x == GINSTRDATATYPE_BOOL || x == GINSTRDATATYPE_CHAR)
 
 typedef struct GUIN_Bytecode {
     GUIN_ubyte* bytecode;
@@ -79,7 +79,7 @@ typedef struct GUIN_Bytecode {
     size_t size;
 } GUIN_Bytecode;
 
-char* GUIN_GINSTR_Datatype_to_str(GINSTR_Datatype x);
+char* GUIN_GINSTR_Datatype_to_string(GINSTR_Datatype x);
 
 GUIN_Bytecode  GUIN_init_Bytecode(void);
 GUIN_Bytecode* GUIN_add_Bytecode(GUIN_Bytecode* x, const GUIN_ubyte* data, const size_t data_length);

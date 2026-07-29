@@ -9,7 +9,7 @@
 #include "../etc/stdlib/GUIN_stdio.h"
 #include "../etc/log.h"
 
-char* GUIN_GINSTR_Datatype_to_str(GINSTR_Datatype x)
+char* GUIN_GINSTR_Datatype_to_string(GINSTR_Datatype x)
 {
     switch (x)
     {
@@ -44,7 +44,6 @@ GUIN_String* GUIN_get_string_in_Bytecode(const GUIN_Bytecode* x, size_t i, const
     }
 
     i += size_of_len_number;
-
 
     GUIN_stringconcat_char_w_len(str, (char*)x->bytecode + i, len);
     return str;
@@ -199,6 +198,7 @@ GUIN_Bytecode* GUIN_add_Bytecode_String_no_size_embedded(GUIN_Bytecode* x, const
 
 
 
+
 static int numlen(size_t number)
 {
     int i = 1;
@@ -244,7 +244,7 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
                 }
 
                 i += sizeof(size_t) + name->length; // varname len + int size
-                GUIN_printf("%sc\n", GUIN_GINSTR_Datatype_to_str(globaldatatype));
+                GUIN_printf("%sc\n", GUIN_GINSTR_Datatype_to_string(globaldatatype));
 
                 GUIN_clearstring_ptr(&name);
                 break;
@@ -262,7 +262,7 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
                 memcpy(&slotnum, &x->bytecode[i], sizeof(GUIN_LOCAL_SLOT_INT));
 
                 i += sizeof(GUIN_LOCAL_SLOT_INT); // varname len + int size
-                GUIN_printf("%u: %sc\n", slotnum, GUIN_GINSTR_Datatype_to_str(globaldatatype));
+                GUIN_printf("%u: %sc\n", slotnum, GUIN_GINSTR_Datatype_to_string(globaldatatype));
                 break;
             }
 
@@ -350,14 +350,14 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
                 ++i;
                 GINSTR_Datatype immediatedatatype = x->bytecode[i];
                 ++i;
-                GUIN_printf("%sc ", GUIN_GINSTR_Datatype_to_str(immediatedatatype));
+                GUIN_printf("%sc ", GUIN_GINSTR_Datatype_to_string(immediatedatatype));
                 switch (immediatedatatype)
                 {
                     case GINSTRDATATYPE_STRING:
                     {
-                        int64_t size;
+                        GUIN_int64 size;
                         memcpy(&size, &x->bytecode[i], 8);
-                        i += sizeof(int64_t);
+                        i += sizeof(GUIN_int64);
                         GUIN_String str = GUIN_init_String();
                         GUIN_stringconcat_char_w_len(&str, (char*)&x->bytecode[i], size);
                         GUIN_printf("\"%s\"", &str);

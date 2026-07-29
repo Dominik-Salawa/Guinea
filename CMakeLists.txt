@@ -17,7 +17,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         -Werror -Wno-unused-parameter 
         -Wno-unused-variable 
         -Wno-unused-function -O3
-        -fomit-frame-pointer
+        -fomit-frame-pointer -Wshadow
     )
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
     message(STATUS "Using GCC")
@@ -27,7 +27,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
         -Werror -Wno-unused-parameter 
         -Wno-unused-variable 
         -Wno-unused-function -O3
-        -fomit-frame-pointer
+        -fomit-frame-pointer -Wshadow
     )
 elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     message(STATUS "Using MSVC")

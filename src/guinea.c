@@ -57,23 +57,29 @@ GUIN_VM* GUIN_API_open_VM(void)
 }
 void GUIN_API_print_main_stack(GUIN_VM* vm)
 {
-    for (GUIN_ValueHeader* ptr = vm->stack_main.baseptr; ptr < vm->stack_main.stackptr; ++ptr) {
-        printf("Datatype: %s | ", GUIN_GINSTR_Datatype_to_str(ptr->current_value_type));
+    for (GUIN_ValueHeader* ptr = vm->stack_main.stackptr-1; ptr >= vm->stack_main.baseptr; --ptr) {
+        printf("Datatype: %s", GUIN_GINSTR_Datatype_to_string(ptr->current_value_type));
         switch (ptr->current_value_type)
         {
-            case GINSTRDATATYPE_NULL:       GUIN_printf("null\n"); break;
-            case GINSTRDATATYPE_NIL:        GUIN_printf("nil\n"); break;
-            case GINSTRDATATYPE_STRING:     GUIN_printf("\"%s\"\n", ptr->str); break;
-            case GINSTRDATATYPE_INT32:      GUIN_printf("%d\n", ptr->i32); break;
-            case GINSTRDATATYPE_INT64:      GUIN_printf("%ld\n", ptr->i64); break;
-            case GINSTRDATATYPE_NUMBER32:   GUIN_printf("%f\n", ptr->n32); break;
-            case GINSTRDATATYPE_NUMBER64:   GUIN_printf("%lf\n", ptr->n64); break;
-            case GINSTRDATATYPE_BOOL:       GUIN_printf("%b\n", ptr->bl); break;
-            case GINSTRDATATYPE_CHAR:       GUIN_printf("'%c'\n", ptr->ch); break;
-            case GINSTRDATATYPE_FUNCTION:   GUIN_printf("function\n"); break;
-            case GINSTRDATATYPE_DYNAMIC:    GUIN_printf("dynamic\n"); break;
-            default:                        GUIN_printf("error\n"); break;
+            case GINSTRDATATYPE_NULL:       /*GUIN_printf("null\n");*/ putchar('\n'); break;
+            case GINSTRDATATYPE_NIL:        /*GUIN_printf("nil\n");*/ putchar('\n'); break;
+            case GINSTRDATATYPE_STRING:     GUIN_printf(" -> \"%s\"\n", ptr->str); break;
+            case GINSTRDATATYPE_INT32:      GUIN_printf(" -> %d\n", ptr->i32); break;
+            case GINSTRDATATYPE_INT64:      GUIN_printf(" -> %ld\n", ptr->i64); break;
+            case GINSTRDATATYPE_NUMBER32:   GUIN_printf(" -> %f\n", ptr->n32); break;
+            case GINSTRDATATYPE_NUMBER64:   GUIN_printf(" -> %lf\n", ptr->n64); break;
+            case GINSTRDATATYPE_BOOL:       GUIN_printf(" -> %b\n", ptr->bl); break;
+            case GINSTRDATATYPE_CHAR:       GUIN_printf(" -> '%c'\n", ptr->ch); break;
+            case GINSTRDATATYPE_FUNCTION:   GUIN_printf(" -> function\n"); break;
+            case GINSTRDATATYPE_DYNAMIC:    GUIN_printf(" -> dynamic\n"); break;
+            default:                        GUIN_printf(" -> error\n"); break;
         }
+    }
+}
+void GUIN_API_print_global(GUIN_VM* vm)
+{
+    for (size_t i = 0; i < vm->global.length; ++i) {
+        printf("%s: %s\n", vm->global.content[i].name, GUIN_GINSTR_Datatype_to_string(vm->global.content[i].datatype));
     }
 }
 //bool GUIN_API_bootstrap_VM_w_file(GUIN_VM* vm, FILE* file);
@@ -116,7 +122,11 @@ bool GUIN_API_MOD(GUIN_VM* vm)
     { return GUIN_VM_mod(vm); }
 bool GUIN_API_POW(GUIN_VM* vm)
     { return GUIN_VM_pow(vm); }
+// pops 1, returns 1 val
+bool GUIN_API_NEG(GUIN_VM* vm)
+    { return GUIN_VM_neg(vm); }
 
+// pops 1, returns 1 val
 bool GUIN_API_NOT(GUIN_VM* vm)
     { return GUIN_VM_not(vm); }
 bool GUIN_API_AND(GUIN_VM* vm)

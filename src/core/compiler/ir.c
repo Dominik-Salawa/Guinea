@@ -97,10 +97,10 @@ static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST
 
                 case GUIN_EXPRNODE_CALL:
                 {
-                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
-
                     for (size_t i = 0; i < expr->data.exprFuncCallAST.expression_args_length; ++i)
                         GUIN_IR_CONVERT_expression(expr->data.exprFuncCallAST.expression_args[i]->top, addr_to_bytecode, false);
+
+                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
 
                     GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)GINSTR_CALL);
                     GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)expr->data.exprFuncCallAST.expression_args_length);
@@ -414,7 +414,7 @@ if (bytecode) {
     bool error = false;
     while (!reached_the_end && !error) {
         GUIN_log_push_layer();
-        GUIN_AST astnode = GUIN_parse_segment(&pState, GUIN_TK_EOF, true);
+        astnode = GUIN_parse_segment(&pState, GUIN_TK_EOF, true);
         GUIN_log_pop_layer();
 
         if (astnode.error) {
