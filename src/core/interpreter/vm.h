@@ -6,6 +6,7 @@
 #include "../bytecode.h"
 #include "stacks.h"
 #include "value.h"
+#include "gc.h"
 
 #define GUIN_is_false_eval(x) (x.current_value_type == GINSTRDATATYPE_NIL || (x.current_value_type == GINSTRDATATYPE_BOOL && !x.bl))
 
@@ -23,6 +24,7 @@ typedef struct GUIN_VM {
     GUIN_FRAME_STACK stack_frames;
     GUIN_VALUE_STACK stack_main;
     GUIN_GLOBALMAP   global;
+    GUIN_GC          gc;
 } GUIN_VM;
 GUIN_VM  GUIN_init_VM(void);
 GUIN_VM* GUIN_init_VM_ptr(void);

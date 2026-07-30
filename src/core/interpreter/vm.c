@@ -3,6 +3,7 @@
 
 #include "stacks.h"
 #include "vm.h"
+#include "gc.h"
 #include <math.h>
 #include <string.h>
 
@@ -101,6 +102,12 @@ GUIN_VM GUIN_init_VM(void)
         GUIN_destroy_VALUE_STACK(&x.stack_main);
         return (GUIN_VM){0};
     }
+    x.gc = GUIN_init_GC();
+    if (!x.gc.pages) {
+        GUIN_destroy_VALUE_STACK(&x.stack_main);
+        GUIN_destroy_FRAME_STACK(&x.stack_frames);
+        return (GUIN_VM){0};
+    }
     return x;
 }
 GUIN_VM* GUIN_init_VM_ptr(void)
@@ -115,11 +122,9 @@ GUIN_VM* GUIN_init_VM_ptr(void)
 void GUIN_destroy_VM(GUIN_VM* x)
 {
     if (!x) return;
-    printf("destroying VM\n");
     GUIN_destroy_VALUE_STACK(&x->stack_main);
-    printf("freed main stack\n");
     GUIN_destroy_FRAME_STACK(&x->stack_frames);
-    printf("freed frame stack\n");
+    GUIN_destroy_GC(&x->gc);
     *x = (GUIN_VM){0};
 }
 void GUIN_destroy_VM_ptr(GUIN_VM** x)
@@ -806,6 +811,20 @@ bool GUIN_VM_lt_equ(GUIN_VM* vm)
     return GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, new);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 GUIN_STATUS GUIN_load_VM(GUIN_VM* vm, GUIN_Bytecode* bytecode)
 {
     for (size_t i = 0; i < bytecode->length;) {
@@ -931,8 +950,26 @@ GUIN_STATUS GUIN_load_VM(GUIN_VM* vm, GUIN_Bytecode* bytecode)
                     name[j] = bytecode->bytecode[i];
                 name[namelen] = 0;
 
-                GUIN_add_GLOBALNAME_to_GLOBALMAP(&vm->global, dt, name);
+                GUIN_STATUS s = GUIN_add_GLOBALNAME_to_GLOBALMAP(&vm->global, dt, name);
+                if (s != GUIN_SUCCESS) {
+                    free(name);
+                    return s;
+                }
                 i += namelen;
+
+                { // assigns the Global variable its own dedicated slot and assigns from stack
+                    GUIN_ValueHeader** x = GUIN_GC_get_memory(vm, 1);
+                    if (!x) return GUIN_MEM_FAIL;
+                    
+                    GUIN_VARIABLE_HEADER* glocation = GUIN_fetch_GLOBALNAME_from_GLOBALMAP(&vm->global, name);
+                    glocation->ptr_to_value = *x;
+                    free(x);
+
+                    GUIN_ValueHeader popped_val = GUIN_pop_VALUE_STACK(&vm->stack_main);
+                    if (popped_val.current_value_type == GINSTRDATATYPE_NULL) return GUIN_FAIL;
+                    *glocation->ptr_to_value = popped_val;
+                }
+
                 break;
             }
 
@@ -946,15 +983,13 @@ GUIN_STATUS GUIN_load_VM(GUIN_VM* vm, GUIN_Bytecode* bytecode)
 
 // true:  loaded and did execute (but not necessarily there was no runtime errors)
 // false: failed to load/execute
-GUIN_STATUS GUIN_exec_VM(GUIN_VM* vm, char* start);/*
+GUIN_STATUS GUIN_exec_VM(GUIN_VM* vm, char* start)
 {
     GUIN_VARIABLE_HEADER* start_header = GUIN_fetch_GLOBALNAME_from_GLOBALMAP(&vm->global, start);
     if (!start_header) return GUIN_FAIL;
     if (start_header->datatype != GINSTRDATATYPE_FUNCTION || !start_header->ptr_to_value) return GUIN_FAIL;
 
-    
-
     return GUIN_SUCCESS;
-}*/
+}
 
 #endif

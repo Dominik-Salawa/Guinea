@@ -16,6 +16,7 @@ typedef struct GUIN_VARIABLE_HEADER {
     GUIN_ValueHeader* ptr_to_value;
 } GUIN_VARIABLE_HEADER;
 GUIN_VARIABLE_HEADER  GUIN_init_VARIABLE_HEADER(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr);
+GUIN_VARIABLE_HEADER  GUIN_init_VARIABLE_HEADER_cp_name(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr);
 GUIN_VARIABLE_HEADER* GUIN_init_VARIABLE_HEADER_ptr(GINSTR_Datatype datatype, char* name, GUIN_ValueHeader* ptr);
 void GUIN_destroy_VARIABLE_HEADER(GUIN_VARIABLE_HEADER* x);
 void GUIN_destroy_VARIABLE_HEADER_ptr(GUIN_VARIABLE_HEADER** x);
