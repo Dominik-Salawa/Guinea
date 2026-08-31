@@ -96,8 +96,9 @@ static const struct GUIN_LexNodeStringToEnumData stringtoken[] = {
     {.string="true",        .type=GUIN_TK_Bool_val},
     {.string="false",       .type=GUIN_TK_Bool_val},
     {.string="nil",         .type=GUIN_TK_nil},
-    {.string="NaN",         .type=GUIN_TK_NaN},
     {.string="void",        .type=GUIN_TK_void},
+    {.string="NaN",         .type=GUIN_TK_NaN},
+    {.string="Inf",         .type=GUIN_TK_Inf},
 
     {.string="func",        .type=GUIN_TK_func},
     {.string="int",         .type=GUIN_TK_int},
@@ -105,6 +106,7 @@ static const struct GUIN_LexNodeStringToEnumData stringtoken[] = {
     {.string="char",        .type=GUIN_TK_char},
     {.string="bool",        .type=GUIN_TK_bool},
     {.string="string",      .type=GUIN_TK_string},
+    {.string="dynamic",     .type=GUIN_TK_dynamic},
 
     {.string="if",          .type=GUIN_TK_if},
     {.string="else",        .type=GUIN_TK_else},
@@ -113,6 +115,9 @@ static const struct GUIN_LexNodeStringToEnumData stringtoken[] = {
     {.string="not",         .type=GUIN_TK_not},
     {.string="and",         .type=GUIN_TK_and},
     {.string="or",          .type=GUIN_TK_or},
+    {.string="continue",    .type=GUIN_TK_continue},
+    {.string="break",       .type=GUIN_TK_break},
+    {.string="return",      .type=GUIN_TK_return},
 
     {.string="var",         .type=GUIN_TK_var},
 };
@@ -217,6 +222,11 @@ static void GUIN_set_token_type(GUIN_LexToken* token, GUIN_LexState* lState) // 
             else if (token->type == GUIN_TK_NaN) {
                 token->type = GUIN_TK_Number_val;
                 token->number = GUIN_NaN;
+            }
+
+            else if (token->type == GUIN_TK_Inf) {
+                token->type = GUIN_TK_Number_val;
+                token->number = GUIN_Inf;
             }
 
             return;

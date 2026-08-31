@@ -24,6 +24,7 @@ typedef enum GUIN_LexTokenEnum {
     GUIN_TK_Bool_val,
     GUIN_TK_nil,
     GUIN_TK_NaN,
+    GUIN_TK_Inf,
 
     // CONTROL FLOW
     GUIN_TK_if,

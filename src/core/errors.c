@@ -82,7 +82,6 @@ bool GUIN_ERROR_std_err_message(FILE* f, char* filename, char* source, char* mes
     fprintf(f, GUIN_COLOR_CLEAR);
     putc('\n',f);
     bool exit = GUIN_ERROR_point_to_error(f, source, msg_next_to_ptr, line, column, len);
-    fprintf(f, GUIN_COLOR_WHITE"1 error generated.\n"GUIN_COLOR_CLEAR);
     return exit;
 }
 

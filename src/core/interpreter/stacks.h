@@ -38,6 +38,7 @@ typedef struct GUIN_FRAME {
     GUIN_ValueHeader* func; // for the GC to not delete it, should trust its pointing to a function obj as well
     size_t local_slot_base; // the offset in the main stack where the first arg starts
     GUIN_ubyte* pc; // points to func->funcval->bytecode and one of its members
+    bool no_ret;
 } GUIN_FRAME;
 // will assume that the entire size of local slot is in func
 // func is meant to be a reference for the GC, it is under

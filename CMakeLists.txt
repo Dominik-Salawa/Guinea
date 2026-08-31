@@ -16,7 +16,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         -Wpedantic -Wall -Wextra 
         -Werror -Wno-unused-parameter 
         -Wno-unused-variable 
-        -Wno-unused-function -O3
+        -Wno-unused-function -Os
         -fomit-frame-pointer -Wshadow
     )
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
@@ -26,7 +26,7 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
         -Wpedantic -Wall -Wextra 
         -Werror -Wno-unused-parameter 
         -Wno-unused-variable 
-        -Wno-unused-function -O3
+        -Wno-unused-function -O0 -g
         -fomit-frame-pointer -Wshadow
     )
 elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
@@ -35,7 +35,7 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
         guinea PRIVATE 
         /std:c11 /Za /W4 /WX 
         /wd4100 /wd4101 /wd4505
-        /O2
+        /Os
     )
 endif()
 

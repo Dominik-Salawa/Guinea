@@ -3,25 +3,6 @@
 
 #include "guinea.c"
 
-void print_peak_memory_linux(void) 
-{
-    FILE *f = fopen("/proc/self/status", "r");
-    if (!f) {
-        perror("Failed to open /proc/self/status");
-        return;
-    }
-
-    char line[128];
-    while (fgets(line, sizeof(line), f)) {
-        if (strncmp(line, "VmHWM:", 6) == 0) {
-            printf("Peak Physical RAM Usage (Linux): %s", line);
-            break;
-        }
-    }
-
-    fclose(f);
-}
-
 int main(int argc, char** argv)
 {
     int i = 1;
@@ -75,11 +56,10 @@ int main(int argc, char** argv)
 
     if (x) {
         GUIN_print_Bytecode_into_ASM(x);
-        putchar(10);
-        //freopen("file.gs", "w", stdout);
-        //GUIN_print_Bytecode_into_ASM(x);
+        if (mode == 1) {
 
-        if (mode == 2) {
+        }
+        else if (mode == 2) {
             ++i;
             if (i < argc) {
                 FILE* tosave = fopen(argv[i], "w");
@@ -95,7 +75,5 @@ int main(int argc, char** argv)
 
     GUIN_destroy_Bytecode_ptr(&x);
     GUIN_clearstring(&inp);
-
-    if (GUIN_log_on) print_peak_memory_linux();
     return 0;
 }

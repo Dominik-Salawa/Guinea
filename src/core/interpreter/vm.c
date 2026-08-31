@@ -136,7 +136,31 @@ void GUIN_destroy_VM_ptr(GUIN_VM** x)
     *x = NULL;
 }
 
-
+#define GUIN_VM_integer_branch(x,y, both_num, both_num_datatype, x_is_num, x_is_num_datatype, y_is_num, y_is_num_datatype, both_ints, both_int_datatype)\
+    if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {\
+        new = (GUIN_ValueHeader){.current_value_type=both_num_datatype};\
+        GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
+        GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
+        both_num;\
+    }\
+    else if (GUIN_is_number(x.current_value_type)) {\
+        new = (GUIN_ValueHeader){.current_value_type=x_is_num_datatype};\
+        GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
+        GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
+        x_is_num;\
+    }\
+    else if (GUIN_is_number(y.current_value_type)) {\
+        new = (GUIN_ValueHeader){.current_value_type=y_is_num_datatype};\
+        GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; \
+        GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
+        y_is_num;\
+    }\
+    else {\
+        new = (GUIN_ValueHeader){.current_value_type=both_int_datatype};\
+        GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; \
+        GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
+        both_ints;\
+    }
 
 // ARITHMETIC
 bool GUIN_VM_add(GUIN_VM* vm)
@@ -153,30 +177,16 @@ bool GUIN_VM_add(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int + number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval + yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = xval + yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval + yval;
-        }
-        else {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_INT64};
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.i64 = xval + yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.n64 = xval + yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval + yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval + yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.i64 = xval + yval,
+                GINSTRDATATYPE_INT64
+        )
     }
     // string + string
     else if (x.current_value_type == GINSTRDATATYPE_STRING && y.current_value_type == GINSTRDATATYPE_STRING) {
@@ -208,30 +218,16 @@ bool GUIN_VM_sub(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int + number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval - yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = xval - yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval - yval;
-        }
-        else {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_INT64};
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.i64 = xval - yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.n64 = xval - yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval - yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval - yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.i64 = xval - yval,
+                GINSTRDATATYPE_INT64
+        )
     }
     // error sub
     else {
@@ -257,30 +253,16 @@ bool GUIN_VM_mul(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int * number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval * yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = xval * yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval * yval;
-        }
-        else {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_INT64};
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.i64 = xval * yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.n64 = xval * yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval * yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval * yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.i64 = xval * yval,
+                GINSTRDATATYPE_INT64
+        )
     }
     // string/int * string/int
     else if ((x.current_value_type == GINSTRDATATYPE_STRING || y.current_value_type == GINSTRDATATYPE_STRING) && (GUIN_is_int(x.current_value_type) || GUIN_is_int(y.current_value_type))) {
@@ -334,30 +316,16 @@ bool GUIN_VM_div(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int / number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval / yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = xval / yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = xval / yval;
-        }
-        else {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = xval / yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.n64 = xval / yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval / yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = xval / yval,
+                GINSTRDATATYPE_NUMBER64,
+            new.i64 = xval / yval,
+                GINSTRDATATYPE_INT64
+        )
     }
     // error div
     else {
@@ -383,30 +351,16 @@ bool GUIN_VM_mod(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int ^ number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = fmod(xval, yval);
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = fmod(xval, yval);
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = fmod(xval, yval);
-        }
-        else {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = xval % yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.n64 = fmod(xval, yval),
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = fmod(xval, yval),
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = fmod(xval, yval),
+                GINSTRDATATYPE_NUMBER64,
+            new.i64 = xval % yval,
+                GINSTRDATATYPE_INT64
+        )
     }
     // error pow
     else {
@@ -432,30 +386,16 @@ bool GUIN_VM_pow(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int ^ number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = pow(xval, yval);
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = pow(xval, yval);
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.n64 = pow(xval, yval);
-        }
-        else {
-            new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_NUMBER64};
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.n64 = pow(xval, yval);
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.n64 = pow(xval, yval),
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = pow(xval, yval),
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = pow(xval, yval),
+                GINSTRDATATYPE_NUMBER64,
+            new.n64 = pow(xval, yval),
+                GINSTRDATATYPE_NUMBER64
+        )
     }
     // error pow
     else {
@@ -552,29 +492,19 @@ bool GUIN_VM_equ(GUIN_VM* vm)
         return false;
     }
 
-    GUIN_ValueHeader new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_BOOL};
+    GUIN_ValueHeader new;
     // number/int/bool/char == number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval == yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval == yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval == yval;
-        }
-        else {
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval == yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.bl = xval == yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval == yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval == yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval == yval,
+                GINSTRDATATYPE_BOOL
+        )
     }
     else if (x.current_value_type == GINSTRDATATYPE_STRING && y.current_value_type == GINSTRDATATYPE_STRING) {
         new.bl = GUIN_stringcompare(x.str, y.str);
@@ -599,29 +529,19 @@ bool GUIN_VM_not_equ(GUIN_VM* vm)
         return false;
     }
 
-    GUIN_ValueHeader new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_BOOL};
+    GUIN_ValueHeader new;
     // number/int/bool/char != number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval != yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval != yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval != yval;
-        }
-        else {
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval != yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.bl = xval != yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval != yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval != yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval != yval,
+                GINSTRDATATYPE_BOOL
+        )
     }
     else if (x.current_value_type == GINSTRDATATYPE_STRING && y.current_value_type == GINSTRDATATYPE_STRING) {
         new.bl = !GUIN_stringcompare(x.str, y.str);
@@ -646,29 +566,19 @@ bool GUIN_VM_gt(GUIN_VM* vm)
         return false;
     }
 
-    GUIN_ValueHeader new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_BOOL};
+    GUIN_ValueHeader new;
     // number/int/bool/char > number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval > yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval > yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval > yval;
-        }
-        else {
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval > yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.bl = xval > yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval > yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval > yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval > yval,
+                GINSTRDATATYPE_BOOL
+        )
     }
     else {
         GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
@@ -690,29 +600,19 @@ bool GUIN_VM_lt(GUIN_VM* vm)
         return false;
     }
 
-    GUIN_ValueHeader new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_BOOL};
+    GUIN_ValueHeader new;
     // number/int/bool/char < number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval < yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval < yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval < yval;
-        }
-        else {
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval < yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.bl = xval < yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval < yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval < yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval < yval,
+                GINSTRDATATYPE_BOOL
+        )
     }
     else {
         GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
@@ -737,26 +637,16 @@ bool GUIN_VM_gt_equ(GUIN_VM* vm)
     GUIN_ValueHeader new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_BOOL};
     // number/int/bool/char >= number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval >= yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval >= yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval >= yval;
-        }
-        else {
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval >= yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.bl = xval >= yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval >= yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval >= yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval >= yval,
+                GINSTRDATATYPE_BOOL
+        )
     }
     else {
         GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
@@ -781,26 +671,16 @@ bool GUIN_VM_lt_equ(GUIN_VM* vm)
     GUIN_ValueHeader new = (GUIN_ValueHeader){.current_value_type=GINSTRDATATYPE_BOOL};
     // number/int/bool/char <= number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval <= yval;
-        }
-        else if (GUIN_is_number(x.current_value_type)) {
-            GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32; 
-            GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval <= yval;
-        }
-        else if (GUIN_is_number(y.current_value_type)) {
-            GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;
-            new.bl = xval <= yval;
-        }
-        else {
-            GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; 
-            GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
-            new.bl = xval <= yval;
-        }
+        GUIN_VM_integer_branch(x,y,
+            new.bl = xval <= yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval <= yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval <= yval,
+                GINSTRDATATYPE_BOOL,
+            new.bl = xval <= yval,
+                GINSTRDATATYPE_BOOL
+        )
     }
     else {
         GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
@@ -813,170 +693,293 @@ bool GUIN_VM_lt_equ(GUIN_VM* vm)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-GUIN_STATUS GUIN_load_VM(GUIN_VM* vm, GUIN_Bytecode* bytecode)
+GUIN_STATUS GINSTR_VM_PUSH_IMMEDIATE_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
 {
-    for (size_t i = 0; i < bytecode->length;) {
-        switch (bytecode->bytecode[i])
-        {
-            case GINSTR_PUSH_IMMEDIATE: {
-                ++i;
-                GUIN_VH_from_BC_result x = GUIN_get_ValueHeader_from_Bytecode(&bytecode->bytecode[i]);
-                if (x.status == GUIN_FAIL) {
-                    GUIN_printf("%sc\n", x.errmsg);
-                    GUIN_destroy_ValueHeader(&x.value);
-                    return GUIN_FAIL;
-                }
-                if (x.status == GUIN_MEM_FAIL) {
-                    GUIN_destroy_ValueHeader(&x.value);
-                    return GUIN_MEM_FAIL;
-                }
+    ++frame->pc;
+    GUIN_VH_from_BC_result x = GUIN_get_ValueHeader_from_Bytecode(&frame->func->funcval->bytecode, frame->pc);
+    if (x.status == GUIN_FAIL) {
+        GUIN_printf("%sc\n", x.errmsg);
+        GUIN_destroy_ValueHeader(&x.value);
+        return GUIN_FAIL;
+    }
+    if (x.status == GUIN_MEM_FAIL) {
+        GUIN_destroy_ValueHeader(&x.value);
+        return GUIN_MEM_FAIL;
+    }
 
-                bool s = GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, x.value);
-                if (!s) {
-                    GUIN_destroy_ValueHeader(&x.value);
-                    return s;
-                }
-                i += x.to_jump;
-                break;
-            }
+    bool s = GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, x.value);
+    if (!s) {
+        GUIN_destroy_ValueHeader(&x.value);
+        return s;
+    }
+    frame->pc += x.to_jump;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_DECLARE_GLOBAL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    ++frame->pc;
+    GINSTR_Datatype dt = *frame->pc;
+    ++frame->pc;
+    GUIN_uint64 namelen;
+    memcpy(&namelen, frame->pc, sizeof(namelen));
+    frame->pc += sizeof(namelen);
+    char* name = malloc(sizeof(char) * namelen + 1);
+    if (!name) return GUIN_MEM_FAIL;
 
-            case GINSTR_ADD:
-                if (!GUIN_VM_add(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
+    for (size_t j = 0; j < (size_t)namelen; ++j, ++frame->pc)
+        name[j] = *frame->pc;
+    name[namelen] = 0;
 
-            case GINSTR_SUB:
-                if (!GUIN_VM_sub(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
+    GUIN_STATUS s = GUIN_add_GLOBALNAME_to_GLOBALMAP(&vm->global, dt, name);
+    if (s != GUIN_SUCCESS) {
+        free(name);
+        return s;
+    }
+    frame->pc += namelen-1;
 
-            case GINSTR_MUL:
-                if (!GUIN_VM_mul(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
+    { // assigns the Global variable its own dedicated slot and assigns from stack
+        GUIN_ValueHeader** x = GUIN_GC_get_memory(vm, 1);
+        if (!x) return GUIN_MEM_FAIL;
+        
+        GUIN_VARIABLE_HEADER* glocation = GUIN_fetch_GLOBALNAME_from_GLOBALMAP(&vm->global, name);
+        glocation->ptr_to_value = *x;
+        glocation->ptr_to_value->header_type = dt;
+        free(x);
 
-            case GINSTR_DIV:
-                if (!GUIN_VM_div(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_MOD:
-                if (!GUIN_VM_mod(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_POW:
-                if (!GUIN_VM_pow(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_NEG:
-                if (!GUIN_VM_neg(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_NOT:
-                if (!GUIN_VM_not(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_EQU:
-                if (!GUIN_VM_equ(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_NOT_EQU:
-                if (!GUIN_VM_not_equ(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_GT:
-                if (!GUIN_VM_gt(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-            
-            case GINSTR_LT:
-                if (!GUIN_VM_lt(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_GT_EQU:
-                if (!GUIN_VM_gt_equ(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_LT_EQU:
-                if (!GUIN_VM_lt_equ(vm))
-                    return GUIN_FAIL;
-                ++i;
-                break;
-
-            case GINSTR_DECLARE_GLOBAL: {
-                ++i;
-                GINSTR_Datatype dt = bytecode->bytecode[i];
-                ++i;
-                GUIN_uint64 namelen;
-                memcpy(&namelen, &bytecode->bytecode[i], sizeof(namelen));
-                i += sizeof(namelen);
-                char* name = malloc(sizeof(char) * namelen + 1);
-                if (!name) return GUIN_MEM_FAIL;
-
-                for (size_t j = 0; j < (size_t)namelen; ++j, ++i)
-                    name[j] = bytecode->bytecode[i];
-                name[namelen] = 0;
-
-                GUIN_STATUS s = GUIN_add_GLOBALNAME_to_GLOBALMAP(&vm->global, dt, name);
-                if (s != GUIN_SUCCESS) {
-                    free(name);
-                    return s;
-                }
-                i += namelen;
-
-                { // assigns the Global variable its own dedicated slot and assigns from stack
-                    GUIN_ValueHeader** x = GUIN_GC_get_memory(vm, 1);
-                    if (!x) return GUIN_MEM_FAIL;
-                    
-                    GUIN_VARIABLE_HEADER* glocation = GUIN_fetch_GLOBALNAME_from_GLOBALMAP(&vm->global, name);
-                    glocation->ptr_to_value = *x;
-                    free(x);
-
-                    GUIN_ValueHeader popped_val = GUIN_pop_VALUE_STACK(&vm->stack_main);
-                    if (popped_val.current_value_type == GINSTRDATATYPE_NULL) return GUIN_FAIL;
-                    *glocation->ptr_to_value = popped_val;
-                }
-
-                break;
-            }
-
-            default:
-                printf("error byte: %d %zu\n", bytecode->bytecode[i], i);
-                return GUIN_FAIL;
+        GUIN_ValueHeader popped_val = GUIN_pop_VALUE_STACK(&vm->stack_main);
+        s = GUIN_assign_ValueHeader_with_ValueHeader(glocation->ptr_to_value, popped_val);
+        if (s != GUIN_SUCCESS) {
+            GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, popped_val);
+            return s;
         }
+    }
+    return GUIN_SUCCESS;
+}
+
+GUIN_STATUS GINSTR_VM_ADD_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_add(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_SUB_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_sub(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_MUL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_mul(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_DIV_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_div(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_MOD_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_mod(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_POW_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_pow(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_NEG_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_neg(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_NOT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_not(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_AND_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_and(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_OR_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_or(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_equ(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_NOT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_not_equ(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_GT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_gt(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_LT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_lt(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_GT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_gt_equ(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_LT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (!GUIN_VM_lt_equ(vm))
+        return GUIN_FAIL;
+    ++frame->pc;
+    return GUIN_SUCCESS;
+}
+
+#define GUIN_VM_is_valid_Program_Counter(pc, bytecode) (pc >= bytecode.bytecode && pc < bytecode.bytecode + bytecode.length)
+
+GUIN_STATUS GINSTR_VM_JMP_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    frame->pc += 1;
+    GUIN_ubyte jmp;
+
+    if (!GUIN_safe_memcpy_Bytecode(&jmp, &frame->func->funcval->bytecode, frame->pc, sizeof(GUIN_ubyte))) {
+        vm->errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
+        return GUIN_FAIL;
+    }
+
+    frame->pc += *(frame->pc - 1);
+    return GUIN_SUCCESS;
+}
+GUIN_STATUS GINSTR_VM_JMPL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    frame->pc += 1;
+    GUIN_JUMPL_SIZE jmp;
+
+    if (!GUIN_safe_memcpy_Bytecode(&jmp, &frame->func->funcval->bytecode, frame->pc, sizeof(GUIN_JUMPL_SIZE))) {
+        vm->errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
+        return GUIN_FAIL;
+    }
+
+    frame->pc += jmp + sizeof(GUIN_JUMPL_SIZE);
+    return GUIN_SUCCESS;
+}
+
+GUIN_STATUS GINSTR_VM_RET_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
+{
+    if (frame->no_ret && frame->func->funcval->return_type != GINSTRDATATYPE_VOID)
+        GUIN_pop_VALUE_STACK(&vm->stack_main);
+
+    GUIN_pop_FRAME_STACK(&vm->stack_frames);    
+    return GUIN_SUCCESS;
+}
+
+typedef GUIN_STATUS (*GUIN_BytecodeHandler)(GUIN_VM* vm, GUIN_FRAME* frame);
+static GUIN_BytecodeHandler GUIN_VM_bytecode_handler[256] = {
+    [GINSTR_PUSH_IMMEDIATE] = &GINSTR_VM_PUSH_IMMEDIATE_BYTECODE,
+    [GINSTR_DECLARE_GLOBAL] = &GINSTR_VM_DECLARE_GLOBAL_BYTECODE,
+
+    [GINSTR_JMP]            = &GINSTR_VM_JMP_BYTECODE,
+    [GINSTR_JMPL]           = &GINSTR_VM_JMPL_BYTECODE,
+
+    [GINSTR_RET]            = &GINSTR_VM_RET_BYTECODE,
+
+    [GINSTR_ADD]            = &GINSTR_VM_ADD_BYTECODE,
+    [GINSTR_SUB]            = &GINSTR_VM_SUB_BYTECODE,
+    [GINSTR_MUL]            = &GINSTR_VM_MUL_BYTECODE,
+    [GINSTR_DIV]            = &GINSTR_VM_DIV_BYTECODE,
+    [GINSTR_MOD]            = &GINSTR_VM_MOD_BYTECODE,
+    [GINSTR_POW]            = &GINSTR_VM_POW_BYTECODE,
+    [GINSTR_NEG]            = &GINSTR_VM_NEG_BYTECODE,
+    [GINSTR_NOT]            = &GINSTR_VM_NOT_BYTECODE,
+    [GINSTR_AND]            = &GINSTR_VM_AND_BYTECODE,
+    [GINSTR_OR]             = &GINSTR_VM_OR_BYTECODE,
+    [GINSTR_EQU]            = &GINSTR_VM_EQU_BYTECODE,
+    [GINSTR_NOT_EQU]        = &GINSTR_VM_NOT_EQU_BYTECODE,
+    [GINSTR_GT]             = &GINSTR_VM_GT_BYTECODE,
+    [GINSTR_LT]             = &GINSTR_VM_LT_BYTECODE,
+    [GINSTR_GT_EQU]         = &GINSTR_VM_GT_EQU_BYTECODE,
+    [GINSTR_LT_EQU]         = &GINSTR_VM_LT_EQU_BYTECODE,
+};
+
+
+// DOES NOT DEEP COPY
+GUIN_STATUS GUIN_load_Bytecode_into_VM(GUIN_VM* vm, GUIN_Bytecode* global)
+{
+    if (!vm || !global) return GUIN_FAIL;
+
+    GUIN_FunctionValue func;
+    func.argc = 0;
+    func.bytecode = *global;
+    func.return_type = GINSTRDATATYPE_VOID;
+
+    GUIN_ValueHeader vh = GUIN_init_ValueHeader(GINSTRDATATYPE_FUNCTION);
+    vh.funcval = &func;
+    GUIN_FRAME frame = GUIN_init_FRAME(&vh);
+
+    if (!frame.pc)
+        return GUIN_FAIL;
+
+    return (GUIN_add_FRAME_to_FRAME_STACK(&vm->stack_frames, frame) == true)? GUIN_SUCCESS : GUIN_MEM_FAIL;
+}
+
+
+GUIN_STATUS GUIN_run_VM(GUIN_VM* vm)
+{
+    if (!vm) return GUIN_FAIL;
+    vm->errmsg = NULL;
+    for (GUIN_FRAME* frame = vm->stack_frames.stackptr-1; vm->stack_frames.stackptr != vm->stack_frames.baseptr; frame = vm->stack_frames.stackptr-1) {
+        if (GUIN_overflow_Bytecode((&frame->func->funcval->bytecode), frame->pc)) {
+            vm->errmsg = "Program Counter overflow!";
+            return GUIN_FAIL;
+        }
+        if (GUIN_underflow_Bytecode((&frame->func->funcval->bytecode), frame->pc)) {
+            vm->errmsg = "Program Counter underflow!";
+            return GUIN_FAIL;
+        }
+
+        //GUIN_printf("l %d\n", *frame->pc);
+        GUIN_BytecodeHandler func = GUIN_VM_bytecode_handler[*frame->pc];
+        if (func == NULL) {
+            vm->errmsg = "Unknown bytecode!";
+            //printf("Error byte: %d %zu\n", *frame->pc, (size_t)(frame->pc - frame->func->funcval->bytecode.bytecode));
+            return GUIN_FAIL;
+        }
+        GUIN_STATUS s = func(vm, frame);
+        if (s != GUIN_SUCCESS) return s;
     }
     return GUIN_SUCCESS;
 }

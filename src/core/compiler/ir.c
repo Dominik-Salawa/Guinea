@@ -48,7 +48,7 @@ GINSTR GUIN_ExpressionNodeType_to_GINSTR(GUIN_ExpressionNodeType x)
 #define is_number_int_expr(expr) (expr == EXPRNODE_INT || expr == EXPRNODE_NUMBER)
 #define is_immediate_value(expr) (is_number_int_expr(expr) || expr == EXPRNODE_BOOL || expr == EXPRNODE_CHAR || expr == EXPRNODE_STRING || expr == EXPRNODE_NIL || expr == EXPRNODE_FUNCTION_LITERAL)
 // please leave arg3 as false, its just for chaining, NOT LISTENING TO THIS MESSAGE WILL MESS UP THE FUNCTION
-static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST* expr, GUIN_Bytecode** addr_to_bytecode, bool dont_push_load)
+static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST* expr, GUIN_Bytecode** addr_to_bytecode, bool dont_push_load, bool assign_trust_push)
 {
     GUIN_ExpressionNodeType x = GUIN_EXPRNODE_UNINIT;
 
@@ -63,8 +63,8 @@ static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST
         case 2:
         {
             x = expr->type;
-            GUIN_IR_CONVERT_expression(expr->left,  addr_to_bytecode, false);
-            GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+            GUIN_IR_CONVERT_expression(expr->left,  addr_to_bytecode, false, true);
+            GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
             GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)GUIN_ExpressionNodeType_to_GINSTR(expr->type));
             break;
         }
@@ -80,27 +80,27 @@ static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST
 
                     if (child == GUIN_EXPRNODE_INT) {
                         expr->right->data.integer = -expr->right->data.integer;
-                        GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+                        GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
                         break;
                     }
                     else if (child == GUIN_EXPRNODE_NUMBER) {
                         expr->right->data.number = -expr->right->data.number;
-                        GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+                        GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
                         break;
                     }
 
                     // if it doesnt meet the requirements above, it will just use the NEG opcode
-                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
                     GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)GINSTR_NEG);
                     break;
                 }
 
                 case GUIN_EXPRNODE_CALL:
                 {
-                    for (size_t i = 0; i < expr->data.exprFuncCallAST.expression_args_length; ++i)
-                        GUIN_IR_CONVERT_expression(expr->data.exprFuncCallAST.expression_args[i]->top, addr_to_bytecode, false);
+                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
 
-                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+                    for (size_t i = 0; i < expr->data.exprFuncCallAST.expression_args_length; ++i)
+                        GUIN_IR_CONVERT_expression(expr->data.exprFuncCallAST.expression_args[i]->top, addr_to_bytecode, false, true);
 
                     GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)GINSTR_CALL);
                     GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)expr->data.exprFuncCallAST.expression_args_length);
@@ -109,11 +109,11 @@ static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST
 
 
                 case GUIN_EXPRNODE_PARENTHESIS:
-                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
                     break;
 
                 default:
-                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false);
+                    GUIN_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
                     GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)GUIN_ExpressionNodeType_to_GINSTR(expr->type));
                     break;
             }
@@ -125,6 +125,33 @@ static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST
             x = expr->type;
             switch (expr->type)
             {
+                case GUIN_EXPRNODE_FUNCTION_LITERAL:
+                    GUIN_log("converting function literal\n");
+                    GUIN_add_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
+                    GUIN_add_Bytecode_one_byte(bytecode, GINSTRDATATYPE_FUNCTION);
+                    GUIN_add_Bytecode_one_byte(bytecode, (GUIN_ubyte)GUIN_ASTDatatype_to_Bytecode_Datatype(expr->data.function.return_type));
+                    GUIN_Bytecode* funcbc = GUIN_IR_CONVERT_ASTSCOPE(&expr->data.function.scope);
+                    if (!funcbc) {
+                        GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
+                        return GUIN_EXPRNODE_UNINIT;
+                    }
+
+                    if (funcbc->length > 0 && funcbc->bytecode[funcbc->length-1] != GINSTR_RET) {
+                        GUIN_log("add RET since its missing from func bytecode\n");
+                        if (!GUIN_add_Bytecode_one_byte(funcbc, GINSTR_RET)) {
+                            GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
+                            GUIN_destroy_Bytecode_ptr(&funcbc);
+                            return GUIN_EXPRNODE_UNINIT;
+                        }
+                    }
+
+                    GUIN_log("done add %ld\n", funcbc->length);
+
+                    GUIN_add_Bytecode_w_byte_size(bytecode, &funcbc->length, sizeof(size_t));
+                    GUIN_add_Bytecode(bytecode, funcbc->bytecode, funcbc->length);
+                    GUIN_destroy_Bytecode_ptr(&funcbc);
+                    break;
+
                 case GUIN_EXPRNODE_STRING:
                     GUIN_add_Bytecode_one_byte(bytecode, GINSTR_PUSH_IMMEDIATE);
                     GUIN_add_Bytecode_one_byte(bytecode, GINSTRDATATYPE_STRING);
@@ -189,45 +216,44 @@ static GUIN_ExpressionNodeType GUIN_IR_CONVERT_expression(GUIN_ExpressionNodeAST
 
         default:
             printf("err IR CONV RESULT\n");
-            exit(1);
+            break;
     }
     return x;
 }
 
-static int GUIN_IR_ADD_AST_TO_BYTECODE(const GUIN_AST astnode, GUIN_Bytecode** addr_to_bytecode)
+static GUIN_STATUS GUIN_IR_ADD_AST_TO_BYTECODE(const GUIN_AST* astnode, GUIN_Bytecode** addr_to_bytecode)
 {
-    if (!addr_to_bytecode) return GUIN_IR_CONVERT_FAILED;
-    if (astnode.error)     return GUIN_IR_CONVERT_FAILED;
+    if (!addr_to_bytecode || !astnode) return GUIN_FAIL;
 
-    switch (astnode.nodetype) 
+    switch (astnode->nodetype) 
     {
         case GUIN_ASTNODE_DECLARATION: {
-            GUIN_ExpressionNodeType ir_tree = GUIN_IR_CONVERT_expression(astnode.declarationAST.expression->top, addr_to_bytecode, false);
+            GUIN_ExpressionNodeType ir_tree = GUIN_IR_CONVERT_expression(astnode->declarationAST.expression->top, addr_to_bytecode, false, false);
 
             if (ir_tree == GUIN_EXPRNODE_UNINIT) {
                 GUIN_log("failed!\n");
                 GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
-                return GUIN_IR_CONVERT_FAILED;
+                return GUIN_FAIL;
             }
 
-            if (astnode.declarationAST.slot == 0) {
+            if (astnode->declarationAST.slot == 0) {
                 GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GINSTR_DECLARE_GLOBAL);
 
                 // metadata for the declaration
-                GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GUIN_ASTDatatype_to_Bytecode_Datatype(astnode.declarationAST.info.datatype));
+                GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GUIN_ASTDatatype_to_Bytecode_Datatype(astnode->declarationAST.info.datatype));
                 // str of global name
-                GUIN_uint64 length = astnode.declarationAST.info.identifier.length;
+                GUIN_uint64 length = astnode->declarationAST.info.identifier.length;
                 // DO NOT FORGET TO CHANGE BELOW sizeof(datatype) FOR length PLEASE
                 GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, &length, sizeof(GUIN_uint64));
-                GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, astnode.declarationAST.info.identifier.content, length);
+                GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, astnode->declarationAST.info.identifier.content, length);
             } else {
                 GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GINSTR_DECLARE_LOCAL);
 
                 // metadata for the declaration
-                GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GUIN_ASTDatatype_to_Bytecode_Datatype(astnode.declarationAST.info.datatype));
+                GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GUIN_ASTDatatype_to_Bytecode_Datatype(astnode->declarationAST.info.datatype));
 
                 // designate the slot we plan to target
-                GUIN_LOCAL_SLOT_INT slotnum = astnode.declarationAST.slot-1;
+                GUIN_LOCAL_SLOT_INT slotnum = astnode->declarationAST.slot-1;
                 // DO NOT FORGET TO CHANGE BELOW sizeof(datatype) FOR slotnum PLEASE
                 GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, &slotnum, sizeof(GUIN_LOCAL_SLOT_INT));
             }
@@ -235,18 +261,18 @@ static int GUIN_IR_ADD_AST_TO_BYTECODE(const GUIN_AST astnode, GUIN_Bytecode** a
         }
 
         case GUIN_ASTNODE_IF: {
-            GUIN_ExpressionNodeType ir_tree = GUIN_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, addr_to_bytecode, false);
+            GUIN_ExpressionNodeType ir_tree = GUIN_IR_CONVERT_expression(astnode->ifWhileAST.expression->top, addr_to_bytecode, false, true);
             if (ir_tree == GUIN_EXPRNODE_UNINIT) {
                 GUIN_log("failed ir tree!\n");
                 GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
-                return GUIN_IR_CONVERT_FAILED;
+                return GUIN_MEM_FAIL;
             }
 
-            GUIN_Bytecode* if_conv = GUIN_IR_CONVERT_ASTSCOPE(&astnode.ifWhileAST.nodes);
+            GUIN_Bytecode* if_conv = GUIN_IR_CONVERT_ASTSCOPE(&astnode->ifWhileAST.nodes);
             if (!if_conv) {
                 GUIN_log("failed to get if conversion!\n");
                 GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
-                return GUIN_IR_CONVERT_FAILED;
+                return GUIN_MEM_FAIL;
             }
 
             /*
@@ -283,20 +309,23 @@ static int GUIN_IR_ADD_AST_TO_BYTECODE(const GUIN_AST astnode, GUIN_Bytecode** a
 
         case GUIN_ASTNODE_WHILE: {
             GUIN_Bytecode* ir_tree_bc = GUIN_init_Bytecode_ptr();
-            GUIN_ExpressionNodeType ir_tree = GUIN_IR_CONVERT_expression(astnode.ifWhileAST.expression->top, &ir_tree_bc, false);
+            if (!ir_tree_bc)
+                return GUIN_MEM_FAIL;
+
+            GUIN_ExpressionNodeType ir_tree = GUIN_IR_CONVERT_expression(astnode->ifWhileAST.expression->top, &ir_tree_bc, false, true);
             if (ir_tree == GUIN_EXPRNODE_UNINIT) {
                 GUIN_log("failed ir tree!\n");
                 GUIN_destroy_Bytecode_ptr(&ir_tree_bc);
                 GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
-                return GUIN_IR_CONVERT_FAILED;
+                return GUIN_FAIL;
             }
 
-            GUIN_Bytecode* while_conv = GUIN_IR_CONVERT_ASTSCOPE(&astnode.ifWhileAST.nodes);
+            GUIN_Bytecode* while_conv = GUIN_IR_CONVERT_ASTSCOPE(&astnode->ifWhileAST.nodes);
             if (!while_conv) {
                 GUIN_log("failed to get while conversion!\n");
                 GUIN_destroy_Bytecode_ptr(&ir_tree_bc);
                 GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
-                return GUIN_IR_CONVERT_FAILED;
+                return GUIN_FAIL;
             }
 
             GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, ir_tree_bc->bytecode, ir_tree_bc->length);
@@ -334,12 +363,12 @@ static int GUIN_IR_ADD_AST_TO_BYTECODE(const GUIN_AST astnode, GUIN_Bytecode** a
         }
 
         case GUIN_ASTNODE_SCOPE: {
-            GUIN_Bytecode* scope_conv = GUIN_IR_CONVERT_ASTSCOPE(&astnode.scopeAST);
+            GUIN_Bytecode* scope_conv = GUIN_IR_CONVERT_ASTSCOPE(&astnode->scopeAST);
             if (!scope_conv) {
                 GUIN_log("failed to get scope conversion!\n");
                 GUIN_destroy_Bytecode_ptr(&scope_conv);
                 GUIN_destroy_Bytecode_ptr(addr_to_bytecode);
-                return GUIN_IR_CONVERT_FAILED;
+                return GUIN_FAIL;
             }
             GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, scope_conv->bytecode, scope_conv->length);
             GUIN_destroy_Bytecode_ptr(&scope_conv);
@@ -350,23 +379,41 @@ static int GUIN_IR_ADD_AST_TO_BYTECODE(const GUIN_AST astnode, GUIN_Bytecode** a
         case GUIN_ASTNODE_CLEAR_LOCAL_SLOT: {
             GUIN_log("CLEAR\n");
             GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GINSTR_CLEAR_LOCAL);
-            GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, &astnode.clearLocalSlotAST.slot, sizeof(GUIN_LOCAL_SLOT_INT));
+            GUIN_add_Bytecode_w_byte_size(*addr_to_bytecode, &astnode->clearLocalSlotAST.slot, sizeof(GUIN_LOCAL_SLOT_INT));
+            break;
         }
+
+        case GUIN_ASTNODE_RETURN: {
+            GUIN_log("return\n");
+            GUIN_IR_CONVERT_expression(astnode->returnAST.expression, addr_to_bytecode, false, true);
+            GUIN_add_Bytecode_one_byte(*addr_to_bytecode, (GUIN_ubyte)GINSTR_RET);
+            break;
+        }
+
+        case GUIN_ASTNODE_NULL: 
+            return GUIN_FAIL;
+
+        case GUIN_ASTNODE_BREAK: 
+            return GUIN_FAIL;
+
+        case GUIN_ASTNODE_CONTINUE: 
+            return GUIN_FAIL;
 
         case GUIN_ASTNODE_IGNORE:
             break;
 
         case GUIN_ASTNODE_END:
-            return GUIN_IR_CONVERT_FINISHED;
-
-        default:
-            printf("IDK HOW THE IR IS MEANT TO HANDLE THIS ONE ERROR ERROR!!!!!!!WKAJDLKAWIFJ (%d)\n", astnode.nodetype);
-            exit(1);
+            return GUIN_FINISHED;
     }
 
     GUIN_log("reached the end\n");
-    return GUIN_IR_CONVERT_CONTINUE;
+    return GUIN_CONTINUE;
 }
+
+struct GUIN_IR_CONVERT_ASTSCOPE_result {
+    GUIN_STATUS status;
+    GUIN_Bytecode* bytecode;
+};
 
 // assumes its in a local scope
 static GUIN_Bytecode* GUIN_IR_CONVERT_ASTSCOPE(const GUIN_ASTScope* astscope)
@@ -374,42 +421,37 @@ static GUIN_Bytecode* GUIN_IR_CONVERT_ASTSCOPE(const GUIN_ASTScope* astscope)
     GUIN_Bytecode* bytecode = GUIN_init_Bytecode_ptr();
     if (!bytecode) return NULL;
 
+    GUIN_log("length of ASTScope for GUIN_IR_CONVERT_ASTSCOPE: %zu\n", astscope->length);
     for (size_t i = 0; i < astscope->length; ++i) {
-        GUIN_log("attempt %zu:%zu:\n", i, astscope->length);
-        int code = GUIN_IR_ADD_AST_TO_BYTECODE(astscope->nodes[i], &bytecode);
-        
-        GUIN_log("code: %d\n", code);
+        GUIN_STATUS code = GUIN_IR_ADD_AST_TO_BYTECODE(&astscope->nodes[i], &bytecode);
+
+        if (code == GUIN_MEM_FAIL) {
+            GUIN_destroy_Bytecode_ptr(&bytecode);
+        }
 
         // error
-        if (code == GUIN_IR_CONVERT_FAILED) {
+        if (code == GUIN_FAIL) {
             GUIN_destroy_Bytecode_ptr(&bytecode);
             return NULL;   
         }
 
         // end
-        if (code == GUIN_IR_CONVERT_FINISHED) {
+        if (code == GUIN_FINISHED) {
             break;
         }
     }
 
+    GUIN_printf("FINISHED\n");
+    exit(1);
     return bytecode;
 }
 
 GUIN_Bytecode* GUIN_IR_CONVERT(GUIN_IR* ir, const bool on_global)
 {
-    ///////////////////////////////////////////////////////////
-    ///                                                     ///
-    /// SIZE_T_OF_PLATFORM GETS TEMP CHANGE PLS CHANGE BACK ///
-    ///                                                     ///
-    ///////////////////////////////////////////////////////////
     GUIN_ParseState pState = GUIN_init_ParseState(&ir->source);
     GUIN_Bytecode* bytecode = GUIN_init_Bytecode_ptr();
-    GUIN_AST astnode = (GUIN_AST){0};
+    GUIN_AST* astnode = NULL;
 
-if (bytecode) {
-    { // MAGIC
-        if (on_global) GUIN_add_Bytecode_w_byte_size(bytecode, "$GUINEA", 7);
-    }
     bool reached_the_end = false;
     bool error = false;
     while (!reached_the_end && !error) {
@@ -417,7 +459,13 @@ if (bytecode) {
         astnode = GUIN_parse_segment(&pState, GUIN_TK_EOF, true);
         GUIN_log_pop_layer();
 
-        if (astnode.error) {
+        if (!astnode) {
+            GUIN_destroy_Bytecode_ptr(&bytecode);
+            GUIN_destroy_ParseState(&pState);
+            return NULL;
+        }
+
+        if (astnode->error) {
             if (pState.current.type == GUIN_TK_Identifier)
                 GUIN_ERROR_std_err_message(stdout, ir->filename, ir->source.content, pState.errmsg, "", pState.current.line, pState.current.column, pState.current.string.length);
             else
@@ -427,26 +475,31 @@ if (bytecode) {
             break;
         }
 
-        int code = GUIN_IR_ADD_AST_TO_BYTECODE(astnode, &bytecode);
-        
+        GUIN_STATUS code = GUIN_IR_ADD_AST_TO_BYTECODE(astnode, &bytecode);
+
         // error
-        if (code == GUIN_IR_CONVERT_FAILED) {
+        if (code == GUIN_MEM_FAIL) {
+            GUIN_destroy_Bytecode_ptr(&bytecode);
+            GUIN_destroy_ParseState(&pState);
+            GUIN_destroy_AST_ptr(&astnode);
+            return NULL;
+        }
+        else if (code == GUIN_FAIL) {
             error = true;
         }
-
-        // 1 == continue
-
         // end
-        if (code == GUIN_IR_CONVERT_FINISHED) {
+        else if (code == GUIN_FINISHED) {
             reached_the_end = true;
         }
 
-        GUIN_destroy_AST(&astnode);
+        GUIN_destroy_AST_ptr(&astnode);
     }
-}
     GUIN_destroy_ParseState(&pState);
-    // means it wasnt erased
-    if (astnode.nodetype != GUIN_ASTNODE_IGNORE) GUIN_destroy_AST(&astnode);
+    
+    if (!GUIN_add_Bytecode_one_byte(bytecode, GINSTR_RET))
+        GUIN_destroy_Bytecode_ptr(&bytecode); // so we return NULL, since adding it failed
+        
+    if (astnode) GUIN_destroy_AST_ptr(&astnode);
     return bytecode;
 }
 

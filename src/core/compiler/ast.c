@@ -190,6 +190,13 @@ void GUIN_log_ExpressionNodeAST(GUIN_ExpressionNodeAST* x)
             GUIN_log_pop_layer();
             return;
 
+        case GUIN_EXPRNODE_NOT:
+            GUIN_log("not\n");
+            GUIN_log_push_layer();
+            GUIN_log_ExpressionNodeAST(x->right);
+            GUIN_log_pop_layer();
+            return;
+
         case GUIN_EXPRNODE_EQU:
             GUIN_log("==\n");
             GUIN_log_push_layer();
@@ -293,7 +300,7 @@ void GUIN_log_ExpressionNodeAST(GUIN_ExpressionNodeAST* x)
             return;
 
         case GUIN_EXPRNODE_LOCAL_IDENTIFIER:
-            GUIN_log("(local) %s\n", x->data.string_identifier.content);
+            GUIN_log("(local) %d\n", x->data.slot_num);
             return;
 
         case GUIN_EXPRNODE_FUNCTION_LITERAL:
@@ -303,9 +310,6 @@ void GUIN_log_ExpressionNodeAST(GUIN_ExpressionNodeAST* x)
         case GUIN_EXPRNODE_NIL:
             GUIN_log("nil\n");
             return;
-
-        default:
-            GUIN_log("![Error (%d:%s)]\n", x->type, GUIN_ExpressionNodeType_to_string(x->type));
     }
 }
 
@@ -363,6 +367,10 @@ void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x)
                 GUIN_destroy_ExpressionNodeAST_ptr(&tmp->right);
                 break;
 
+            case GUIN_EXPRNODE_NOT:
+                GUIN_destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
             case GUIN_EXPRNODE_EQU:
                 GUIN_destroy_ExpressionNodeAST_ptr(&tmp->left);
                 GUIN_destroy_ExpressionNodeAST_ptr(&tmp->right);
@@ -405,10 +413,15 @@ void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x)
                 break;
 
             case GUIN_EXPRNODE_CALL:
+            printf("call\n");
                 GUIN_destroy_ExprFuncCallAST(&tmp->data.exprFuncCallAST);
+            printf("continue\n");
+                GUIN_log_ExpressionNodeAST(tmp->right);
                 GUIN_destroy_ExpressionNodeAST_ptr(&tmp->right);
+            printf("done\n");
                 break;
 
+            case GUIN_EXPRNODE_NIL:      break;
             case GUIN_EXPRNODE_INT:      break;
             case GUIN_EXPRNODE_CHAR:     break;
             case GUIN_EXPRNODE_BOOL:     break;
@@ -419,6 +432,7 @@ void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x)
                 break;
 
             case GUIN_EXPRNODE_GLOBAL_IDENTIFIER:
+            printf("identifier\n");
                 GUIN_clearstring(&tmp->data.string_identifier);
                 break;
 
@@ -428,13 +442,6 @@ void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x)
             case GUIN_EXPRNODE_FUNCTION_LITERAL:
                 GUIN_destroy_FunctionAST(&tmp->data.function);
                 break;
-
-            case GUIN_EXPRNODE_NIL:
-                break;
-
-            default:
-                printf("Error: ExpressionNodeAST failed to destroy! (%d:%s)\n", tmp->type, GUIN_ExpressionNodeType_to_string(tmp->type));
-                exit(1);
         }
     }
     if (tmp) free(tmp);
@@ -511,7 +518,8 @@ bool GUIN_add_ExpressionAST_ptr_to_ExprFuncCallAST(GUIN_ExprFuncCallAST* x, GUIN
 }
 void GUIN_destroy_ExprFuncCallAST(GUIN_ExprFuncCallAST* x)
 {
-    if (x->expression_args != NULL) {
+    if (!x) return;
+    if (x->expression_args) {
         for (size_t i = 0; i < x->expression_args_length; ++i)
             GUIN_destroy_ExpressionAST(x->expression_args[i]);
 
@@ -521,16 +529,41 @@ void GUIN_destroy_ExprFuncCallAST(GUIN_ExprFuncCallAST* x)
     x->expression_args_length = 0;
 }
 
-
+GUIN_FunctionAST GUIN_init_FunctionAST(void)
+{
+    GUIN_FunctionAST x = (GUIN_FunctionAST){0};
+    x.args.size = 3;
+    x.args.args = malloc(sizeof(GUIN_FuncArgsAST) * x.args.size);
+    if (!x.args.args) return (GUIN_FunctionAST){0};
+    return x;
+}
 void GUIN_destroy_FunctionAST(GUIN_FunctionAST* x)
 {
     if (!x) return;
-    GUIN_destroy_Bytecode(&x->bytecode);
+    GUIN_destroy_ASTScope(&x->scope);
     if (x->args.args) free(x->args.args);
+    GUIN_clearstring_ptr(&x->name);
     x->args.length = 0;
     x->args.size   = 0;
 }
+bool GUIN_add_arg_to_FunctionAST(GUIN_FunctionAST* x, GUIN_ASTDatatype datatype)
+{
+    if (!x) return false;
 
+    if (x->args.length >= x->args.size) {
+        size_t original_size = x->args.size;
+        while (x->args.length >= x->args.size) x->args.size *= 2;
+        GUIN_FuncArgsAST* tmp = realloc(x->args.args, sizeof(GUIN_FuncArgsAST) * x->args.size);
+        if (!tmp) {
+            x->args.size = original_size;
+            return false;
+        }
+        x->args.args = tmp;
+    }
+
+    x->args.args[x->args.length++].type = datatype;
+    return true;
+}
 
 
 
@@ -546,7 +579,7 @@ GUIN_ASTScope GUIN_init_ASTScope(void)
 }
 
 // does NOT deepcopy pointers in it, just a lightcopy, BEWARE
-bool GUIN_add_AST_to_ASTScope(GUIN_ASTScope* x, GUIN_AST toadd)
+bool GUIN_add_AST_to_ASTScope(GUIN_ASTScope* x, GUIN_AST* toadd)
 {
     if (!x) return false;
 
@@ -564,7 +597,7 @@ bool GUIN_add_AST_to_ASTScope(GUIN_ASTScope* x, GUIN_AST toadd)
         }
         x->nodes = tmp;
     }
-    x->nodes[x->length++] = toadd;
+    x->nodes[x->length++] = *toadd;
     return true;
 }
 
@@ -594,30 +627,49 @@ GUIN_IfWhileAST GUIN_init_IfWhileAST(void)
 
 void GUIN_destroy_IfWhileAST(GUIN_IfWhileAST* x)
 {
+    if (!x) return;
     GUIN_destroy_ExpressionAST_ptr(&x->expression);
     GUIN_destroy_ASTScope(&x->nodes);
 }
 
 
 
+GUIN_AST* GUIN_init_AST_ptr(GUIN_ASTNodeType nodetype)
+{
+    GUIN_AST* x = malloc(sizeof(GUIN_AST));
+    *x = (GUIN_AST){0};
+    if (!x) return NULL;
+    x->nodetype = nodetype;
+    return x;
+}
 void GUIN_destroy_AST(GUIN_AST* g_ast)
 {
     GUIN_log("destroying GUIN_AST...\n");
     switch (g_ast->nodetype)
     {
-        case GUIN_ASTNODE_DECLARATION: { GUIN_destroy_VariableDeclarationAST(&g_ast->declarationAST); break; }
-        case GUIN_ASTNODE_IF:          { GUIN_destroy_IfWhileAST(&g_ast->ifWhileAST);                 break; }
-        case GUIN_ASTNODE_WHILE:       { GUIN_destroy_IfWhileAST(&g_ast->ifWhileAST);                 break; }
-        case GUIN_ASTNODE_SCOPE:       { GUIN_destroy_ASTScope(&g_ast->scopeAST);                     break; }
+        case GUIN_ASTNODE_DECLARATION: { GUIN_destroy_VariableDeclarationAST(&g_ast->declarationAST);      break; }
+        case GUIN_ASTNODE_IF:          { GUIN_destroy_IfWhileAST(&g_ast->ifWhileAST);                      break; }
+        case GUIN_ASTNODE_WHILE:       { GUIN_destroy_IfWhileAST(&g_ast->ifWhileAST);                      break; }
+        case GUIN_ASTNODE_SCOPE:       { GUIN_destroy_ASTScope(&g_ast->scopeAST);                          break; }
+        case GUIN_ASTNODE_RETURN:      { GUIN_destroy_ExpressionNodeAST_ptr(&g_ast->returnAST.expression); break; }
 
+        case GUIN_ASTNODE_NULL:                  break;
         case GUIN_ASTNODE_CLEAR_LOCAL_SLOT:      break;
         case GUIN_ASTNODE_END:                   break;
         case GUIN_ASTNODE_IGNORE:                break;
-        
-        default: printf("err ASTNODE GUIN_AST destroy\n"); exit(1);
+        case GUIN_ASTNODE_BREAK:                 break;
+        case GUIN_ASTNODE_CONTINUE:              break;
     }
     g_ast->nodetype = GUIN_ASTNODE_IGNORE;
     GUIN_log("done destroying GUIN_AST\n");
+}
+void GUIN_destroy_AST_ptr(GUIN_AST** g_ast)
+{
+    if (!g_ast) return;
+    if (!*g_ast) return;
+    GUIN_destroy_AST(*g_ast);
+    free(*g_ast);
+    *g_ast = NULL;
 }
 
 #endif

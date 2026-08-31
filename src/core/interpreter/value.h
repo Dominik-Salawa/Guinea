@@ -43,6 +43,6 @@ typedef struct GUIN_VH_from_BC_result {
     char* errmsg;
 } GUIN_VH_from_BC_result;
 // make sure source starts on the datatype
-GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_ubyte* src);
+GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_Bytecode* bytecode, GUIN_ubyte* src);
 
 #endif

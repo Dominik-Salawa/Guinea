@@ -8,6 +8,7 @@
 #include "../bytecode.h"
 
 typedef struct GUIN_AST GUIN_AST;
+typedef struct GUIN_ASTScope GUIN_ASTScope;
 
 typedef enum GUIN_ASTDatatype {
     GUIN_ASTDATATYPE_ERR = 0, // FOR ERRORS
@@ -65,6 +66,19 @@ GUIN_byte GUIN_get_pathway_count_of_ExpressionNodeAST(GUIN_ExpressionNodeType ty
 char* GUIN_ExpressionNodeType_to_string(GUIN_ExpressionNodeType dt);
 
 
+typedef struct GUIN_ASTScope {
+    size_t size;
+    size_t length;
+    GUIN_AST* nodes;
+    bool error;
+} GUIN_ASTScope;
+
+GUIN_ASTScope GUIN_init_ASTScope(void);
+// does NOT deepcopy pointers in it, just a lightcopy, BEWARE
+bool GUIN_add_AST_to_ASTScope(GUIN_ASTScope* x, GUIN_AST* toadd);
+void GUIN_destroy_ASTScope(GUIN_ASTScope* x);
+
+
 typedef struct GUIN_ExpressionAST GUIN_ExpressionAST;
 
 typedef struct GUIN_ExprFuncCallAST {
@@ -83,17 +97,17 @@ typedef struct GUIN_FuncArgsAST {
 } GUIN_FuncArgsAST;
 
 typedef struct FunctionAST {
-    GUIN_Bytecode bytecode;
+    GUIN_ASTScope scope;
     GUIN_ASTDatatype return_type;
-
+    GUIN_String* name;
     struct {
         GUIN_FuncArgsAST* args;
         size_t size;
         size_t length;
     } args;
 } GUIN_FunctionAST;
+GUIN_FunctionAST GUIN_init_FunctionAST(void);
 void GUIN_destroy_FunctionAST(GUIN_FunctionAST* x);
-
 
 
 typedef struct GUIN_ExpressionNodeAST {
@@ -123,6 +137,7 @@ void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x);
 
 typedef struct GUIN_ExpressionAST {
     bool fail;
+    bool is_parenthesis; // for the function GUIN_eval_expression_parser so it can correctly identify instead of mistaking for wrong precendence
     GUIN_ExpressionNodeAST* top;
 } GUIN_ExpressionAST;
 void GUIN_destroy_ExpressionAST(GUIN_ExpressionAST* x);
@@ -133,6 +148,7 @@ typedef struct GUIN_VariableInfoAST {
     GUIN_String identifier; // the name attached to this variable
     //ubyte structure_type; // the structure of this variable
     //bool is_ptr;
+    // this is for whether the variable is allowed to be used in a global expression
     bool allowed_in_global_expression;
     GUIN_LOCAL_SLOT_INT slot;
 
@@ -157,17 +173,6 @@ void GUIN_destroy_VariableDeclarationAST(GUIN_VariableDeclarationAST* x);
 
 
 
-typedef struct GUIN_ASTScope {
-    size_t size;
-    size_t length;
-    GUIN_AST* nodes;
-} GUIN_ASTScope;
-
-GUIN_ASTScope GUIN_init_ASTScope(void);
-// does NOT deepcopy pointers in it, just a lightcopy, BEWARE
-bool GUIN_add_AST_to_ASTScope(GUIN_ASTScope* x, GUIN_AST toadd);
-void GUIN_destroy_ASTScope(GUIN_ASTScope* x);
-
 
 // USED TO REPRESENT BOTH IF AND WHILE AST
 typedef struct GUIN_IfWhileAST {
@@ -178,27 +183,31 @@ GUIN_IfWhileAST GUIN_init_IfWhileAST(void);
 void GUIN_destroy_IfWhileAST(GUIN_IfWhileAST* x);
 
 
-typedef struct AssignAST {
-    GUIN_ExpressionNodeAST* top;
-    GUIN_ExpressionAST* assignment;
-} GUIN_AssignAST;
-
-
 typedef struct GUIN_ClearLocalSlotAST {
     GUIN_LOCAL_SLOT_INT slot;
 } GUIN_ClearLocalSlotAST;
 
 
+typedef struct GUIN_ReturnAST {
+    GUIN_ExpressionNodeAST* expression;
+} GUIN_ReturnAST;
+
+
 typedef enum GUIN_ASTNodeType {
-    GUIN_ASTNODE_IGNORE = 0,  // FOR THE IR TO SIMPLY IGNORE
+    GUIN_ASTNODE_NULL = 0,
+    GUIN_ASTNODE_IGNORE,  // FOR THE IR TO SIMPLY IGNORE
     GUIN_ASTNODE_END,         // PARSER HAS REACHED THE END of its desired token (like end for a function or EOF for a file)
     GUIN_ASTNODE_CLEAR_LOCAL_SLOT,
 
     GUIN_ASTNODE_DECLARATION,
-    GUIN_ASTNODE_ASSIGN,
+//    GUIN_ASTNODE_EXPRESSION,
     GUIN_ASTNODE_IF,
     GUIN_ASTNODE_WHILE,
     GUIN_ASTNODE_SCOPE,
+
+    GUIN_ASTNODE_BREAK,
+    GUIN_ASTNODE_CONTINUE,
+    GUIN_ASTNODE_RETURN,
 } GUIN_ASTNodeType;
 
 typedef struct GUIN_AST {
@@ -209,10 +218,11 @@ typedef struct GUIN_AST {
         GUIN_VariableDeclarationAST declarationAST;
         GUIN_IfWhileAST             ifWhileAST;
         GUIN_ASTScope               scopeAST;
-        GUIN_AssignAST              assignAST;
         GUIN_ClearLocalSlotAST      clearLocalSlotAST;
+        GUIN_ReturnAST              returnAST;
     };
 } GUIN_AST;
+GUIN_AST* GUIN_init_AST_ptr(GUIN_ASTNodeType nodetype);
 void GUIN_destroy_AST(GUIN_AST* g_ast);
 
 #endif

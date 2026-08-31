@@ -57,6 +57,7 @@ typedef enum GINSTR {
 
 typedef enum GINSTR_Datatype {
     GINSTRDATATYPE_NULL = 0,
+    GINSTRDATATYPE_VOID,
     GINSTRDATATYPE_NIL,
     GINSTRDATATYPE_STRING,
     GINSTRDATATYPE_INT32,
@@ -73,6 +74,10 @@ typedef enum GINSTR_Datatype {
 #define GUIN_is_int(x)              (x == GINSTRDATATYPE_INT32 || x == GINSTRDATATYPE_INT64)
 #define GUIN_is_number_variant(x)   (GUIN_is_number_or_int(x) || x == GINSTRDATATYPE_BOOL || x == GINSTRDATATYPE_CHAR)
 
+#define GUIN_underflow_Bytecode(bytecode_ptr, ptr)          (ptr < bytecode_ptr->bytecode)
+#define GUIN_overflow_Bytecode(bytecode_ptr, ptr)           (ptr >= bytecode_ptr->bytecode + bytecode_ptr->size)
+#define GUIN_out_of_bounds_from_Bytecode(bytecode_ptr, ptr) (GUIN_overflow_Bytecode(bytecode_ptr, ptr) || GUIN_underflow_Bytecode(bytecode_ptr, ptr))
+
 typedef struct GUIN_Bytecode {
     GUIN_ubyte* bytecode;
     size_t length;
@@ -86,6 +91,7 @@ GUIN_Bytecode* GUIN_add_Bytecode(GUIN_Bytecode* x, const GUIN_ubyte* data, const
 GUIN_Bytecode* GUIN_add_Bytecode_one_byte(GUIN_Bytecode* x, const GUIN_ubyte data);
 GUIN_Bytecode* GUIN_add_Bytecode_w_byte_size(GUIN_Bytecode* x, const void* data, const size_t length);
 GUIN_Bytecode* GUIN_add_Bytecode_String_no_size_embedded(GUIN_Bytecode* x, const GUIN_String* str);
+bool GUIN_safe_memcpy_Bytecode(void* destination, GUIN_Bytecode* src, GUIN_ubyte* start, size_t length);
 bool GUIN_double_Bytecode_size(GUIN_Bytecode* x);
 void GUIN_destroy_Bytecode(GUIN_Bytecode* x);
 void GUIN_destroy_Bytecode_ptr(GUIN_Bytecode** x);

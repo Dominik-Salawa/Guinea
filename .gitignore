@@ -16,5 +16,6 @@ Makefile
 *.user
 guinea
 build.ninja
-.ninja_log
-.ninja_deps
+*.ninja_log
+*.ninja_deps
+*.sh

@@ -25,6 +25,8 @@ typedef struct GUIN_VM {
     GUIN_VALUE_STACK stack_main;
     GUIN_GLOBALMAP   global;
     GUIN_GC          gc;
+    GUIN_ubyte*      pc;
+    char* errmsg;
 } GUIN_VM;
 GUIN_VM  GUIN_init_VM(void);
 GUIN_VM* GUIN_init_VM_ptr(void);
@@ -48,7 +50,9 @@ bool GUIN_VM_gt(GUIN_VM* vm);
 bool GUIN_VM_lt_equ(GUIN_VM* vm);
 bool GUIN_VM_gt_equ(GUIN_VM* vm);
 
-GUIN_STATUS GUIN_load_VM(GUIN_VM* vm, GUIN_Bytecode* bytecode);
+// does NOT deep copy
+GUIN_STATUS GUIN_load_Bytecode_into_VM(GUIN_VM* vm, GUIN_Bytecode* bytecode);
+GUIN_STATUS GUIN_run_VM(GUIN_VM* vm);
 // true:  loaded and did execute (but not necessarily there was no runtime errors)
 // false: failed to load/execute
 GUIN_STATUS GUIN_exec_VM(GUIN_VM* vm, char* _start);
