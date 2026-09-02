@@ -644,114 +644,121 @@ static GUIN_ExpressionAST* GUIN_get_value_expression_parser(GUIN_ParseState* pSt
 
     GUIN_log("done retreiving value\n");
 
-    if (!exprAST->fail) {
-        do {
-            // func call
-            if (GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_L) {
-                exprAST->is_parenthesis = false;
-                GUIN_log("getting a function call!\n");
-
-                GUIN_ExprFuncCallAST func_call = GUIN_init_ExprFuncCallAST();
-                if (!func_call.expression_args) {
-                    GUIN_destroy_ExpressionAST_ptr(&exprAST);
-                    return NULL; // failed alloc
-                }
-
-                GUIN_advance_parser(pState);
-                GUIN_int16 func_args = 0;
-                if (GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_R && GUIN_pState_current.type == GUIN_TK_PARENTHESIS_L) {
-                    GUIN_advance_parser(pState);
-                } else {
-                    while (GUIN_pState_current.type != GUIN_TK_PARENTHESIS_R) {
-                        ++func_args;
-                        GUIN_ExpressionAST* eAST = GUIN_eval_expression_parser(pState, GUIN_TK_COMMA, true, is_global_scope);
-
-                        if (func_args > 255) {
-                            pState->errmsg = "Overflowed the maximum function arguements allowed (255), stop making poor design choices!";
-                            GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
-                            GUIN_destroy_ExprFuncCallAST(&func_call);
-                            exprAST->fail = true;
-                            return exprAST;
-                        }
-                        if (!eAST) {
-                            GUIN_destroy_ExpressionAST_ptr(&exprAST);
-                            GUIN_destroy_ExprFuncCallAST(&func_call);
-                            return NULL;
-                        }
-                        if (eAST->fail) {
-                            if (!eAST->top && GUIN_pState_current.type == GUIN_TK_COMMA)
-                                pState->errmsg = "Expected a valid arguement but it was left empty!";
-                            GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
-                            GUIN_destroy_ExprFuncCallAST(&func_call);
-                            exprAST->fail = true;
-                            return exprAST;
-                        }
-                        if (!eAST->top) {
-                            if (GUIN_pState_ahead.type != GUIN_TK_COMMA && GUIN_pState_ahead.type != GUIN_TK_PARENTHESIS_R) {
-                                pState->errmsg = "Expected a valid arguement but it was left empty!";
-                                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
-                                GUIN_destroy_ExprFuncCallAST(&func_call);
-                                exprAST->fail = true;
-                                return exprAST;
-                            }
-                        }
-                        else if (!GUIN_add_ExpressionAST_ptr_to_ExprFuncCallAST(&func_call, eAST)) {
-                            GUIN_destroy_ExpressionAST_ptr(&exprAST);
-                            GUIN_destroy_ExprFuncCallAST(&func_call);
-                            return NULL; // failed alloc
-                        }
-
-                        GUIN_advance_parser(pState);
-
-                        if (GUIN_pState_current.type == GUIN_TK_COMMA) {
-                            if (GUIN_pState_ahead.type == GUIN_TK_COMMA || GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_R) {
-                                GUIN_advance_parser(pState); // for errmsg
-                                pState->errmsg = "Expected a valid arguement but it was left empty!";
-                                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
-                                GUIN_destroy_ExprFuncCallAST(&func_call);
-                                exprAST->fail = true;
-                                return exprAST;
-                            }
-                        }
-                    }
-                }
-
-                GUIN_ExpressionNodeAST* tmp = NULL;
-                GUIN_assign_ExpressionNodeAST(&tmp, GUIN_EXPRNODE_CALL);
-                if (!tmp) {
-                    GUIN_destroy_ExpressionAST_ptr(&exprAST);
-                    return NULL;
-                }
-
-                tmp->right = exprAST->top;
-                tmp->data.exprFuncCallAST = func_call;
-                exprAST->top = tmp;
-            }
-            else { 
-                break;
-            }
-        } while (true);
-        
-
-        if (on_negative) {
-            exprAST->is_parenthesis = false;
-            GUIN_ExpressionNodeAST* tmp = NULL;
-            GUIN_assign_ExpressionNodeAST(&tmp, GUIN_EXPRNODE_NEG);
-            if (!tmp) {
-                GUIN_destroy_ExpressionAST_ptr(&exprAST);
-                return NULL;
-            }
-            tmp->right = exprAST->top;
-            exprAST->top = tmp;
-        }
-    }
-    else {
+    if (exprAST->fail) {
         GUIN_log("Expression failed...\n");
         GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
     }
+
+    /*
+    do {
+        // func call
+        if (GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_L) {
+
+        }
+        else { 
+            break;
+        }
+    } while (true);
+    */
+
+    if (on_negative) {
+        exprAST->is_parenthesis = false;
+        GUIN_ExpressionNodeAST* tmp = NULL;
+        GUIN_assign_ExpressionNodeAST(&tmp, GUIN_EXPRNODE_NEG);
+        if (!tmp) {
+            GUIN_destroy_ExpressionAST_ptr(&exprAST);
+            return NULL;
+        }
+        tmp->right = exprAST->top;
+        exprAST->top = tmp;
+    }
+
     return exprAST;
 }
 
+/*
+static inline void do_FUNC_CALL_get_value_expression_parser(GUIN_ParseState* pState, GUIN_ExpressionAST* exprAST,)
+{
+    exprAST->is_parenthesis = false;
+    GUIN_log("getting a function call!\n");
+
+    GUIN_ExprFuncCallAST func_call = GUIN_init_ExprFuncCallAST();
+    if (!func_call.expression_args) {
+        GUIN_destroy_ExpressionAST_ptr(&exprAST);
+        return NULL; // failed alloc
+    }
+
+    GUIN_advance_parser(pState);
+    GUIN_int16 func_args = 0;
+    if (GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_R && GUIN_pState_current.type == GUIN_TK_PARENTHESIS_L) {
+        GUIN_advance_parser(pState);
+    } else {
+        while (GUIN_pState_current.type != GUIN_TK_PARENTHESIS_R) {
+            ++func_args;
+            GUIN_ExpressionAST* eAST = GUIN_eval_expression_parser(pState, GUIN_TK_COMMA, true, is_global_scope);
+
+            if (func_args > 255) {
+                pState->errmsg = "Overflowed the maximum function arguements allowed (255), stop making poor design choices!";
+                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                GUIN_destroy_ExprFuncCallAST(&func_call);
+                exprAST->fail = true;
+                return exprAST;
+            }
+            if (!eAST) {
+                GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                GUIN_destroy_ExprFuncCallAST(&func_call);
+                return NULL;
+            }
+            if (eAST->fail) {
+                if (!eAST->top && GUIN_pState_current.type == GUIN_TK_COMMA)
+                    pState->errmsg = "Expected a valid arguement but it was left empty!";
+                GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                GUIN_destroy_ExprFuncCallAST(&func_call);
+                exprAST->fail = true;
+                return exprAST;
+            }
+            if (!eAST->top) {
+                if (GUIN_pState_ahead.type != GUIN_TK_COMMA && GUIN_pState_ahead.type != GUIN_TK_PARENTHESIS_R) {
+                    pState->errmsg = "Expected a valid arguement but it was left empty!";
+                    GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                    GUIN_destroy_ExprFuncCallAST(&func_call);
+                    exprAST->fail = true;
+                    return exprAST;
+                }
+            }
+            else if (!GUIN_add_ExpressionAST_ptr_to_ExprFuncCallAST(&func_call, eAST)) {
+                GUIN_destroy_ExpressionAST_ptr(&exprAST);
+                GUIN_destroy_ExprFuncCallAST(&func_call);
+                return NULL; // failed alloc
+            }
+
+            GUIN_advance_parser(pState);
+
+            if (GUIN_pState_current.type == GUIN_TK_COMMA) {
+                if (GUIN_pState_ahead.type == GUIN_TK_COMMA || GUIN_pState_ahead.type == GUIN_TK_PARENTHESIS_R) {
+                    GUIN_advance_parser(pState); // for errmsg
+                    pState->errmsg = "Expected a valid arguement but it was left empty!";
+                    GUIN_destroy_ExpressionNodeAST_ptr(&exprAST->top);
+                    GUIN_destroy_ExprFuncCallAST(&func_call);
+                    exprAST->fail = true;
+                    return exprAST;
+                }
+            }
+        }
+    }
+
+    GUIN_ExpressionNodeAST* tmp = NULL;
+    GUIN_assign_ExpressionNodeAST(&tmp, GUIN_EXPRNODE_CALL);
+    if (!tmp) {
+        GUIN_destroy_ExpressionAST_ptr(&exprAST);
+        return NULL;
+    }
+
+    tmp->right = exprAST->top;
+    tmp->data.exprFuncCallAST = func_call;
+    exprAST->top = tmp;
+}
+*/
 
 // IF YOU ONLY RECIEVE NULL, THAT MEANS IT FAILED TO ALLOC MEM
 // ELSE TO KNOW IF ITD FAIL, YOU'D CHECK ...->failed
@@ -1046,10 +1053,6 @@ static GUIN_AST* GUIN_eval_function_statement(GUIN_ParseState* pState)
     x->declarationAST.info.datatype   = GUIN_ASTDATATYPE_FUNCTION;
     x->declarationAST.info.identifier = GUIN_copystring(funcval->top->data.function.name);
     { // this is here as its assumed that this name is going to be used for other places, so not to cause cascading errors
-        for (size_t i = 0; i < pState->scope_top->var_info.length; ++i) {    
-            GUIN_printf("-> %s\n", &pState->scope_top->var_info.arr[i].identifier);
-        }
-        
         bool adding_var_status = GUIN_add_ParseScopeNode_variable(pState, funcval->top->data.function.name, x->declarationAST.info.datatype);
         if (adding_var_status) {
             GUIN_log("done adding name\n");
@@ -1061,7 +1064,6 @@ static GUIN_AST* GUIN_eval_function_statement(GUIN_ParseState* pState)
             return x;
         }
         x->declarationAST.slot = pState->scope_top->var_info.arr[pState->scope_top->var_info.length-1].slot;
-        GUIN_printf("func: %d\n", x->declarationAST.slot);
     }
     return x;
 }
@@ -1099,8 +1101,10 @@ static GUIN_ASTScope GUIN_parser_get_scope(GUIN_ParseState* pState, const bool p
         
         if (x->nodetype == GUIN_ASTNODE_END)
             break;
-        if (x->nodetype == GUIN_ASTNODE_IGNORE)
+        if (x->nodetype == GUIN_ASTNODE_IGNORE) {
+            GUIN_destroy_AST_ptr(&x);
             continue;
+        }
         if (x->error) {
             GUIN_log("scope parsing has error: %d\n", x->nodetype);
             GUIN_destroy_ASTScope(&scope);
@@ -1132,7 +1136,7 @@ static GUIN_AST* GUIN_eval_if_and_while_statement(GUIN_ParseState* pState)
 {
     if (!pState) return NULL;
 
-    printf("doing if/while statement\n");
+    GUIN_log("doing if/while statement\n");
 
     GUIN_AST* x = GUIN_init_AST_ptr(GUIN_ASTNODE_IF);
     if (!x) return NULL;
@@ -1258,7 +1262,7 @@ static GUIN_AST* GUIN_eval_return(GUIN_ParseState* pState, const GUIN_LexTokenEn
         GUIN_destroy_ExpressionAST_ptr(&exprAST);
         GUIN_destroy_AST(x);
         x->error = true;
-        printf("error func\n");
+        GUIN_log("error func\n");
         return x;
     }
     
@@ -1348,7 +1352,7 @@ GUIN_AST* GUIN_parse_segment(GUIN_ParseState* pState, const GUIN_LexTokenEnum en
             return GUIN_eval_continue(pState);
 
         case GUIN_TK_return:
-            printf("doing return\n");
+            GUIN_log("doing return\n");
             if (!GUIN_get_descendant_of_Scope_ParseScopeNode(pState, GUIN_SCOPE_SEARCH_FUNCTION)) {
                 if (is_global_scope) {
                     pState->errmsg = "Cannot use a function only statement in the Global scope!";
@@ -1368,16 +1372,13 @@ GUIN_AST* GUIN_parse_segment(GUIN_ParseState* pState, const GUIN_LexTokenEnum en
         default: {
             if (GUIN_pState_current.type == GUIN_TK_SEMI_COLON) {
                 GUIN_log("is semi\n");
-                GUIN_AST* x = GUIN_init_AST_ptr(GUIN_ASTNODE_IGNORE);
-                if (!x) return NULL;
-                x->error = true;
-                return x;
+                return GUIN_init_AST_ptr(GUIN_ASTNODE_IGNORE);
             }
 
             // to tell the IR to stop looping, the scope has closed or the end of the file
             if (GUIN_pState_current.type == ending) {
                 GUIN_log("is ending\n");
-                return GUIN_init_AST_ptr(GUIN_ASTNODE_END);;
+                return GUIN_init_AST_ptr(GUIN_ASTNODE_END);
             }
 
             GUIN_log("no matches!\n");

@@ -25,10 +25,10 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
         guinea PRIVATE 
         -Wpedantic -Wall -Wextra 
         -Werror -Wno-unused-parameter 
-        -Wno-unused-variable 
-        -Wno-unused-function -O0 -g
-        -fomit-frame-pointer -Wshadow
+        -Wno-unused-variable -Wno-unused-function 
+        -O0 -g -fomit-frame-pointer -Wshadow
     )
+    #target_link_options(guinea PRIVATE -fsanitize=address)
 elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     message(STATUS "Using MSVC")
     target_compile_options(

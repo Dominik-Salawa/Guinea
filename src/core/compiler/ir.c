@@ -441,8 +441,6 @@ static GUIN_Bytecode* GUIN_IR_CONVERT_ASTSCOPE(const GUIN_ASTScope* astscope)
         }
     }
 
-    GUIN_printf("FINISHED\n");
-    exit(1);
     return bytecode;
 }
 

@@ -413,12 +413,12 @@ void GUIN_destroy_ExpressionNodeAST_ptr(GUIN_ExpressionNodeAST** x)
                 break;
 
             case GUIN_EXPRNODE_CALL:
-            printf("call\n");
+            //printf("call\n");
                 GUIN_destroy_ExprFuncCallAST(&tmp->data.exprFuncCallAST);
-            printf("continue\n");
+            //printf("continue\n");
                 GUIN_log_ExpressionNodeAST(tmp->right);
                 GUIN_destroy_ExpressionNodeAST_ptr(&tmp->right);
-            printf("done\n");
+            //printf("done\n");
                 break;
 
             case GUIN_EXPRNODE_NIL:      break;
@@ -634,7 +634,7 @@ void GUIN_destroy_IfWhileAST(GUIN_IfWhileAST* x)
 
 
 
-GUIN_AST* GUIN_init_AST_ptr(GUIN_ASTNodeType nodetype)
+inline GUIN_AST* GUIN_init_AST_ptr(GUIN_ASTNodeType nodetype)
 {
     GUIN_AST* x = malloc(sizeof(GUIN_AST));
     *x = (GUIN_AST){0};
