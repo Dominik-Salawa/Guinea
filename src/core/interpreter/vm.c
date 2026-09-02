@@ -138,28 +138,66 @@ void GUIN_destroy_VM_ptr(GUIN_VM** x)
 
 #define GUIN_VM_integer_branch(x,y, both_num, both_num_datatype, x_is_num, x_is_num_datatype, y_is_num, y_is_num_datatype, both_ints, both_int_datatype)\
     if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {\
-        new = (GUIN_ValueHeader){.current_value_type=both_num_datatype};\
+        new = GUIN_init_ValueHeader(both_num_datatype);\
         GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
         GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
         both_num;\
     }\
     else if (GUIN_is_number(x.current_value_type)) {\
-        new = (GUIN_ValueHeader){.current_value_type=x_is_num_datatype};\
+        new = GUIN_init_ValueHeader(x_is_num_datatype);\
         GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
         GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
         x_is_num;\
     }\
     else if (GUIN_is_number(y.current_value_type)) {\
-        new = (GUIN_ValueHeader){.current_value_type=y_is_num_datatype};\
-        GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; \
+        new = GUIN_init_ValueHeader(y_is_num_datatype);\
+        GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;\
         GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
         y_is_num;\
     }\
     else {\
-        new = (GUIN_ValueHeader){.current_value_type=both_int_datatype};\
-        GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32; \
+        new = GUIN_init_ValueHeader(both_int_datatype);\
+        GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;\
         GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
         both_ints;\
+    }
+
+#define GUIN_VM_integer_div_branch(x,y)\
+    if (GUIN_is_number(x.current_value_type) && GUIN_is_number(y.current_value_type)) {\
+        new = GUIN_init_ValueHeader(GINSTRDATATYPE_NUMBER64);\
+        GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
+        GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
+        if (yval == 0)\
+            new.n64 = GUIN_NaN;\
+        else\
+            new.n64 = xval / yval;\
+    }\
+    else if (GUIN_is_number(x.current_value_type)) {\
+        new = GUIN_init_ValueHeader(GINSTRDATATYPE_NUMBER64);\
+        GUIN_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
+        GUIN_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
+        if (yval == 0)\
+            new.n64 = GUIN_NaN;\
+        else\
+            new.n64 = xval / yval;\
+    }\
+    else if (GUIN_is_number(y.current_value_type)) {\
+        new = GUIN_init_ValueHeader(GINSTRDATATYPE_NUMBER64);\
+        GUIN_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;\
+        GUIN_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
+        if (yval == 0)\
+            new.n64 = GUIN_NaN;\
+        else\
+            new.n64 = xval / yval;\
+    }\
+    else {\
+        new = GUIN_init_ValueHeader(GINSTRDATATYPE_NUMBER64);\
+        GUIN_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;\
+        GUIN_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
+        if (yval == 0)\
+            new.n64 = GUIN_NaN;\
+        else\
+            new.n64 = xval / yval;\
     }
 
 // ARITHMETIC
@@ -316,16 +354,7 @@ bool GUIN_VM_div(GUIN_VM* vm)
     GUIN_ValueHeader new;
     // number/int / number/int
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
-        GUIN_VM_integer_branch(x,y,
-            new.n64 = xval / yval,
-                GINSTRDATATYPE_NUMBER64,
-            new.n64 = xval / yval,
-                GINSTRDATATYPE_NUMBER64,
-            new.n64 = xval / yval,
-                GINSTRDATATYPE_NUMBER64,
-            new.i64 = xval / yval,
-                GINSTRDATATYPE_INT64
-        )
+        GUIN_VM_integer_div_branch(x,y)
     }
     // error div
     else {
@@ -358,8 +387,8 @@ bool GUIN_VM_mod(GUIN_VM* vm)
                 GINSTRDATATYPE_NUMBER64,
             new.n64 = fmod(xval, yval),
                 GINSTRDATATYPE_NUMBER64,
-            new.i64 = xval % yval,
-                GINSTRDATATYPE_INT64
+            new.n64 = fmod(xval, yval),
+                GINSTRDATATYPE_NUMBER64
         )
     }
     // error pow

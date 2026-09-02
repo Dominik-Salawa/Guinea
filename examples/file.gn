@@ -12,6 +12,8 @@ func idk_lolll(): int
     var i: int = 5;
     var b: int = i + (d / yay)^yay;
 
+    {{{{{{{{{{{{var ddd:int=i}var ddd:int=i}}}}}}}}}}}
+
     func testing_my_language(): int
     {
         var a: int = 5;
