@@ -3,7 +3,11 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "log.h"
+
+size_t GUIN_log_layer_size = 0;
+bool GUIN_log_on = false;
 
 void GUIN_log(char* string, ...)
 {

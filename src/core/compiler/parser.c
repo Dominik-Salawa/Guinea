@@ -632,11 +632,17 @@ static GUIN_ExpressionAST* GUIN_get_value_expression_parser(GUIN_ParseState* pSt
 
         default:
             GUIN_log("got no value | lexer pos: %s %s %s\n", GUIN_LexTokenEnum_to_string(GUIN_pState_prev.type), GUIN_LexTokenEnum_to_string(GUIN_pState_current.type), GUIN_LexTokenEnum_to_string(GUIN_pState_ahead.type));
-            if (!(GUIN_is_EOF_or_end(token_to_signify_end) || (parsing_func_call_arg && GUIN_is_function_end(token_to_signify_end, GUIN_pState_current.type)))) {
-                if (GUIN_is_op(GUIN_pState_current.type))
+
+            if (GUIN_pState_current.type == token_to_signify_end && !on_negative)
+                break;
+
+            if (!(GUIN_is_EOF_or_end(token_to_signify_end) || (parsing_func_call_arg && GUIN_is_function_end(token_to_signify_end, GUIN_pState_current.type))) || on_negative) {
+                if (on_negative)
+                    pState->errmsg = "Expected a valid value!";
+                else if (GUIN_is_op(GUIN_pState_current.type))
                     pState->errmsg = "This arithmetic cannot be located behind the value!";
                 else
-                    pState->errmsg = "Invalid start to an expression!";
+                    pState->errmsg = "Invalid end to an expression!";
                 exprAST->fail = true;
             }
             break;
@@ -864,8 +870,7 @@ static GUIN_ExpressionAST* GUIN_eval_expression_parser(GUIN_ParseState* pState, 
 
     do { // IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
         GUIN_ExpressionAST* right;
-        
-        GUIN_log("expr parser fetch\n");
+        GUIN_log("expr parser fetch %s\n", GUIN_LexTokenEnum_to_string(token_to_signify_end));
 
         { // fetching right
             right = GUIN_eval_expression_parser_section(pState, token_to_signify_end, parsing_func_arg_call, is_global_scope);
@@ -876,11 +881,15 @@ static GUIN_ExpressionAST* GUIN_eval_expression_parser(GUIN_ParseState* pState, 
                 GUIN_destroy_ExpressionAST_ptr(&main);
                 return NULL;
             }
-            if (!right->top || right->fail) {
-                GUIN_printf("failed right\n");
+            if (right->fail) {
+                GUIN_log("failed right %d\n", right->fail);
                 GUIN_destroy_ExpressionAST_ptr(&right);
                 GUIN_destroy_ExpressionNodeAST_ptr(&main->top);
                 main->fail = true;
+                return main;
+            }
+            if (!right->top) { // means we have hit the end
+                GUIN_destroy_ExpressionAST_ptr(&right);
                 return main;
             }
         }
@@ -1178,11 +1187,11 @@ static GUIN_AST* GUIN_eval_if_and_while_statement(GUIN_ParseState* pState)
     GUIN_log("Statement:\n");
     GUIN_log_ExpressionNodeAST(x->ifWhileAST.expression->top);
 
-    GUIN_advance_parser(pState);
+    //GUIN_advance_parser(pState);
 
     GUIN_log("-------------------------------------------------------\n");
     GUIN_log_push_layer();
-    x->ifWhileAST.nodes = GUIN_parser_get_scope(pState, true, (x->nodetype == GUIN_ASTNODE_IF)? GUIN_SCOPE_IF : GUIN_SCOPE_WHILE, GUIN_TK_CURLY_R, true);
+    x->ifWhileAST.nodes = GUIN_parser_get_scope(pState, true, (x->nodetype == GUIN_ASTNODE_IF)? GUIN_SCOPE_IF : GUIN_SCOPE_WHILE, GUIN_TK_CURLY_R, false);
     GUIN_log_pop_layer();
     GUIN_log("-------------------------------------------------------\n");
 

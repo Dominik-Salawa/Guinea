@@ -750,13 +750,15 @@ GUIN_STATUS GINSTR_VM_DECLARE_GLOBAL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
     GINSTR_Datatype dt = *frame->pc;
     ++frame->pc;
     GUIN_uint64 namelen;
-    memcpy(&namelen, frame->pc, sizeof(namelen));
+    if (!GUIN_safe_memcpy_Bytecode(&namelen, &frame->func->funcval->bytecode, frame->pc, sizeof(namelen))) {
+        return GUIN_CORRUPTED_DATA;
+    }
     frame->pc += sizeof(namelen);
-    char* name = malloc(sizeof(char) * namelen + 1);
+    char* name = malloc(namelen + 1);
     if (!name) return GUIN_MEM_FAIL;
 
-    for (size_t j = 0; j < (size_t)namelen; ++j, ++frame->pc)
-        name[j] = *frame->pc;
+    for (size_t i = 0; i < (size_t)namelen; ++i, ++frame->pc)
+        name[i] = *frame->pc;
     name[namelen] = 0;
 
     GUIN_STATUS s = GUIN_add_GLOBALNAME_to_GLOBALMAP(&vm->global, dt, name);
@@ -764,7 +766,6 @@ GUIN_STATUS GINSTR_VM_DECLARE_GLOBAL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
         free(name);
         return s;
     }
-    frame->pc += namelen-1;
 
     { // assigns the Global variable its own dedicated slot and assigns from stack
         GUIN_ValueHeader** x = GUIN_GC_get_memory(vm, 1);
@@ -778,125 +779,37 @@ GUIN_STATUS GINSTR_VM_DECLARE_GLOBAL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
         GUIN_ValueHeader popped_val = GUIN_pop_VALUE_STACK(&vm->stack_main);
         s = GUIN_assign_ValueHeader_with_ValueHeader(glocation->ptr_to_value, popped_val);
         if (s != GUIN_SUCCESS) {
-            GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, popped_val);
+            printf("unsuccessful assigning to `%s`\n", name);
+            if (popped_val.current_value_type != GINSTRDATATYPE_NULL)
+                GUIN_add_VALUE_to_VALUE_STACK(&vm->stack_main, popped_val);
             return s;
         }
     }
     return GUIN_SUCCESS;
 }
 
-GUIN_STATUS GINSTR_VM_ADD_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_add(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
+#define GUIN_BASIC_OP_ARITHMETIC_LOGIC(func)\
+{\
+    if (!func(vm)) return GUIN_FAIL;\
+    ++frame->pc;\
+    return GUIN_SUCCESS;\
 }
-GUIN_STATUS GINSTR_VM_SUB_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_sub(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_MUL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_mul(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_DIV_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_div(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_MOD_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_mod(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_POW_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_pow(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_NEG_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_neg(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_NOT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_not(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_AND_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_and(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_OR_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_or(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_equ(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_NOT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_not_equ(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_GT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_gt(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_LT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_lt(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_GT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_gt_equ(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
-GUIN_STATUS GINSTR_VM_LT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)
-{
-    if (!GUIN_VM_lt_equ(vm))
-        return GUIN_FAIL;
-    ++frame->pc;
-    return GUIN_SUCCESS;
-}
+GUIN_STATUS GINSTR_VM_ADD_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_add)
+GUIN_STATUS GINSTR_VM_SUB_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_sub)
+GUIN_STATUS GINSTR_VM_MUL_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_mul)
+GUIN_STATUS GINSTR_VM_DIV_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_div)
+GUIN_STATUS GINSTR_VM_MOD_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_mod)
+GUIN_STATUS GINSTR_VM_POW_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_pow)
+GUIN_STATUS GINSTR_VM_NEG_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_neg)
+GUIN_STATUS GINSTR_VM_NOT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_not)
+GUIN_STATUS GINSTR_VM_AND_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_and)
+GUIN_STATUS GINSTR_VM_OR_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)       GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_or)
+GUIN_STATUS GINSTR_VM_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)      GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_equ)
+GUIN_STATUS GINSTR_VM_NOT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)  GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_not_equ)
+GUIN_STATUS GINSTR_VM_GT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)       GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_gt)
+GUIN_STATUS GINSTR_VM_LT_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)       GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_lt)
+GUIN_STATUS GINSTR_VM_GT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)   GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_gt_equ)
+GUIN_STATUS GINSTR_VM_LT_EQU_BYTECODE(GUIN_VM* vm, GUIN_FRAME* frame)   GUIN_BASIC_OP_ARITHMETIC_LOGIC(GUIN_VM_lt_equ)
 
 #define GUIN_VM_is_valid_Program_Counter(pc, bytecode) (pc >= bytecode.bytecode && pc < bytecode.bytecode + bytecode.length)
 
@@ -970,19 +883,23 @@ GUIN_STATUS GUIN_load_Bytecode_into_VM(GUIN_VM* vm, GUIN_Bytecode* global)
 {
     if (!vm || !global) return GUIN_FAIL;
 
-    GUIN_FunctionValue func;
-    func.argc = 0;
-    func.bytecode = *global;
-    func.return_type = GINSTRDATATYPE_VOID;
+    GUIN_FunctionValue* func = malloc(sizeof(GUIN_FunctionValue));
+    func->argc = 0;
+    func->bytecode = *global;
+    func->return_type = GINSTRDATATYPE_VOID;
 
-    GUIN_ValueHeader vh = GUIN_init_ValueHeader(GINSTRDATATYPE_FUNCTION);
-    vh.funcval = &func;
-    GUIN_FRAME frame = GUIN_init_FRAME(&vh);
+    GUIN_ValueHeader** y = GUIN_GC_get_memory(vm, 1);
+    GUIN_ValueHeader* x = *y;
+    free(y);
+
+    x->current_value_type = GINSTRDATATYPE_FUNCTION;
+    x->funcval = func;
+    GUIN_FRAME frame = GUIN_init_FRAME(x);
 
     if (!frame.pc)
         return GUIN_FAIL;
 
-    return (GUIN_add_FRAME_to_FRAME_STACK(&vm->stack_frames, frame) == true)? GUIN_SUCCESS : GUIN_MEM_FAIL;
+    return (GUIN_add_FRAME_to_FRAME_STACK(&vm->stack_frames, frame))? GUIN_SUCCESS : GUIN_MEM_FAIL;
 }
 
 
@@ -991,16 +908,21 @@ GUIN_STATUS GUIN_run_VM(GUIN_VM* vm)
     if (!vm) return GUIN_FAIL;
     vm->errmsg = NULL;
     for (GUIN_FRAME* frame = vm->stack_frames.stackptr-1; vm->stack_frames.stackptr != vm->stack_frames.baseptr; frame = vm->stack_frames.stackptr-1) {
-        if (GUIN_overflow_Bytecode((&frame->func->funcval->bytecode), frame->pc)) {
+        GUIN_Bytecode* bc = &frame->func->funcval->bytecode;
+
+        printf("%ld\n", frame->pc-bc->bytecode);
+
+        if (GUIN_overflow_Bytecode(bc, frame->pc)) {
             vm->errmsg = "Program Counter overflow!";
             return GUIN_FAIL;
         }
-        if (GUIN_underflow_Bytecode((&frame->func->funcval->bytecode), frame->pc)) {
+            
+        if (GUIN_underflow_Bytecode(bc, frame->pc)) {
             vm->errmsg = "Program Counter underflow!";
             return GUIN_FAIL;
         }
-
-        //GUIN_printf("l %d\n", *frame->pc);
+            
+        GUIN_printf("=> %d\n", *frame->pc);
         GUIN_BytecodeHandler func = GUIN_VM_bytecode_handler[*frame->pc];
         if (func == NULL) {
             vm->errmsg = "Unknown bytecode!";

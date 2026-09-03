@@ -16,7 +16,7 @@ if(CMAKE_C_COMPILER_ID MATCHES "Clang")
         -Wpedantic -Wall -Wextra 
         -Werror -Wno-unused-parameter 
         -Wno-unused-variable 
-        -Wno-unused-function -Os
+        -Wno-unused-function -O2
         -fomit-frame-pointer -Wshadow
     )
 elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")

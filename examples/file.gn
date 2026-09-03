@@ -1,8 +1,9 @@
 var yay: int = 2;
-var d: int = nil;
-var fetch: func = nil;
-var length: func = nil;
+var d: string = "-"*10 + "\x1b[0;31mnil\x1b[0m" + "-"*10;
+var fetch: int = nil;
+var length: int = nil;
 
+/*
 func idk_lolll(): int
 {
     var x: int = fetch;

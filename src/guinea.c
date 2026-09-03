@@ -6,6 +6,7 @@
 // guinea.h is located in /include/
 
 #include "../include/guinea.h"
+
 #include "etc/stdlib/GUIN_stdio.h"
 
 #include "declarations.c"
@@ -59,7 +60,7 @@ void GUIN_API_print_main_stack(GUIN_VM* vm)
 {
     if (!vm) return;
     for (GUIN_ValueHeader* ptr = vm->stack_main.stackptr-1; ptr >= vm->stack_main.baseptr; --ptr) {
-        printf("Datatype: %s", GUIN_GINSTR_Datatype_to_string(ptr->current_value_type));
+        printf("Datatype: %s %d", GUIN_GINSTR_Datatype_to_string(ptr->current_value_type), ptr->current_value_type);
         switch (ptr->current_value_type)
         {
             case GINSTRDATATYPE_NULL:       putchar('\n'); break;

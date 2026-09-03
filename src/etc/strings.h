@@ -1,10 +1,6 @@
 #ifndef STRINGS_H
 #define STRINGS_H
 
-#if defined(__cplusplus)
-#extern "C" {
-#endif
-
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -29,9 +25,5 @@ GUIN_String* GUIN_stringconcat(GUIN_String* toconcat, GUIN_String* toadd);
 GUIN_String* GUIN_stringconcat_char_w_len(GUIN_String* toconcat, const char* toadd, size_t length);
 GUIN_String* GUIN_stringconcat_charptr(GUIN_String* toconcat, const char* toadd);
 bool GUIN_stringcompare(GUIN_String* string1, GUIN_String* string2);
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

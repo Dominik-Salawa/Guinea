@@ -1,5 +1,5 @@
-#ifndef GUIN_H
-#define GUIN_H
+#ifndef INCL_GUIN_H
+#define INCL_GUIN_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -73,38 +73,40 @@ GUIN_API_Value GUIN_API_string(const char* data);
 
     #include <cstddef> // for nullptr_t
 
-    GUIN_API_Value GUIN_VALUE(GUIN_int16 value)
+    inline GUIN_API_Value GUIN_VALUE(GUIN_int16 value)
         { return GUIN_API_int16(value); }
-    GUIN_API_Value GUIN_VALUE(GUIN_int32 value)
+    inline GUIN_API_Value GUIN_VALUE(GUIN_int32 value)
         { return GUIN_API_int32(value); }
-    GUIN_API_Value GUIN_VALUE(long long value)
+    inline GUIN_API_Value GUIN_VALUE(long long value)
         { return GUIN_API_int64(value); }
-    GUIN_API_Value GUIN_VALUE(GUIN_int64 value)
+    inline GUIN_API_Value GUIN_VALUE(GUIN_int64 value)
         { return GUIN_API_int64(value); }
 
-    GUIN_API_Value GUIN_VALUE(GUIN_number32 value)
+    inline GUIN_API_Value GUIN_VALUE(GUIN_number32 value)
         { return GUIN_API_number32(value); }
-    GUIN_API_Value GUIN_VALUE(GUIN_number64 value)
+    inline GUIN_API_Value GUIN_VALUE(GUIN_number64 value)
         { return GUIN_API_number64(value); }
     
-    GUIN_API_Value GUIN_VALUE(bool value)
+    inline GUIN_API_Value GUIN_VALUE(bool value)
         { return GUIN_API_bool(value); }
-    GUIN_API_Value GUIN_VALUE(char value)
+    inline GUIN_API_Value GUIN_VALUE(char value)
         { return GUIN_API_char(value); }
-    GUIN_API_Value GUIN_VALUE(char* value)
+    inline GUIN_API_Value GUIN_VALUE(char* value)
         { return GUIN_API_string(value); }
-    GUIN_API_Value GUIN_VALUE(const char* value)
+    inline GUIN_API_Value GUIN_VALUE(const char* value)
         { return GUIN_API_string(value); }
 
-    GUIN_API_Value GUIN_VALUE(std::nullptr_t value)
-        { return GUIN_API_nil(nullptr); }
-    GUIN_API_Value GUIN_VALUE(void* value)
+    inline GUIN_API_Value GUIN_VALUE(struct GUIN_nil__struct__* value)
         { return GUIN_API_nil(value); }
-    GUIN_API_Value GUIN_VALUE(struct GUIN_nil__struct__* value)
+    inline GUIN_API_Value GUIN_VALUE(std::nullptr_t value)
+        { return GUIN_API_nil(nullptr); }
+    inline GUIN_API_Value GUIN_VALUE(void* value)
         { return GUIN_API_nil(value); }
 
 extern "C" {
 #endif
+
+
 
 typedef struct GUIN_VM GUIN_VM;
 GUIN_VM* GUIN_API_open_VM(void);

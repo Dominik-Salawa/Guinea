@@ -1,10 +1,6 @@
 #ifndef STRINGS_C
 #define STRINGS_C
 
-#if defined(__cplusplus)
-#extern "C" {
-#endif
-
 #include "strings.h"
 #include <string.h>
 
@@ -138,9 +134,5 @@ bool GUIN_stringcompare(GUIN_String* string1, GUIN_String* string2)
 
     return true;
 }
-
-#if defined(__cplusplus)
-}
-#endif
 
 #endif

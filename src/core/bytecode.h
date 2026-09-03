@@ -74,9 +74,9 @@ typedef enum GINSTR_Datatype {
 #define GUIN_is_int(x)              (x == GINSTRDATATYPE_INT32 || x == GINSTRDATATYPE_INT64)
 #define GUIN_is_number_variant(x)   (GUIN_is_number_or_int(x) || x == GINSTRDATATYPE_BOOL || x == GINSTRDATATYPE_CHAR)
 
-#define GUIN_underflow_Bytecode(bytecode_ptr, ptr)          (ptr < bytecode_ptr->bytecode)
-#define GUIN_overflow_Bytecode(bytecode_ptr, ptr)           (ptr >= bytecode_ptr->bytecode + bytecode_ptr->size)
-#define GUIN_out_of_bounds_from_Bytecode(bytecode_ptr, ptr) (GUIN_overflow_Bytecode(bytecode_ptr, ptr) || GUIN_underflow_Bytecode(bytecode_ptr, ptr))
+#define GUIN_underflow_Bytecode(_bytecode_ptr, ptr)          (ptr < _bytecode_ptr->bytecode)
+#define GUIN_overflow_Bytecode(_bytecode_ptr, ptr)           (ptr >= _bytecode_ptr->bytecode + _bytecode_ptr->size)
+#define GUIN_out_of_bounds_from_Bytecode(_bytecode_ptr, ptr) (GUIN_overflow_Bytecode(_bytecode_ptr, ptr) || GUIN_underflow_Bytecode(_bytecode_ptr, ptr))
 
 typedef struct GUIN_Bytecode {
     GUIN_ubyte* bytecode;

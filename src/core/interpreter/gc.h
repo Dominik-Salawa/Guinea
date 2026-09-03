@@ -3,7 +3,8 @@
 
 #include <stdlib.h>
 #include "value.h"
-#include "vm.h"
+
+typedef struct GUIN_VM GUIN_VM;
 
 const size_t GUIN_MEM_PAGE_SIZE = 1024;
 

@@ -10,7 +10,6 @@ CMakeFiles/
 bin/
 *.cmake
 CMakeCache.txt
-Makefile
 .vs/
 *.suo
 *.user

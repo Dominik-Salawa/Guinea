@@ -14,6 +14,7 @@ char* GUIN_GINSTR_Datatype_to_string(GINSTR_Datatype x)
     switch (x)
     {
         case GINSTRDATATYPE_NULL:       return "null";
+        case GINSTRDATATYPE_VOID:       return "void";
         case GINSTRDATATYPE_NIL:        return "nil";
         case GINSTRDATATYPE_STRING:     return "string";
         case GINSTRDATATYPE_INT32:      return "int32";
