@@ -870,8 +870,7 @@ static GUIN_ExpressionAST* GUIN_eval_expression_parser(GUIN_ParseState* pState, 
 
     do { // IF CURRENT == NULL IT MEANS WE HAVE REACHED THE END OF THE PARSER
         GUIN_ExpressionAST* right;
-        GUIN_log("expr parser fetch %s\n", GUIN_LexTokenEnum_to_string(token_to_signify_end));
-
+        
         { // fetching right
             right = GUIN_eval_expression_parser_section(pState, token_to_signify_end, parsing_func_arg_call, is_global_scope);
 
@@ -898,12 +897,16 @@ static GUIN_ExpressionAST* GUIN_eval_expression_parser(GUIN_ParseState* pState, 
         GUIN_byte current_precedence  = GUIN_get_Precedence_level(c_ref->type);
         GUIN_byte right_precedence    = GUIN_get_Precedence_level(right->top->type);
 
+        GUIN_log("%s %s\n", GUIN_ExpressionNodeType_to_string(c_ref->type), GUIN_ExpressionNodeType_to_string(right->top->type));
+
         if (current_precedence >= right_precedence && right_precedence != 0 && !right->is_parenthesis) {
-            // we position main to be on the left side of the lesser/equ right
+            // we position the the left of right to be under the current path we're on 
+            // then we make the main to be in the left of right, then right becomes the main branch
             GUIN_log("left_precedence >= right_precedence && right_precedence != 0 && !right->is_parenthesis\n");
             c_ref->right     = right->top->left;
-            right->top->left = c_ref;
-            *current = right->top;
+            right->top->left = main->top;
+            main->top = right->top;
+            current = &main->top;
         }
         else if (right_precedence == 0 || right->is_parenthesis) {
             GUIN_log("right_precedence == 0 || right->is_parenthesis\n");

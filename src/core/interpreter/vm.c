@@ -303,13 +303,16 @@ bool GUIN_VM_mul(GUIN_VM* vm)
         )
     }
     // string/int * string/int
-    else if ((x.current_value_type == GINSTRDATATYPE_STRING || y.current_value_type == GINSTRDATATYPE_STRING) && (GUIN_is_int(x.current_value_type) || GUIN_is_int(y.current_value_type))) {
+    else if ((x.current_value_type == GINSTRDATATYPE_STRING || y.current_value_type == GINSTRDATATYPE_STRING) && (GUIN_is_number_variant(x.current_value_type) || GUIN_is_number_variant(y.current_value_type))) {
         GUIN_ValueHeader* hd;
-        size_t loopcount;
+        GUIN_int64 loopcount;
 
-        if (GUIN_is_int(x.current_value_type)) {
+        if (GUIN_is_number_variant(x.current_value_type)) {
             hd = &y;
-            loopcount = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;
+            if (GUIN_is_number(x.current_value_type))            
+                loopcount = (GUIN_int64)((x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32);
+            else
+                loopcount = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;
         } else {
             hd = &x;
             loopcount = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;
@@ -325,7 +328,7 @@ bool GUIN_VM_mul(GUIN_VM* vm)
                 new.str->size = new.str->length / loopcount - 1;
             }
         }
-        for (size_t i = 0; i < loopcount; ++i)
+        for (GUIN_int64 i = 0; i < loopcount; ++i)
             GUIN_stringconcat(new.str, hd->str);
 
         GUIN_destroy_ValueHeader(hd);
@@ -521,7 +524,7 @@ bool GUIN_VM_equ(GUIN_VM* vm)
         return false;
     }
 
-    GUIN_ValueHeader new;
+    GUIN_ValueHeader new = {.current_value_type=GINSTRDATATYPE_BOOL,.header_type=GINSTRDATATYPE_BOOL};
     // number/int/bool/char == number/int/bool/char
     if (GUIN_is_number_variant(x.current_value_type) && GUIN_is_number_variant(y.current_value_type)) {
         GUIN_VM_integer_branch(x,y,
@@ -910,8 +913,6 @@ GUIN_STATUS GUIN_run_VM(GUIN_VM* vm)
     for (GUIN_FRAME* frame = vm->stack_frames.stackptr-1; vm->stack_frames.stackptr != vm->stack_frames.baseptr; frame = vm->stack_frames.stackptr-1) {
         GUIN_Bytecode* bc = &frame->func->funcval->bytecode;
 
-        printf("%ld\n", frame->pc-bc->bytecode);
-
         if (GUIN_overflow_Bytecode(bc, frame->pc)) {
             vm->errmsg = "Program Counter overflow!";
             return GUIN_FAIL;
@@ -922,7 +923,6 @@ GUIN_STATUS GUIN_run_VM(GUIN_VM* vm)
             return GUIN_FAIL;
         }
             
-        GUIN_printf("=> %d\n", *frame->pc);
         GUIN_BytecodeHandler func = GUIN_VM_bytecode_handler[*frame->pc];
         if (func == NULL) {
             vm->errmsg = "Unknown bytecode!";

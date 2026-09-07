@@ -41,7 +41,10 @@ void GUIN_destroy_ValueHeader(GUIN_ValueHeader* x)
 
 GUIN_STATUS GUIN_assign_ValueHeader_with_ValueHeader(GUIN_ValueHeader* to_assign, GUIN_ValueHeader value)
 {
-    if (to_assign->header_type != value.current_value_type && to_assign->header_type != GINSTRDATATYPE_DYNAMIC && value.current_value_type != GINSTRDATATYPE_NIL) return GUIN_FAIL;
+    if (to_assign->header_type != value.current_value_type && to_assign->header_type != GINSTRDATATYPE_DYNAMIC && value.current_value_type != GINSTRDATATYPE_NIL) {
+        printf("incorrect val\n");   
+        return GUIN_FAIL;
+    }
 
     GUIN_destroy_ValueHeader(to_assign);
     *to_assign = value;

@@ -1,3 +1,6 @@
+// NOW IT WILL EXIT WITH ERR 1, BUT BECAUSE I HAVE YET TO
+// IMPLEMENT HOW TO DELETE FUNCTION OBJECTS AND GC OBJECTS
+
 #include <iostream>
 #include "../../../src/guinea.h"
 

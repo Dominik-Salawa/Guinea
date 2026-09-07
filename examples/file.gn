@@ -1,11 +1,13 @@
 var yay: int = 2;
-var d: string = "-"*10 + "\x1b[0;31mnil\x1b[0m" + "-"*10;
-var fetch: int = nil;
-var length: int = nil;
+var d: bool = "-"*(10 + 10^2) + "a" + "nil" + "a" + "-"*10 == "hi";
+var adawdawda: bool = ("-"*(10 + 10^2) + "a" + "nil" + "a" + "-"*10) == "hi";
+var fetch: func = nil;
+var length: func = nil;
 
 /*
-func idk_lolll(): int
+func main(): int
 {
+    
     var x: int = fetch;
     var y: int = 1/4;;;;;
     return 9 + 10;
@@ -13,15 +15,14 @@ func idk_lolll(): int
     var i: int = 5;
     var b: int = i + (d / yay)^yay;
 
-    {{{{{{{{{{{{var ddd:int=i}var ddd:int=i}}}}}}}}}}}
-
     func testing_my_language(): int
     {
         var a: int = 5;
         return a;
     }
 
-    if length*(d) == testing_my_language {
+
+    if length(d) == testing_my_language {
         var gk: int = 999;;;;;
     }
     while y* 6 > 15 {
