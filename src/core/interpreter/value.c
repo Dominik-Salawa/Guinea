@@ -1,5 +1,5 @@
-#ifndef GUIN_VALUE_C
-#define GUIN_VALUE_C
+#ifndef guin_VALUE_c
+#define guin_VALUE_c
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -10,19 +10,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-GUIN_ValueHeader GUIN_init_ValueHeader(GINSTR_Datatype header_type)
+guin_ValueHeader guin_init_ValueHeader(GINSTR_Datatype header_type)
 {
-    GUIN_ValueHeader v = {0};
+    guin_ValueHeader v = {0};
     v.header_type = header_type;
     v.current_value_type = header_type;
     return v;
 }
-void GUIN_destroy_ValueHeader(GUIN_ValueHeader* x)
+void guin_destroy_ValueHeader(guin_ValueHeader* x)
 {
     switch (x->current_value_type)
     {
         case GINSTRDATATYPE_STRING:
-            if (x->str) GUIN_clearstring_ptr(&x->str);
+            if (x->str) guin_clearstring_ptr(&x->str);
             break;
         case GINSTRDATATYPE_INT32:      break;
         case GINSTRDATATYPE_INT64:      break;
@@ -36,29 +36,29 @@ void GUIN_destroy_ValueHeader(GUIN_ValueHeader* x)
             printf("idk what datatype this is! %d\n", x->current_value_type);
             exit(1);
     }
-    *x = (GUIN_ValueHeader){0};
+    *x = (guin_ValueHeader){0};
 }
 
-GUIN_STATUS GUIN_assign_ValueHeader_with_ValueHeader(GUIN_ValueHeader* to_assign, GUIN_ValueHeader value)
+guin_STATUS guin_assign_ValueHeader_with_ValueHeader(guin_ValueHeader* to_assign, guin_ValueHeader value)
 {
     if (to_assign->header_type != value.current_value_type && to_assign->header_type != GINSTRDATATYPE_DYNAMIC && value.current_value_type != GINSTRDATATYPE_NIL) {
         printf("incorrect val\n");   
-        return GUIN_FAIL;
+        return guin_FAIL;
     }
 
-    GUIN_destroy_ValueHeader(to_assign);
+    guin_destroy_ValueHeader(to_assign);
     *to_assign = value;
 
-    return GUIN_SUCCESS;
+    return guin_SUCCESS;
 }
 
 #include <string.h>
 // make sure source starts on the datatype
-GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_Bytecode* bytecode, GUIN_ubyte* src)
+guin_VH_from_BC_result guin_get_ValueHeader_from_Bytecode(guin_Bytecode* bytecode, guin_ubyte* src)
 {
-    GUIN_VH_from_BC_result x = {.status=GUIN_FAIL};
-    GUIN_ubyte* original = src;
-    GUIN_ValueHeader vh = (GUIN_ValueHeader){0};
+    guin_VH_from_BC_result x = {.status=guin_FAIL};
+    guin_ubyte* original = src;
+    guin_ValueHeader vh = (guin_ValueHeader){0};
     if (!src) return x;
     vh.current_value_type = *src++;
     vh.header_type = vh.current_value_type;
@@ -73,39 +73,39 @@ GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_Bytecode* bytecod
             break;
 
         case GINSTRDATATYPE_INT32:
-            if (!GUIN_safe_memcpy_Bytecode(&vh.i32, bytecode, src, sizeof(GUIN_int32))) {
+            if (!guin_safe_memcpy_Bytecode(&vh.i32, bytecode, src, sizeof(guin_int32))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
-            src += sizeof(GUIN_int32);
+            src += sizeof(guin_int32);
             break;
 
         case GINSTRDATATYPE_INT64:
-            if (!GUIN_safe_memcpy_Bytecode(&vh.i64, bytecode, src, sizeof(GUIN_int64))) {
+            if (!guin_safe_memcpy_Bytecode(&vh.i64, bytecode, src, sizeof(guin_int64))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
-            src += sizeof(GUIN_int64);
+            src += sizeof(guin_int64);
             break;
 
         case GINSTRDATATYPE_NUMBER32:
-            if (!GUIN_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(GUIN_number32))) {
+            if (!guin_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(guin_number32))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
-            src += sizeof(GUIN_number32);
+            src += sizeof(guin_number32);
             break;
 
         case GINSTRDATATYPE_NUMBER64:
-            if (!GUIN_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(GUIN_number64))) {
+            if (!guin_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(guin_number64))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
-            src += sizeof(GUIN_number64);
+            src += sizeof(guin_number64);
             break;
 
         case GINSTRDATATYPE_CHAR:
-            if (!GUIN_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(char))) {
+            if (!guin_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(char))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
@@ -113,7 +113,7 @@ GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_Bytecode* bytecod
             break;
 
         case GINSTRDATATYPE_BOOL:
-            if (!GUIN_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(bool))) {
+            if (!guin_safe_memcpy_Bytecode(&vh.n32, bytecode, src, sizeof(bool))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
@@ -121,24 +121,24 @@ GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_Bytecode* bytecod
             break;
             
         case GINSTRDATATYPE_STRING: {
-            GUIN_int64 len;
-            if (!GUIN_safe_memcpy_Bytecode(&len, bytecode, src, sizeof(len))) {
+            guin_int64 len;
+            if (!guin_safe_memcpy_Bytecode(&len, bytecode, src, sizeof(len))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
             src += sizeof(len);
 
-            vh.str = GUIN_init_String_ptr();
+            vh.str = guin_init_String_ptr();
             if (!vh.str) {
-                x.status = GUIN_MEM_FAIL;
+                x.status = guin_MEM_FAIL;
                 return x;
             }
-            if (GUIN_overflow_Bytecode(bytecode, (src + len - 1))) {
+            if (guin_overflow_Bytecode(bytecode, (src + len - 1))) {
                 x.errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
                 return x;
             }
-            if (!GUIN_stringconcat_char_w_len(vh.str, (char*)src, len)) {
-                x.status = GUIN_MEM_FAIL;
+            if (!guin_stringconcat_char_w_len(vh.str, (char*)src, len)) {
+                x.status = guin_MEM_FAIL;
                 return x;
             }
             src += len;
@@ -151,7 +151,7 @@ GUIN_VH_from_BC_result GUIN_get_ValueHeader_from_Bytecode(GUIN_Bytecode* bytecod
     }
     x.to_jump = src - original;
     x.value = vh;
-    x.status = GUIN_SUCCESS;
+    x.status = guin_SUCCESS;
     return x;
 }
 

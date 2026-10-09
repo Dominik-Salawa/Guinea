@@ -1,5 +1,5 @@
-#ifndef GUIN_COMPILER_H
-#define GUIN_COMPILER_H
+#ifndef guin_COMPILER_h
+#define guin_COMPILER_h
 
 // THIS FILES ENTIRE PURPOSE IS TO QUICKLY LINK AND INCLUDE ALL THE .h FILES FROM /src/core/compiler
 

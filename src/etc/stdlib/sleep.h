@@ -3,6 +3,6 @@
 
 #include <stdbool.h>
 #include "../../../include/declarations.h"
-bool GUIN_sleep(GUIN_int32 miliseconds);
+bool guin_sleep(guin_int32 miliseconds);
 
 #endif

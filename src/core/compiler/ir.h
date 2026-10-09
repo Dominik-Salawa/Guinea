@@ -5,13 +5,13 @@
 #include "ast.h"
 #include "../bytecode.h"
 
-typedef struct GUIN_IR {
+typedef struct guin_IR {
     char* filename;
-    GUIN_ubyte ver[2];
-    GUIN_String source;
-} GUIN_IR;
+    guin_ubyte ver[2];
+    guin_String source;
+} guin_IR;
 
-GINSTR GUIN_ExpressionNodeType_to_GINSTR(GUIN_ExpressionNodeType x);
-GUIN_Bytecode* GUIN_IR_CONVERT(GUIN_IR* ir, const bool on_global);
+GINSTR guin_ExpressionNodeType_to_GINSTR(guin_ExpressionNodeType x);
+guin_Bytecode* guin_IR_CONVERT(guin_IR* ir, const bool on_global);
 
 #endif

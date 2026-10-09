@@ -1,36 +1,36 @@
-#ifndef DECLARATIONS_H
-#define DECLARATIONS_H
+#ifndef guin_DECLARATIONS_h
+#define guin_DECLARATIONS_h
 
 #include <inttypes.h>
 #include <math.h>
 
-typedef unsigned char GUIN_uchar;
+typedef unsigned char guin_uchar;
 
-typedef int8_t        GUIN_byte;
-typedef uint8_t       GUIN_ubyte;
+typedef int8_t        guin_byte;
+typedef uint8_t       guin_ubyte;
 
-typedef int16_t       GUIN_int16;
-typedef uint16_t      GUIN_uint16;
-typedef int32_t       GUIN_int32;
-typedef uint32_t      GUIN_uint32;
-typedef int64_t       GUIN_int64;
-typedef uint64_t      GUIN_uint64;
+typedef int16_t       guin_int16;
+typedef uint16_t      guin_uint16;
+typedef int32_t       guin_int32;
+typedef uint32_t      guin_uint32;
+typedef int64_t       guin_int64;
+typedef uint64_t      guin_uint64;
 
-typedef float         GUIN_number32;
-typedef double        GUIN_number64;
+typedef float         guin_number32;
+typedef double        guin_number64;
 typedef void (*RawFuncPointer)(void*);
 
-typedef GUIN_uint16 GUIN_LOCAL_SLOT_INT;
-typedef GUIN_uint32 GUIN_JUMPL_SIZE;
+typedef guin_uint16 guin_LOCAL_SLOT_INT;
+typedef guin_uint32 guin_JUMPL_SIZE;
 
-typedef enum GUIN_STATUS {
-    GUIN_SUCCESS = 0, GUIN_FAIL, GUIN_MEM_FAIL, GUIN_CONTINUE, GUIN_FINISHED, GUIN_CORRUPTED_DATA
-} GUIN_STATUS;
+typedef enum guin_STATUS {
+    guin_SUCCESS = 0, guin_FAIL, guin_MEM_FAIL, guin_CONTINUE, guin_FINISHED, guin_CORRUPTED_DATA
+} guin_STATUS;
 
-GUIN_number32 GUIN__NaN__(void);
+guin_number32 guin__NaN__(void);
 
-#define GUIN_Inf         (INFINITY)
-#define GUIN_NaN         (GUIN__NaN__())
-#define GUIN_is_NaN(num) (num != num) // according to IEEE 754, a NaN cannot equ to itself
+#define guin_Inf         (INFINITY)
+#define guin_NaN         (guin__NaN__())
+#define guin_is_NaN(num) (num != num) // according to IEEE 754, a NaN cannot equ to itself
 
 #endif

@@ -1,13 +1,13 @@
-#ifndef DECLARATIONS_C
-#define DECLARATIONS_C
+#ifndef guin_DECLARATIONS_c
+#define guin_DECLARATIONS_c
 
 #include "../include/declarations.h"
 
-GUIN_number32 GUIN__NaN__(void)
+guin_number32 guin__NaN__(void)
 {
     union {
-        GUIN_uint32 i;
-        GUIN_number32 n;
+        guin_uint32 i;
+        guin_number32 n;
     } u;
 
     u.i = 0x7FF80000;

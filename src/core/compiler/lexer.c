@@ -8,161 +8,161 @@
 #include <math.h>
 
 #include "lexer.h"
-#include "../../etc/string_manipulation.h"
+#include "../../etc/string-manipulation.h"
 
-char* GUIN_LexTokenEnum_to_string(GUIN_LexTokenEnum e)
+char* guin_LexTokenEnum_to_string(guin_LexTokenEnum e)
 {
     switch (e)
     {
-        case GUIN_TK_Identifier:     return "identifier";
-        case GUIN_TK_var:            return "var";
+        case guin_TK_Identifier:     return "identifier";
+        case guin_TK_var:            return "var";
 
-        case GUIN_TK_Int_val:        return "(int)";
-        case GUIN_TK_Number_val:     return "(number)";
-        case GUIN_TK_String_val:     return "(string)";
-        case GUIN_TK_Char_val:       return "(char)";
-        case GUIN_TK_Bool_val:       return "(bool)";
-        case GUIN_TK_nil:            return "nil";
-        case GUIN_TK_NaN:            return "NaN";
+        case guin_TK_Int_val:        return "(int)";
+        case guin_TK_Number_val:     return "(number)";
+        case guin_TK_String_val:     return "(string)";
+        case guin_TK_Char_val:       return "(char)";
+        case guin_TK_Bool_val:       return "(bool)";
+        case guin_TK_nil:            return "nil";
+        case guin_TK_NaN:            return "NaN";
 
-        case GUIN_TK_if:             return "if";
-        case GUIN_TK_else:           return "else";
-        case GUIN_TK_while:          return "while";
-        case GUIN_TK_for:            return "for";
-        case GUIN_TK_return:         return "return";
-        case GUIN_TK_continue:       return "continue";
-        case GUIN_TK_break:          return "break";
+        case guin_TK_if:             return "if";
+        case guin_TK_else:           return "else";
+        case guin_TK_while:          return "while";
+        case guin_TK_for:            return "for";
+        case guin_TK_return:         return "return";
+        case guin_TK_continue:       return "continue";
+        case guin_TK_break:          return "break";
 
-        case GUIN_TK_func:           return "func";
-        case GUIN_TK_int:            return "int";
-        case GUIN_TK_number:         return "number";
-        case GUIN_TK_string:         return "string";
-        case GUIN_TK_char:           return "char";
-        case GUIN_TK_bool:           return "bool";
-        case GUIN_TK_void:           return "void";
+        case guin_TK_func:           return "func";
+        case guin_TK_int:            return "int";
+        case guin_TK_number:         return "number";
+        case guin_TK_string:         return "string";
+        case guin_TK_char:           return "char";
+        case guin_TK_bool:           return "bool";
+        case guin_TK_void:           return "void";
 
-        case GUIN_TK_ASSIGN:         return "=";
-        case GUIN_TK_ADD:            return "+";
-        case GUIN_TK_SUB:            return "-";
-        case GUIN_TK_MUL:            return "*";
-        case GUIN_TK_DIV:            return "/";
-        case GUIN_TK_MOD:            return "%";
-        case GUIN_TK_POW:            return "^";
+        case guin_TK_ASSIGN:         return "=";
+        case guin_TK_ADD:            return "+";
+        case guin_TK_SUB:            return "-";
+        case guin_TK_MUL:            return "*";
+        case guin_TK_DIV:            return "/";
+        case guin_TK_MOD:            return "%";
+        case guin_TK_POW:            return "^";
 
-        case GUIN_TK_HASH:           return "#";
+        case guin_TK_HASH:           return "#";
 
-        case GUIN_TK_PARENTHESIS_L:  return "(";
-        case GUIN_TK_PARENTHESIS_R:  return ")";
-        case GUIN_TK_COLON:          return ":";
-        case GUIN_TK_SEMI_COLON:     return ";";
-        case GUIN_TK_DOT:            return ".";
-        case GUIN_TK_COMMA:          return ",";
+        case guin_TK_PARENTHESIS_L:  return "(";
+        case guin_TK_PARENTHESIS_R:  return ")";
+        case guin_TK_COLON:          return ":";
+        case guin_TK_SEMI_COLON:     return ";";
+        case guin_TK_DOT:            return ".";
+        case guin_TK_COMMA:          return ",";
 
-        case GUIN_TK_GT:             return ">";
-        case GUIN_TK_LT:             return "<";
-        case GUIN_TK_EQU:            return "==";
-        case GUIN_TK_NOT_EQU:        return "!=";
-        case GUIN_TK_LT_EQU:         return "<=";
-        case GUIN_TK_GT_EQU:         return ">=";
-        case GUIN_TK_and:            return "and";
-        case GUIN_TK_or:             return "or";
+        case guin_TK_GT:             return ">";
+        case guin_TK_LT:             return "<";
+        case guin_TK_EQU:            return "==";
+        case guin_TK_NOT_EQU:        return "!=";
+        case guin_TK_LT_EQU:         return "<=";
+        case guin_TK_GT_EQU:         return ">=";
+        case guin_TK_and:            return "and";
+        case guin_TK_or:             return "or";
 
-        case GUIN_TK_CURLY_L:        return "{";
-        case GUIN_TK_CURLY_R:        return "}";
+        case guin_TK_CURLY_L:        return "{";
+        case guin_TK_CURLY_R:        return "}";
 
-        case GUIN_TK_BRACKET_L:      return "[";
-        case GUIN_TK_BRACKET_R:      return "]";
+        case guin_TK_BRACKET_L:      return "[";
+        case guin_TK_BRACKET_R:      return "]";
 
-        case GUIN_TK_EOF:            return "EOF";
-        case GUIN_TK_UNINIT:         return "UNINIT";
-        case GUIN_TK_UNKNOWN:        return "UNKNOWN";
-        case GUIN_TK_ERR:            return "ERR";
+        case guin_TK_EOF:            return "EOF";
+        case guin_TK_UNINIT:         return "UNINIT";
+        case guin_TK_UNKNOWN:        return "UNKNOWN";
+        case guin_TK_ERR:            return "ERR";
 
         default:                return "(UNAVAILABLE)";
     }
 }
 
-struct GUIN_LexNodeStringToEnumData {
+struct guin_LexNodeStringToEnumData {
     char* string;
-    GUIN_LexTokenEnum type;
+    guin_LexTokenEnum type;
 };
 
-struct GUIN_LexNodeCharToEnumData {
+struct guin_LexNodeCharToEnumData {
     char ch;
-    GUIN_LexTokenEnum type;
+    guin_LexTokenEnum type;
 };
 
-static const struct GUIN_LexNodeStringToEnumData stringtoken[] = {
-    {.string="true",        .type=GUIN_TK_Bool_val},
-    {.string="false",       .type=GUIN_TK_Bool_val},
-    {.string="nil",         .type=GUIN_TK_nil},
-    {.string="void",        .type=GUIN_TK_void},
-    {.string="NaN",         .type=GUIN_TK_NaN},
-    {.string="Inf",         .type=GUIN_TK_Inf},
+static const struct guin_LexNodeStringToEnumData stringtoken[] = {
+    {.string="true",        .type=guin_TK_Bool_val},
+    {.string="false",       .type=guin_TK_Bool_val},
+    {.string="nil",         .type=guin_TK_nil},
+    {.string="void",        .type=guin_TK_void},
+    {.string="NaN",         .type=guin_TK_NaN},
+    {.string="Inf",         .type=guin_TK_Inf},
 
-    {.string="func",        .type=GUIN_TK_func},
-    {.string="int",         .type=GUIN_TK_int},
-    {.string="number",      .type=GUIN_TK_number},
-    {.string="char",        .type=GUIN_TK_char},
-    {.string="bool",        .type=GUIN_TK_bool},
-    {.string="string",      .type=GUIN_TK_string},
-    {.string="dynamic",     .type=GUIN_TK_dynamic},
+    {.string="func",        .type=guin_TK_func},
+    {.string="int",         .type=guin_TK_int},
+    {.string="number",      .type=guin_TK_number},
+    {.string="char",        .type=guin_TK_char},
+    {.string="bool",        .type=guin_TK_bool},
+    {.string="string",      .type=guin_TK_string},
+    {.string="dynamic",     .type=guin_TK_dynamic},
 
-    {.string="if",          .type=GUIN_TK_if},
-    {.string="else",        .type=GUIN_TK_else},
-    {.string="while",       .type=GUIN_TK_while},
-    {.string="for",         .type=GUIN_TK_for},
-    {.string="not",         .type=GUIN_TK_not},
-    {.string="and",         .type=GUIN_TK_and},
-    {.string="or",          .type=GUIN_TK_or},
-    {.string="continue",    .type=GUIN_TK_continue},
-    {.string="break",       .type=GUIN_TK_break},
-    {.string="return",      .type=GUIN_TK_return},
+    {.string="if",          .type=guin_TK_if},
+    {.string="else",        .type=guin_TK_else},
+    {.string="while",       .type=guin_TK_while},
+    {.string="for",         .type=guin_TK_for},
+    {.string="not",         .type=guin_TK_not},
+    {.string="and",         .type=guin_TK_and},
+    {.string="or",          .type=guin_TK_or},
+    {.string="continue",    .type=guin_TK_continue},
+    {.string="break",       .type=guin_TK_break},
+    {.string="return",      .type=guin_TK_return},
 
-    {.string="var",         .type=GUIN_TK_var},
+    {.string="var",         .type=guin_TK_var},
 };
 
-static const struct GUIN_LexNodeCharToEnumData chartoken[] = {
-    {.ch='{',       .type=GUIN_TK_CURLY_L},
-    {.ch='}',       .type=GUIN_TK_CURLY_R},
-    {.ch='[',       .type=GUIN_TK_BRACKET_L},
-    {.ch=']',       .type=GUIN_TK_BRACKET_R},
+static const struct guin_LexNodeCharToEnumData chartoken[] = {
+    {.ch='{',       .type=guin_TK_CURLY_L},
+    {.ch='}',       .type=guin_TK_CURLY_R},
+    {.ch='[',       .type=guin_TK_BRACKET_L},
+    {.ch=']',       .type=guin_TK_BRACKET_R},
 
-    {.ch='(',       .type=GUIN_TK_PARENTHESIS_L},
-    {.ch=')',       .type=GUIN_TK_PARENTHESIS_R},
-    {.ch='.',       .type=GUIN_TK_DOT},
-    {.ch=':',       .type=GUIN_TK_COLON},
-    {.ch=';',       .type=GUIN_TK_SEMI_COLON},
-    {.ch=',',       .type=GUIN_TK_COMMA},
+    {.ch='(',       .type=guin_TK_PARENTHESIS_L},
+    {.ch=')',       .type=guin_TK_PARENTHESIS_R},
+    {.ch='.',       .type=guin_TK_DOT},
+    {.ch=':',       .type=guin_TK_COLON},
+    {.ch=';',       .type=guin_TK_SEMI_COLON},
+    {.ch=',',       .type=guin_TK_COMMA},
 
-    {.ch='=',       .type=GUIN_TK_ASSIGN},
-    {.ch='<',       .type=GUIN_TK_LT},
-    {.ch='>',       .type=GUIN_TK_GT},
-    {.ch='+',       .type=GUIN_TK_ADD},
-    {.ch='-',       .type=GUIN_TK_SUB},
-    {.ch='*',       .type=GUIN_TK_MUL},
-    {.ch='/',       .type=GUIN_TK_DIV},
-    {.ch='%',       .type=GUIN_TK_MOD},
-    {.ch='^',       .type=GUIN_TK_POW},
-    {.ch='#',       .type=GUIN_TK_HASH},
+    {.ch='=',       .type=guin_TK_ASSIGN},
+    {.ch='<',       .type=guin_TK_LT},
+    {.ch='>',       .type=guin_TK_GT},
+    {.ch='+',       .type=guin_TK_ADD},
+    {.ch='-',       .type=guin_TK_SUB},
+    {.ch='*',       .type=guin_TK_MUL},
+    {.ch='/',       .type=guin_TK_DIV},
+    {.ch='%',       .type=guin_TK_MOD},
+    {.ch='^',       .type=guin_TK_POW},
+    {.ch='#',       .type=guin_TK_HASH},
 };
 
-struct GUIN_DoubleOperationChar {
+struct guin_DoubleOperationChar {
     char f_ch;
     char s_ch;
-    GUIN_LexTokenEnum type;
+    guin_LexTokenEnum type;
 };
 
-static const struct GUIN_DoubleOperationChar doublechartoken[] = {
-    {.f_ch='=', .s_ch='=',      .type=GUIN_TK_EQU},
-    {.f_ch='!', .s_ch='=',      .type=GUIN_TK_NOT_EQU},
-    {.f_ch='<', .s_ch='=',      .type=GUIN_TK_LT_EQU},
-    {.f_ch='>', .s_ch='=',      .type=GUIN_TK_GT_EQU},
+static const struct guin_DoubleOperationChar doublechartoken[] = {
+    {.f_ch='=', .s_ch='=',      .type=guin_TK_EQU},
+    {.f_ch='!', .s_ch='=',      .type=guin_TK_NOT_EQU},
+    {.f_ch='<', .s_ch='=',      .type=guin_TK_LT_EQU},
+    {.f_ch='>', .s_ch='=',      .type=guin_TK_GT_EQU},
 };
 
-static void GUIN_set_token_type(GUIN_LexToken* token, GUIN_LexState* lState) // for true/false also converts into right datatype
+static void guin_set_token_type(guin_LexToken* token, guin_LexState* lState) // for true/false also converts into right datatype
 {
-    if (GUIN_is_int_string(token->string.content) || GUIN_is_valid_number(token->string.content)) {
+    if (guin_is_int_string(token->string.content) || guin_is_valid_number(token->string.content)) {
         size_t decimal_index = 0;
         {
             bool found = false;
@@ -175,34 +175,34 @@ static void GUIN_set_token_type(GUIN_LexToken* token, GUIN_LexState* lState) // 
                 }
             } 
 
-            token->type = (found) ? GUIN_TK_Number_val : GUIN_TK_Int_val;
+            token->type = (found) ? guin_TK_Number_val : guin_TK_Int_val;
         }
 
-        GUIN_int64     integer = 0;
-        GUIN_number64  number  = 0;
-        GUIN_number64  decimal = 0;
+        guin_int64     integer = 0;
+        guin_number64  number  = 0;
+        guin_number64  decimal = 0;
 
-        if (token->type == GUIN_TK_Int_val) {
+        if (token->type == guin_TK_Int_val) {
             for (size_t i = 0; i < token->string.length; i++) {
-                integer = (integer * 10) + GUIN_to_number(token->string.content[i]);
+                integer = (integer * 10) + guin_to_number(token->string.content[i]);
             }
         } else {
             size_t i = 0;
             for (; i < decimal_index; i++) {
-                number = (number * 10) + GUIN_to_number(token->string.content[i]);
+                number = (number * 10) + guin_to_number(token->string.content[i]);
             }
             size_t current_dec_pos = 1;
             for (i += 1; i < token->string.length; i++) {
-                decimal = GUIN_to_number(token->string.content[i]);
+                decimal = guin_to_number(token->string.content[i]);
                 if (decimal != 0) decimal /= pow(10, current_dec_pos);
                 number += decimal;
                 ++current_dec_pos;
             }
         }
 
-        GUIN_clearstring(&token->string);
+        guin_clearstring(&token->string);
 
-        if (token->type == GUIN_TK_Number_val) {
+        if (token->type == guin_TK_Number_val) {
             token->number  = number;
         } else { 
             token->integer = integer; 
@@ -211,43 +211,43 @@ static void GUIN_set_token_type(GUIN_LexToken* token, GUIN_LexState* lState) // 
         return;
     }
 
-    for (size_t i = 0; i < sizeof(stringtoken)/sizeof(struct GUIN_LexNodeStringToEnumData); i++) {
+    for (size_t i = 0; i < sizeof(stringtoken)/sizeof(struct guin_LexNodeStringToEnumData); i++) {
         if (strcmp(stringtoken[i].string, token->string.content) == 0) {
-            GUIN_clearstring(&token->string);
+            guin_clearstring(&token->string);
             token->type = stringtoken[i].type;
 
-            if (token->type == GUIN_TK_Bool_val)
+            if (token->type == guin_TK_Bool_val)
                 token->bl = stringtoken[i].string[0] == 't'; // if true, then 1 else 0
 
-            else if (token->type == GUIN_TK_NaN) {
-                token->type = GUIN_TK_Number_val;
-                token->number = GUIN_NaN;
+            else if (token->type == guin_TK_NaN) {
+                token->type = guin_TK_Number_val;
+                token->number = guin_NaN;
             }
 
-            else if (token->type == GUIN_TK_Inf) {
-                token->type = GUIN_TK_Number_val;
-                token->number = GUIN_Inf;
+            else if (token->type == guin_TK_Inf) {
+                token->type = guin_TK_Number_val;
+                token->number = guin_Inf;
             }
 
             return;
         }
     }
 
-    if (GUIN_is_valid_identifier_string(token->string.content)) {
-        token->type = GUIN_TK_Identifier;
+    if (guin_is_valid_identifier_string(token->string.content)) {
+        token->type = guin_TK_Identifier;
         return;
     }
 
-    token->type = GUIN_TK_UNKNOWN;
+    token->type = guin_TK_UNKNOWN;
     return;
 }
 
-struct GUIN_EscapeCodeToInt {
+struct guin_EscapeCodeToInt {
     char ch;
     char convert;
 };
 
-static const struct GUIN_EscapeCodeToInt escapeCodeToNumber[] = {
+static const struct guin_EscapeCodeToInt escapeCodeToNumber[] = {
     {.ch='"',   .convert='"' },
     {.ch='\'',  .convert='\''},
     {.ch='t',   .convert='\t'},
@@ -260,20 +260,20 @@ static const struct GUIN_EscapeCodeToInt escapeCodeToNumber[] = {
     {.ch='\\',  .convert='\\'},
 };
 
-struct GUIN_ParseEscapeCode {
+struct guin_ParseEscapeCode {
     char size;
     char ch;
     bool err;
 };
 
-static struct GUIN_ParseEscapeCode GUIN_parse_escape_code(char* str, size_t index)
+static struct guin_ParseEscapeCode guin_parse_escape_code(char* str, size_t index)
 {
-    struct GUIN_ParseEscapeCode ret = {.ch=0,.err=false,.size=0};
+    struct guin_ParseEscapeCode ret = {.ch=0,.err=false,.size=0};
     size_t len = 0;
     while (str[index+len] != 0) ++len;
 
     // IF ITS LIKE \n OR \t
-    for (size_t i = 0; i < sizeof(escapeCodeToNumber)/sizeof(struct GUIN_EscapeCodeToInt); i++) {
+    for (size_t i = 0; i < sizeof(escapeCodeToNumber)/sizeof(struct guin_EscapeCodeToInt); i++) {
         if (str[index] == escapeCodeToNumber[i].ch) {
             ret.ch = escapeCodeToNumber[i].convert;
             ret.size = 1;
@@ -286,9 +286,9 @@ static struct GUIN_ParseEscapeCode GUIN_parse_escape_code(char* str, size_t inde
     //
 
     // IF ITS OCTAL STATE
-    if (GUIN_is_octal_char(str[index])) {
-        for (; GUIN_is_octal_char(str[index+ret.size]) && ret.size < 3; ret.size++)
-            ret.ch = (ret.ch * 8) + GUIN_to_number(str[index+ret.size]);
+    if (guin_is_octal_char(str[index])) {
+        for (; guin_is_octal_char(str[index+ret.size]) && ret.size < 3; ret.size++)
+            ret.ch = (ret.ch * 8) + guin_to_number(str[index+ret.size]);
 
         if (ret.size > 0) return ret;
     }
@@ -298,13 +298,13 @@ static struct GUIN_ParseEscapeCode GUIN_parse_escape_code(char* str, size_t inde
     ++ret.size;
     switch (str[index]) {
         case 'x':
-            for (; GUIN_is_hex_code(str[index+ret.size]) && ret.size < 3; ret.size++)
-                ret.ch = (ret.ch * 16) + GUIN_to_hex_char(str[index+ret.size]);
+            for (; guin_is_hex_code(str[index+ret.size]) && ret.size < 3; ret.size++)
+                ret.ch = (ret.ch * 16) + guin_to_hex_char(str[index+ret.size]);
             if (ret.size > 1) return ret;
 
         case 'o':
-            for (; GUIN_is_octal_char(str[index+ret.size]) && ret.size < 4; ret.size++)
-                ret.ch = (ret.ch * 8) + GUIN_to_number(str[index+ret.size]);
+            for (; guin_is_octal_char(str[index+ret.size]) && ret.size < 4; ret.size++)
+                ret.ch = (ret.ch * 8) + guin_to_number(str[index+ret.size]);
             if (ret.size > 1) return ret;
     }
 
@@ -313,94 +313,94 @@ static struct GUIN_ParseEscapeCode GUIN_parse_escape_code(char* str, size_t inde
     return ret;
 }
 
-#define GUIN_lState_char       (lState->string[lState->index])
-#define GUIN_ahead_lState_char (lState->string[lState->index + 1])
+#define guin_lState_char       (lState->string[lState->index])
+#define guin_ahead_lState_char (lState->string[lState->index + 1])
 
-static void GUIN_increment_lexer(GUIN_LexState* lState, size_t incremental_size)
+static void guin_increment_lexer(guin_LexState* lState, size_t incremental_size)
 {
     lState->current_column += incremental_size;
     lState->index          += incremental_size;
 }
 
-static void GUIN_parse_lexer_string(GUIN_LexState* lState, GUIN_LexToken* lToken)
+static void guin_parse_lexer_string(guin_LexState* lState, guin_LexToken* lToken)
 {
-    GUIN_increment_lexer(lState, 1);
+    guin_increment_lexer(lState, 1);
 
-    #define GUIN_rewind_string_lexer() {\
-        GUIN_clearstring(&lToken->string);\
-        lToken->string = GUIN_init_String();\
+    #define guin_rewind_string_lexer() {\
+        guin_clearstring(&lToken->string);\
+        lToken->string = guin_init_String();\
         lToken->length = 1;\
-        GUIN_increment_lexer(lState, -((lState->current_column)-original));\
+        guin_increment_lexer(lState, -((lState->current_column)-original));\
     }
 
     lToken->length = 1;
     size_t original = lState->current_column;
-    for (;true;GUIN_increment_lexer(lState, 1)) {
+    for (;true;guin_increment_lexer(lState, 1)) {
         ++lToken->length;
         // reached EOF
         if (lState->index >= lState->str_length) {
-            if (lToken->type == GUIN_TK_ERR) {
+            if (lToken->type == guin_TK_ERR) {
                 break;
             }
                     
             lState->errmsg = "String was left unterminated and reached <EOF>!";
-            lToken->type = GUIN_TK_ERR;
-            GUIN_rewind_string_lexer();
-            GUIN_stringaddchar(&lToken->string, '"');
+            lToken->type = guin_TK_ERR;
+            guin_rewind_string_lexer();
+            guin_stringaddchar(&lToken->string, '"');
         }
         // reached end of line
-        if (GUIN_lState_char == '\n') {
-            if (lToken->type == GUIN_TK_ERR) {
+        if (guin_lState_char == '\n') {
+            if (lToken->type == guin_TK_ERR) {
                 break;
             }
 
             lState->errmsg = "String was left unterminated!";
-            lToken->type = GUIN_TK_ERR;
-            GUIN_rewind_string_lexer();
-            GUIN_stringaddchar(&lToken->string, '"');
+            lToken->type = guin_TK_ERR;
+            guin_rewind_string_lexer();
+            guin_stringaddchar(&lToken->string, '"');
         }
 
         // Reached the end of string
-        if (GUIN_lState_char == '"') {
-            GUIN_increment_lexer(lState, 1);
-            if (lToken->type == GUIN_TK_ERR) {
+        if (guin_lState_char == '"') {
+            guin_increment_lexer(lState, 1);
+            if (lToken->type == guin_TK_ERR) {
                 ++lToken->length;
-                GUIN_stringaddchar(&lToken->string, '"');
+                guin_stringaddchar(&lToken->string, '"');
             }
             break;
         }
 
-        if (GUIN_lState_char == '\\' && lToken->type != GUIN_TK_ERR) {
-            GUIN_increment_lexer(lState, 1);
-            struct GUIN_ParseEscapeCode ret = GUIN_parse_escape_code(lState->string, lState->index);
+        if (guin_lState_char == '\\' && lToken->type != guin_TK_ERR) {
+            guin_increment_lexer(lState, 1);
+            struct guin_ParseEscapeCode ret = guin_parse_escape_code(lState->string, lState->index);
 
             lToken->length += ret.size;
             if (ret.err) {
                 lState->errmsg = "Invalid escape character!";
-                lToken->type = GUIN_TK_ERR;
-                GUIN_rewind_string_lexer();
-                GUIN_stringaddchar(&lToken->string, '"');
-                GUIN_stringaddchar(&lToken->string, GUIN_lState_char);
+                lToken->type = guin_TK_ERR;
+                guin_rewind_string_lexer();
+                guin_stringaddchar(&lToken->string, '"');
+                guin_stringaddchar(&lToken->string, guin_lState_char);
             } else {
-                GUIN_increment_lexer(lState, ret.size-1);
-                GUIN_stringaddchar(&lToken->string, ret.ch);
+                guin_increment_lexer(lState, ret.size-1);
+                guin_stringaddchar(&lToken->string, ret.ch);
             }
         } else {
             //++lToken->length;
-            GUIN_stringaddchar(&lToken->string, GUIN_lState_char);
+            guin_stringaddchar(&lToken->string, guin_lState_char);
         }
     }
 
-    if (lToken->type != GUIN_TK_ERR)
-        lToken->type   = GUIN_TK_String_val;
+    if (lToken->type != guin_TK_ERR)
+        lToken->type   = guin_TK_String_val;
 }
 
 
 
 
-GUIN_LexState GUIN_init_LexState(GUIN_String* file_content)
+guin_LexState guin_init_LexState(guin_String* file_content)
 {
-    GUIN_LexState x;
+    guin_LexState x;
 
     x.current_column = 1;
     x.current_line   = 1;
@@ -418,53 +418,53 @@ GUIN_LexState GUIN_init_LexState(GUIN_String* file_content)
 
 
 
-GUIN_LexToken GUIN_advance_lexer(GUIN_LexState* lState)
+guin_LexToken guin_advance_lexer(guin_LexState* lState)
 {
-    GUIN_LexToken lToken = {0};
+    guin_LexToken lToken = {0};
     lToken.column = lState->current_column;
     lToken.line   = lState->current_line;
     lToken.length = 1;
 
     if (lState->index >= lState->str_length) {
-        lToken.type = GUIN_TK_EOF;
+        lToken.type = guin_TK_EOF;
         return lToken;
     }
 
     bool doing_comment       = false;
     bool doing_multi_comment = false;
 
-    for (; lState->index < lState->str_length; GUIN_increment_lexer(lState, 1)) {
-        if (GUIN_lState_char == ' ' || GUIN_lState_char == '\t') {
+    for (; lState->index < lState->str_length; guin_increment_lexer(lState, 1)) {
+        if (guin_lState_char == ' ' || guin_lState_char == '\t') {
             continue;
         }
-        if (GUIN_lState_char == '\n') {
+        if (guin_lState_char == '\n') {
             lState->current_column = 0;
             ++lState->current_line;
             doing_comment = false;
             continue;
         }
-        if (GUIN_lState_char == '\v') {
+        if (guin_lState_char == '\v') {
             continue;
         }
-        if (GUIN_lState_char == '\r') {
+        if (guin_lState_char == '\r') {
             lState->current_column = 0;
             continue;
         }
         if (doing_comment) {
             continue;
         }
-        if (GUIN_lState_char == '/' && GUIN_ahead_lState_char == '*') {
+        if (guin_lState_char == '/' && guin_ahead_lState_char == '*') {
             doing_multi_comment = true;
             continue;    
         }
-        if (GUIN_lState_char == '*' && GUIN_ahead_lState_char == '/') {
+        if (guin_lState_char == '*' && guin_ahead_lState_char == '/') {
             if (!doing_multi_comment) {
                 lState->errmsg = "End of a multi-lined comment mentioned when it wasn't active!";
                 lToken.column = lState->current_column;
                 lToken.line   = lState->current_line;
-                lToken.string = GUIN_init_String();
-                GUIN_stringconcat_charptr(&lToken.string, "*/");
-                lToken.type = GUIN_TK_ERR;
+                lToken.string = guin_init_String();
+                guin_stringconcat_charptr(&lToken.string, "*/");
+                lToken.type = guin_TK_ERR;
                 return lToken;
             }
 
@@ -474,7 +474,7 @@ GUIN_LexToken GUIN_advance_lexer(GUIN_LexState* lState)
             ++lState->index;
             continue;
 
-        } else if (GUIN_lState_char == '/' && GUIN_ahead_lState_char == '/' && !doing_multi_comment) {
+        } else if (guin_lState_char == '/' && guin_ahead_lState_char == '/' && !doing_multi_comment) {
             doing_comment = true;
             continue;
         }
@@ -486,55 +486,55 @@ GUIN_LexToken GUIN_advance_lexer(GUIN_LexState* lState)
         lToken.line   = lState->current_line;
 
         // CHECK IF ITS A 2 CHAR SIZED THING LIKE ==, !=, etc...
-        for (size_t i = 0; i < sizeof(doublechartoken)/sizeof(struct GUIN_DoubleOperationChar); i++) {
-            if (doublechartoken[i].f_ch == GUIN_lState_char && doublechartoken[i].s_ch == GUIN_ahead_lState_char) {
+        for (size_t i = 0; i < sizeof(doublechartoken)/sizeof(struct guin_DoubleOperationChar); i++) {
+            if (doublechartoken[i].f_ch == guin_lState_char && doublechartoken[i].s_ch == guin_ahead_lState_char) {
                 lToken.type = doublechartoken[i].type;
-                GUIN_increment_lexer(lState, 2);
+                guin_increment_lexer(lState, 2);
                 return lToken;
             }
         }
 
         // CHECK IF ITS A 1 CHAR SIZED THING LIKE =, <, etc...
-        for (size_t i = 0; i < sizeof(chartoken)/sizeof(struct GUIN_LexNodeCharToEnumData); i++) {
-            if (chartoken[i].ch == GUIN_lState_char) {
+        for (size_t i = 0; i < sizeof(chartoken)/sizeof(struct guin_LexNodeCharToEnumData); i++) {
+            if (chartoken[i].ch == guin_lState_char) {
                 lToken.type = chartoken[i].type;
-                GUIN_increment_lexer(lState, 1);
+                guin_increment_lexer(lState, 1);
                 return lToken;
             }
         }
 
-        lToken.string = GUIN_init_String();
+        lToken.string = guin_init_String();
 
         // Doing string
-        if (GUIN_lState_char == '"') {
-            GUIN_parse_lexer_string(lState, &lToken);
+        if (guin_lState_char == '"') {
+            guin_parse_lexer_string(lState, &lToken);
             return lToken;
         }
         
         lToken.length = 0;
 
         // Checking if its just invalid characters and if it is then collect
-        if (!GUIN_is_valid_identifier_char(GUIN_lState_char)) {
-            for (;!GUIN_is_valid_identifier_char(GUIN_lState_char) && GUIN_lState_char != ' ' && GUIN_lState_char != '\n' && GUIN_lState_char != '\t'; GUIN_increment_lexer(lState, 1)) {
-                GUIN_stringaddchar(&lToken.string, GUIN_lState_char);
+        if (!guin_is_valid_identifier_char(guin_lState_char)) {
+            for (;!guin_is_valid_identifier_char(guin_lState_char) && guin_lState_char != ' ' && guin_lState_char != '\n' && guin_lState_char != '\t'; guin_increment_lexer(lState, 1)) {
+                guin_stringaddchar(&lToken.string, guin_lState_char);
             }
-            lToken.type = GUIN_TK_UNKNOWN;
+            lToken.type = guin_TK_UNKNOWN;
         } else {
             char doing_decimal = 0;
 
             // If its invalid then collect the identifier/number
-            for (;true;GUIN_increment_lexer(lState, 1)) {
-                if (GUIN_is_valid_identifier_char(GUIN_lState_char)) {
-                    GUIN_stringaddchar(&lToken.string, GUIN_lState_char);
+            for (;true;guin_increment_lexer(lState, 1)) {
+                if (guin_is_valid_identifier_char(guin_lState_char)) {
+                    guin_stringaddchar(&lToken.string, guin_lState_char);
                     ++lToken.length;
                 } else {
                     // if its a number accept the . to be a float
-                    if (!doing_decimal && GUIN_lState_char == '.' && GUIN_is_int_string(lToken.string.content)) {
-                        GUIN_stringaddchar(&lToken.string, '.');
+                    if (!doing_decimal && guin_lState_char == '.' && guin_is_int_string(lToken.string.content)) {
+                        guin_stringaddchar(&lToken.string, '.');
                         doing_decimal = 1;
                         ++lToken.length;
-                    } else if ((doing_decimal < 2 && doing_decimal != 0) && (GUIN_is_valid_identifier_char(GUIN_lState_char) || GUIN_lState_char == '.')) {
-                        GUIN_stringaddchar(&lToken.string, GUIN_lState_char);
+                    } else if ((doing_decimal < 2 && doing_decimal != 0) && (guin_is_valid_identifier_char(guin_lState_char) || guin_lState_char == '.')) {
+                        guin_stringaddchar(&lToken.string, guin_lState_char);
                         ++doing_decimal;
                         ++lToken.length;
                     } else {
@@ -542,10 +542,10 @@ GUIN_LexToken GUIN_advance_lexer(GUIN_LexState* lState)
                     }
                 }
             }
-            GUIN_set_token_type(&lToken, lState);
+            guin_set_token_type(&lToken, lState);
         }
 
-        if (lToken.type == GUIN_TK_UNKNOWN && lState->errmsg == NULL)
+        if (lToken.type == guin_TK_UNKNOWN && lState->errmsg == NULL)
             lState->errmsg = "Unknown token!";
 
         return lToken;
@@ -556,17 +556,17 @@ GUIN_LexToken GUIN_advance_lexer(GUIN_LexState* lState)
     // and reached the end
     lToken.column = lState->current_column;
     lToken.line   = lState->current_line;
-    lToken.type = GUIN_TK_EOF;
+    lToken.type = guin_TK_EOF;
     return lToken;
 }
 
 
-void GUIN_destroy_LexToken(GUIN_LexToken* lToken)
+void guin_destroy_LexToken(guin_LexToken* lToken)
 {
-    if (lToken->type == GUIN_TK_String_val || lToken->type == GUIN_TK_Identifier || lToken->type == GUIN_TK_UNKNOWN || lToken->type == GUIN_TK_ERR)
-        GUIN_clearstring(&lToken->string);
+    if (lToken->type == guin_TK_String_val || lToken->type == guin_TK_Identifier || lToken->type == guin_TK_UNKNOWN || lToken->type == guin_TK_ERR)
+        guin_clearstring(&lToken->string);
 
-    lToken->type   = GUIN_TK_UNINIT;
+    lToken->type   = guin_TK_UNINIT;
     lToken->line   = 0;
     lToken->column = 0;
 }

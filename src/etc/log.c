@@ -1,19 +1,19 @@
-#ifndef GUIN_LOG_C
-#define GUIN_LOG_C
+#ifndef guin_LOG_c
+#define guin_LOG_c
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include "log.h"
 
-size_t GUIN_log_layer_size = 0;
-bool GUIN_log_on = false;
+size_t guin_log_layer_size = 0;
+bool guin_log_on = false;
 
-void GUIN_log(char* string, ...)
+void guin_log(char* string, ...)
 {
-    if (!GUIN_log_on) return;
+    if (!guin_log_on) return;
 
-    for (size_t i = 0; i < GUIN_log_layer_size; i++) {
+    for (size_t i = 0; i < guin_log_layer_size; i++) {
         putchar('\t');
     }
 
@@ -23,9 +23,9 @@ void GUIN_log(char* string, ...)
     va_end(args);
 }
 
-void GUIN_log_raw(char* string, ...)
+void guin_log_raw(char* string, ...)
 {
-    if (!GUIN_log_on) return;
+    if (!guin_log_on) return;
 
     va_list args;
     va_start(args, string);
@@ -33,9 +33,9 @@ void GUIN_log_raw(char* string, ...)
     va_end(args);
 }
 
-void GUIN_log_write(void* origin, size_t size, size_t number, FILE* fd)
+void guin_log_write(void* origin, size_t size, size_t number, FILE* fd)
 {
-    if (!GUIN_log_on) return;
+    if (!guin_log_on) return;
     fwrite(origin, size, number, fd);
 }
 

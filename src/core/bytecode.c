@@ -1,15 +1,15 @@
-#ifndef BYTECODE_C
-#define BYTECODE_C
+#ifndef guin_BYTECODE_c
+#define guin_BYTECODE_c
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include "bytecode.h"
 #include "../etc/strings.h"
-#include "../etc/stdlib/GUIN_stdio.h"
+#include "../etc/stdlib/stdio.h"
 #include "../etc/log.h"
 
-char* GUIN_GINSTR_Datatype_to_string(GINSTR_Datatype x)
+char* guin_GINSTR_Datatype_to_string(GINSTR_Datatype x)
 {
     switch (x)
     {
@@ -29,30 +29,30 @@ char* GUIN_GINSTR_Datatype_to_string(GINSTR_Datatype x)
     }
 }
 
-GUIN_String* GUIN_get_string_in_Bytecode(const GUIN_Bytecode* x, size_t i, const GUIN_ubyte size_of_len_number)
+guin_String* guin_get_string_in_Bytecode(const guin_Bytecode* x, size_t i, const guin_ubyte size_of_len_number)
 {
     if (!x) return NULL;
     if (i + size_of_len_number -1 >= x->length) return NULL;
 
-    GUIN_String* str = GUIN_init_String_ptr();
+    guin_String* str = guin_init_String_ptr();
     if (!str) return NULL;
 
     size_t len;
     memcpy(&len, &x->bytecode[i], size_of_len_number);
     if (i + size_of_len_number + len -1 >= x->length) {
-        GUIN_clearstring_ptr(&str);
+        guin_clearstring_ptr(&str);
         return NULL;
     }
 
     i += size_of_len_number;
 
-    GUIN_stringconcat_char_w_len(str, (char*)x->bytecode + i, len);
+    guin_stringconcat_char_w_len(str, (char*)x->bytecode + i, len);
     return str;
 }
 
-GUIN_Bytecode GUIN_init_Bytecode(void)
+guin_Bytecode guin_init_Bytecode(void)
 {
-    GUIN_Bytecode x = {0};
+    guin_Bytecode x = {0};
     x.size = 32;
     x.length = 0;
     x.bytecode = malloc(x.size);
@@ -60,12 +60,12 @@ GUIN_Bytecode GUIN_init_Bytecode(void)
     return x;
 }
 
-GUIN_Bytecode* GUIN_init_Bytecode_ptr(void)
+guin_Bytecode* guin_init_Bytecode_ptr(void)
 {
-    GUIN_Bytecode* x = malloc(sizeof(GUIN_Bytecode));
+    guin_Bytecode* x = malloc(sizeof(guin_Bytecode));
     if (!x) return NULL;
 
-    *x = GUIN_init_Bytecode();
+    *x = guin_init_Bytecode();
     if (!x->bytecode) {
         free(x);
         return NULL;
@@ -74,12 +74,12 @@ GUIN_Bytecode* GUIN_init_Bytecode_ptr(void)
     return x;
 }
 
-bool GUIN_double_Bytecode_size(GUIN_Bytecode* x)
+bool guin_double_Bytecode_size(guin_Bytecode* x)
 {
     if (!x) return false;
 
     x->size *= 2;
-    GUIN_ubyte* tmp = realloc(x->bytecode, x->size * sizeof(GUIN_ubyte));
+    guin_ubyte* tmp = realloc(x->bytecode, x->size * sizeof(guin_ubyte));
 
     if (!tmp) {
         x->size /= 2;
@@ -90,12 +90,12 @@ bool GUIN_double_Bytecode_size(GUIN_Bytecode* x)
     return true;
 }
 
-bool GUIN_resize_Bytecode_size(GUIN_Bytecode* x, size_t newsize)
+bool guin_resize_Bytecode_size(guin_Bytecode* x, size_t newsize)
 {
     if (!x) return false;
     if (newsize == x->size) return true;
 
-    GUIN_ubyte* tmp = realloc(x->bytecode, newsize * sizeof(GUIN_ubyte));
+    guin_ubyte* tmp = realloc(x->bytecode, newsize * sizeof(guin_ubyte));
 
     if (!tmp) {
         return false;
@@ -106,14 +106,14 @@ bool GUIN_resize_Bytecode_size(GUIN_Bytecode* x, size_t newsize)
     return true;
 }
 
-GUIN_Bytecode* GUIN_add_Bytecode(GUIN_Bytecode* x, const GUIN_ubyte* data, const size_t data_length)
+guin_Bytecode* guin_add_Bytecode(guin_Bytecode* x, const guin_ubyte* data, const size_t data_length)
 {
     if (!x || !data || !data_length) return NULL;
 
     {
         size_t newsize = x->size;
         while (newsize <= x->length + data_length) newsize *= 2;
-        if (!GUIN_resize_Bytecode_size(x, newsize))
+        if (!guin_resize_Bytecode_size(x, newsize))
             return NULL;
     }
 
@@ -124,14 +124,14 @@ GUIN_Bytecode* GUIN_add_Bytecode(GUIN_Bytecode* x, const GUIN_ubyte* data, const
     return x;
 }
 
-GUIN_Bytecode* GUIN_add_Bytecode_one_byte(GUIN_Bytecode* x, const GUIN_ubyte data)
+guin_Bytecode* guin_add_Bytecode_one_byte(guin_Bytecode* x, const guin_ubyte data)
 {
     if (!x) return NULL;
 
     {
         size_t newsize = x->size;
         while (newsize <= x->length + 1) newsize *= 2;
-        if (!GUIN_resize_Bytecode_size(x, newsize))
+        if (!guin_resize_Bytecode_size(x, newsize))
             return NULL;
     }
     x->bytecode[x->length++] = data;
@@ -139,14 +139,14 @@ GUIN_Bytecode* GUIN_add_Bytecode_one_byte(GUIN_Bytecode* x, const GUIN_ubyte dat
 }
 
 
-GUIN_Bytecode* GUIN_add_Bytecode_w_byte_size(GUIN_Bytecode* x, const void* data, const size_t length)
+guin_Bytecode* guin_add_Bytecode_w_byte_size(guin_Bytecode* x, const void* data, const size_t length)
 {
-    return GUIN_add_Bytecode(x, (GUIN_ubyte*)data, length);
+    return guin_add_Bytecode(x, (guin_ubyte*)data, length);
 }
 
 
 
-void GUIN_destroy_Bytecode(GUIN_Bytecode* x)
+void guin_destroy_Bytecode(guin_Bytecode* x)
 {
     if (!x) return;
     if (x->bytecode) {
@@ -157,42 +157,42 @@ void GUIN_destroy_Bytecode(GUIN_Bytecode* x)
     x->size   = 0;
 }
 
-void GUIN_destroy_Bytecode_ptr(GUIN_Bytecode** x)
+void guin_destroy_Bytecode_ptr(guin_Bytecode** x)
 {
     if (!x) return;
     if (*x) {
-        GUIN_destroy_Bytecode(*x);
+        guin_destroy_Bytecode(*x);
         free(*x);
     }
     *x = NULL;
 }
 
 
-GUIN_Bytecode* GUIN_convert_String_to_Bytecode_String(const GUIN_String* str)
+guin_Bytecode* guin_convert_String_to_Bytecode_String(const guin_String* str)
 {
     if (!str) return NULL;
-    GUIN_Bytecode* x = GUIN_init_Bytecode_ptr();
+    guin_Bytecode* x = guin_init_Bytecode_ptr();
     if (!x) return NULL;
-    GUIN_Bytecode* tmp = GUIN_add_Bytecode(x, (GUIN_ubyte*)str->content, str->length);
-    if (!tmp) GUIN_destroy_Bytecode_ptr(&x);
+    guin_Bytecode* tmp = guin_add_Bytecode(x, (guin_ubyte*)str->content, str->length);
+    if (!tmp) guin_destroy_Bytecode_ptr(&x);
     return x;
 }
 
-GUIN_Bytecode* GUIN_add_Bytecode_String(GUIN_Bytecode* x, const GUIN_String* str)
+guin_Bytecode* guin_add_Bytecode_String(guin_Bytecode* x, const guin_String* str)
 {
     if (!x || !str) return NULL;
-    //if (!add_GUIN_Bytecode_w_byte_size(x, (GUIN_ubyte*)&str->length, sizeof(size_t))) return NULL;
-    if (!GUIN_add_Bytecode(x, (GUIN_ubyte*)&str->length, sizeof(size_t))) return NULL;
-    if (!GUIN_add_Bytecode(x, (GUIN_ubyte*)str->content, str->length))    return NULL;
+    //if (!add_guin_Bytecode_w_byte_size(x, (guin_ubyte*)&str->length, sizeof(size_t))) return NULL;
+    if (!guin_add_Bytecode(x, (guin_ubyte*)&str->length, sizeof(size_t))) return NULL;
+    if (!guin_add_Bytecode(x, (guin_ubyte*)str->content, str->length))    return NULL;
     return x;
 }
 
 
-bool GUIN_safe_memcpy_Bytecode(void* destination, GUIN_Bytecode* src, GUIN_ubyte* start, size_t length)
+bool guin_safe_memcpy_Bytecode(void* destination, guin_Bytecode* src, guin_ubyte* start, size_t length)
 {
-    GUIN_ubyte* ptr = (GUIN_ubyte*)destination;
+    guin_ubyte* ptr = (guin_ubyte*)destination;
 
-    if (GUIN_out_of_bounds_from_Bytecode(src, (start + length - 1)))
+    if (guin_out_of_bounds_from_Bytecode(src, (start + length - 1)))
         return false;
 
     for (size_t i = 0; i < length; ++i)
@@ -202,11 +202,11 @@ bool GUIN_safe_memcpy_Bytecode(void* destination, GUIN_Bytecode* src, GUIN_ubyte
 }
 
 
-GUIN_Bytecode* GUIN_add_Bytecode_String_no_size_embedded(GUIN_Bytecode* x, const GUIN_String* str)
+guin_Bytecode* guin_add_Bytecode_String_no_size_embedded(guin_Bytecode* x, const guin_String* str)
 {
     if (!x || !str) return NULL;
-    //if (!add_GUIN_Bytecode_w_byte_size(x, (GUIN_ubyte*)&str->length, sizeof(size_t))) return NULL;
-    if (!GUIN_add_Bytecode(x, (GUIN_ubyte*)str->content, str->length)) return NULL;
+    //if (!add_guin_Bytecode_w_byte_size(x, (guin_ubyte*)&str->length, sizeof(size_t))) return NULL;
+    if (!guin_add_Bytecode(x, (guin_ubyte*)str->content, str->length)) return NULL;
     return x;
 }
 
@@ -225,7 +225,7 @@ static int numlen(size_t number)
 }
 
 #include <string.h>
-bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
+bool guin_print_Bytecode_into_ASM(guin_Bytecode* x)
 {
     bool valid = true;
 
@@ -238,7 +238,7 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
         for (char j = 0; j < numberlen - numlen(i); ++j)
             putchar('0');
 
-        GUIN_printf("%zu   ", i);
+        guin_printf("%zu   ", i);
 
         switch (x->bytecode[i])
         {
@@ -251,22 +251,22 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
                 ++i;
                 GINSTR_Datatype globaldatatype = x->bytecode[i];
 
-                GUIN_printf("DECLARE GLOBAL ");
+                guin_printf("DECLARE GLOBAL ");
 
                 ++i;
 
-                GUIN_String* name = GUIN_get_string_in_Bytecode(x, i, sizeof(size_t));
+                guin_String* name = guin_get_string_in_Bytecode(x, i, sizeof(size_t));
                 if (!name) {
-                    GUIN_printf("no name: \n");
+                    guin_printf("no name: \n");
                     valid = false;
                 } else {
-                    GUIN_printf("%s: ", name);
+                    guin_printf("%s: ", name);
                 }
 
                 i += sizeof(size_t) + name->length; // varname len + int size
-                GUIN_printf("%sc\n", GUIN_GINSTR_Datatype_to_string(globaldatatype));
+                guin_printf("%sc\n", guin_GINSTR_Datatype_to_string(globaldatatype));
 
-                GUIN_clearstring_ptr(&name);
+                guin_clearstring_ptr(&name);
                 break;
             }
 
@@ -274,54 +274,54 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
                 ++i;
                 GINSTR_Datatype globaldatatype = x->bytecode[i];
 
-                GUIN_printf("DECLARE LOCAL ");
+                guin_printf("DECLARE LOCAL ");
 
                 ++i;
 
-                GUIN_LOCAL_SLOT_INT slotnum;
-                memcpy(&slotnum, &x->bytecode[i], sizeof(GUIN_LOCAL_SLOT_INT));
+                guin_LOCAL_SLOT_INT slotnum;
+                memcpy(&slotnum, &x->bytecode[i], sizeof(guin_LOCAL_SLOT_INT));
 
-                i += sizeof(GUIN_LOCAL_SLOT_INT); // varname len + int size
-                GUIN_printf("%u: %sc\n", slotnum, GUIN_GINSTR_Datatype_to_string(globaldatatype));
+                i += sizeof(guin_LOCAL_SLOT_INT); // varname len + int size
+                guin_printf("%u: %sc\n", slotnum, guin_GINSTR_Datatype_to_string(globaldatatype));
                 break;
             }
 
             case GINSTR_CLEAR_LOCAL: {
                 ++i;
 
-                GUIN_LOCAL_SLOT_INT slot;
-                memcpy(&slot, &x->bytecode[i], sizeof(GUIN_LOCAL_SLOT_INT));
-                GUIN_printf("CLEAR LOCAL: %d\n", slot);
+                guin_LOCAL_SLOT_INT slot;
+                memcpy(&slot, &x->bytecode[i], sizeof(guin_LOCAL_SLOT_INT));
+                guin_printf("CLEAR LOCAL: %d\n", slot);
 
-                i += sizeof(GUIN_LOCAL_SLOT_INT); // varname len + int size
+                i += sizeof(guin_LOCAL_SLOT_INT); // varname len + int size
                 break;
             }
 
             case GINSTR_LOAD_GLOBAL: {
-                GUIN_printf("LOAD GLOBAL: ");
+                guin_printf("LOAD GLOBAL: ");
                 ++i;
 
-                GUIN_String* name = GUIN_get_string_in_Bytecode(x, i, sizeof(size_t));
+                guin_String* name = guin_get_string_in_Bytecode(x, i, sizeof(size_t));
                 if (!name) {
-                    GUIN_printf("no name\n");
+                    guin_printf("no name\n");
                     valid = false;
                 } else {
-                    GUIN_printf("%s\n", name);
+                    guin_printf("%s\n", name);
                 }
 
                 i += sizeof(size_t) + name->length; // varname len + int size
-                GUIN_clearstring_ptr(&name);
+                guin_clearstring_ptr(&name);
                 break;
             }
 
             case GINSTR_LOAD_LOCAL: {
                 ++i;
 
-                GUIN_LOCAL_SLOT_INT slot;
-                memcpy(&slot, &x->bytecode[i], sizeof(GUIN_LOCAL_SLOT_INT));
-                GUIN_printf("LOAD LOCAL: %d\n", slot);
+                guin_LOCAL_SLOT_INT slot;
+                memcpy(&slot, &x->bytecode[i], sizeof(guin_LOCAL_SLOT_INT));
+                guin_printf("LOAD LOCAL: %d\n", slot);
 
-                i += sizeof(GUIN_LOCAL_SLOT_INT); // varname len + int size
+                i += sizeof(guin_LOCAL_SLOT_INT); // varname len + int size
                 break;
             }
 
@@ -330,59 +330,59 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
 
                 size_t slot;
                 memcpy(&slot, &x->bytecode[i], sizeof(size_t));
-                GUIN_printf("LOAD INDEX: %zu\n", slot);
+                guin_printf("LOAD INDEX: %zu\n", slot);
 
                 i += sizeof(size_t); // varname len + int size
                 break;
             }
 
             case GINSTR_LOAD_FIELD: {
-                GUIN_printf("LOAD FIELD ");
+                guin_printf("LOAD FIELD ");
                 ++i;
 
-                GUIN_String* name = GUIN_get_string_in_Bytecode(x, i, sizeof(size_t));
+                guin_String* name = guin_get_string_in_Bytecode(x, i, sizeof(size_t));
                 if (!name) {
-                    GUIN_printf("no name\n");
+                    guin_printf("no name\n");
                     valid = false;
                 } else {
-                    GUIN_printf("%s\n", name);
+                    guin_printf("%s\n", name);
                 }
 
                 i += sizeof(size_t) + name->length; // varname len + int size
-                GUIN_clearstring_ptr(&name);
+                guin_clearstring_ptr(&name);
                 break;
             }
 
             case GINSTR_WRITE_LOAD: {
-                GUIN_printf("WRITE LOAD\n");
+                guin_printf("WRITE LOAD\n");
                 ++i;
                 break;
             }
 
             case GINSTR_PUSH_LOAD: {
-                GUIN_printf("PUSH LOAD\n");
+                guin_printf("PUSH LOAD\n");
                 ++i;
                 break;
             }
 
             case GINSTR_PUSH_IMMEDIATE: {
-                GUIN_printf("PUSH ");
+                guin_printf("PUSH ");
                 ++i;
                 GINSTR_Datatype immediatedatatype = x->bytecode[i];
                 ++i;
-                GUIN_printf("%sc ", GUIN_GINSTR_Datatype_to_string(immediatedatatype));
+                guin_printf("%sc ", guin_GINSTR_Datatype_to_string(immediatedatatype));
                 switch (immediatedatatype)
                 {
                     case GINSTRDATATYPE_STRING:
                     {
-                        GUIN_int64 size;
+                        guin_int64 size;
                         memcpy(&size, &x->bytecode[i], 8);
-                        i += sizeof(GUIN_int64);
-                        GUIN_String str = GUIN_init_String();
-                        GUIN_stringconcat_char_w_len(&str, (char*)&x->bytecode[i], size);
-                        GUIN_printf("\"%s\"", &str);
+                        i += sizeof(guin_int64);
+                        guin_String str = guin_init_String();
+                        guin_stringconcat_char_w_len(&str, (char*)&x->bytecode[i], size);
+                        guin_printf("\"%s\"", &str);
                         i += size;
-                        GUIN_clearstring(&str);
+                        guin_clearstring(&str);
                         break;
                     }
 
@@ -393,37 +393,37 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
 
                     case GINSTRDATATYPE_INT32:
                     {
-                        GUIN_int32 val;
+                        guin_int32 val;
                         memcpy(&val, &x->bytecode[i], 4);
-                        GUIN_printf("%d", val);
+                        guin_printf("%d", val);
                         i += 4;
                         break;
                     }
 
                     case GINSTRDATATYPE_INT64:
                     {
-                        GUIN_int64 val;
+                        guin_int64 val;
                         memcpy(&val, &x->bytecode[i], 8);
-                        GUIN_printf("%ld", val);
+                        guin_printf("%ld", val);
                         i += 8;
                         break;
                     }
 
                     case GINSTRDATATYPE_NUMBER32:
                     {
-                        GUIN_number32 val;
+                        guin_number32 val;
                         memcpy(&val, &x->bytecode[i], 4);
-                        GUIN_printf("%f", val);
+                        guin_printf("%f", val);
                         i += 4;
                         break;
                     }
 
                     case GINSTRDATATYPE_NUMBER64:
                     {
-                        GUIN_number64 val;
+                        guin_number64 val;
                         memcpy(&val, &x->bytecode[i], 8);
 
-                        GUIN_printf("%lf", val);
+                        guin_printf("%lf", val);
                         i += 8;
                         break;
                     }
@@ -431,32 +431,32 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
                     case GINSTRDATATYPE_CHAR:
                     {
                         char ch = x->bytecode[i];
-                        GUIN_printf("%c", ch);
+                        guin_printf("%c", ch);
                         ++i;
                         break;
                     }
 
                     case GINSTRDATATYPE_BOOL:
                     {
-                        GUIN_printf("%b", x->bytecode[i]);
+                        guin_printf("%b", x->bytecode[i]);
                         ++i;
                         break;
                     }
 
                     case GINSTRDATATYPE_FUNCTION:
                     {
-                        printf("ret: %s | ", GUIN_GINSTR_Datatype_to_string(x->bytecode[i]));
+                        printf("ret: %s | ", guin_GINSTR_Datatype_to_string(x->bytecode[i]));
                         ++i;
-                        GUIN_uint64 val;
+                        guin_uint64 val;
                         memcpy(&val, &x->bytecode[i], 8);
                         i += sizeof(val);
-                        GUIN_printf("size: %lu (final-opcode:%lu)", val, i + (val) - 1);
+                        guin_printf("size: %lu (final-opcode:%lu)", val, i + (val) - 1);
                         break;
                     }
 
                     default:
                     {
-                        GUIN_printf("[unknown type: %d:%zu]", immediatedatatype, i);
+                        guin_printf("[unknown type: %d:%zu]", immediatedatatype, i);
                         valid = false;
                         break;
                     }
@@ -468,158 +468,158 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
 
 
             case GINSTR_JMP: {
-                GUIN_printf("JMP ");
+                guin_printf("JMP ");
                 ++i;
-                GUIN_int16 size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_int16));
-                i += sizeof(GUIN_int16);
-                GUIN_printf("%d (%d)\n", size, i + (size));
+                guin_int16 size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_int16));
+                i += sizeof(guin_int16);
+                guin_printf("%d (%d)\n", size, i + (size));
                 break;
             }
 
             case GINSTR_JMPL: {
-                GUIN_printf("JMPL ");
+                guin_printf("JMPL ");
                 ++i;
-                GUIN_int64 size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_int64));
-                i += sizeof(GUIN_int64);
-                GUIN_printf("%d (%d)\n", size, i + (size));
+                guin_int64 size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_int64));
+                i += sizeof(guin_int64);
+                guin_printf("%d (%d)\n", size, i + (size));
                 break;
             }
 
             case GINSTR_JNT: {
-                GUIN_printf("JNT ");
+                guin_printf("JNT ");
                 ++i;
-                GUIN_int16 size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_int16));
-                i += sizeof(GUIN_int16);
-                GUIN_printf("%d (%d)\n", size, i + (size));
+                guin_int16 size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_int16));
+                i += sizeof(guin_int16);
+                guin_printf("%d (%d)\n", size, i + (size));
                 break;
             }
 
             case GINSTR_JNTL: {
-                GUIN_printf("JNTL ");
+                guin_printf("JNTL ");
                 ++i;
-                GUIN_int64 size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_int64));
-                i += sizeof(GUIN_int64);
-                GUIN_printf("%d (%d)\n", size, i + (size));
+                guin_int64 size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_int64));
+                i += sizeof(guin_int64);
+                guin_printf("%d (%d)\n", size, i + (size));
                 break;
             }
 
             case GINSTR_JIT: {
-                GUIN_printf("JIT ");
+                guin_printf("JIT ");
                 ++i;
-                GUIN_int16 size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_int16));
-                i += sizeof(GUIN_int16);
-                GUIN_printf("%d (%d)\n", size, i + (size));
+                guin_int16 size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_int16));
+                i += sizeof(guin_int16);
+                guin_printf("%d (%d)\n", size, i + (size));
                 break;
             }
 
             case GINSTR_JITL: {
-                GUIN_printf("JITL ");
+                guin_printf("JITL ");
                 ++i;
-                GUIN_int64 size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_int64));
-                i += sizeof(GUIN_int64);
-                GUIN_printf("%d (%d)\n", size, i + (size));
+                guin_int64 size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_int64));
+                i += sizeof(guin_int64);
+                guin_printf("%d (%d)\n", size, i + (size));
                 break;
             }
 
 
 
             case GINSTR_ADD: {
-                GUIN_printf("ADD\n");
+                guin_printf("ADD\n");
                 ++i;
                 break;
             }
             case GINSTR_SUB: {
-                GUIN_printf("SUB\n");
+                guin_printf("SUB\n");
                 ++i;
                 break;
             }
             case GINSTR_MUL: {
-                GUIN_printf("MUL\n");
+                guin_printf("MUL\n");
                 ++i;
                 break;
             }
             case GINSTR_DIV: {
-                GUIN_printf("DIV\n");
+                guin_printf("DIV\n");
                 ++i;
                 break;
             }
             case GINSTR_MOD: {
-                GUIN_printf("MOD\n");
+                guin_printf("MOD\n");
                 ++i;
                 break;
             }
             case GINSTR_POW: {
-                GUIN_printf("POW\n");
+                guin_printf("POW\n");
                 ++i;
                 break;
             }
             case GINSTR_AND: {
-                GUIN_printf("AND\n");
+                guin_printf("AND\n");
                 ++i;
                 break;
             }
             case GINSTR_OR: {
-                GUIN_printf("OR\n");
+                guin_printf("OR\n");
                 ++i;
                 break;
             }
             case GINSTR_NOT: {
-                GUIN_printf("NOT\n");
+                guin_printf("NOT\n");
                 ++i;
                 break;
             }
             case GINSTR_NEG: {
-                GUIN_printf("NEG\n");
+                guin_printf("NEG\n");
                 ++i;
                 break;
             }
             case GINSTR_CALL: {
-                GUIN_printf("CALL ");
+                guin_printf("CALL ");
                 ++i;
-                GUIN_ubyte size;
-                memcpy(&size, &x->bytecode[i], sizeof(GUIN_ubyte));
-                i += sizeof(GUIN_ubyte);
-                GUIN_printf("%d\n", size);
+                guin_ubyte size;
+                memcpy(&size, &x->bytecode[i], sizeof(guin_ubyte));
+                i += sizeof(guin_ubyte);
+                guin_printf("%d\n", size);
                 break;
             }
             case GINSTR_EQU: {
-                GUIN_printf("EQU\n");
+                guin_printf("EQU\n");
                 ++i;
                 break;
             }
             case GINSTR_NOT_EQU: {
-                GUIN_printf("NOT-EQU\n");
+                guin_printf("NOT-EQU\n");
                 ++i;
                 break;
             }
             case GINSTR_GT: {
-                GUIN_printf("GT\n");
+                guin_printf("GT\n");
                 ++i;
                 break;
             }
             case GINSTR_LT: {
-                GUIN_printf("LT\n");
+                guin_printf("LT\n");
                 ++i;
                 break;
             }
             case GINSTR_GT_EQU: {
-                GUIN_printf("GT-EQU\n");
+                guin_printf("GT-EQU\n");
                 ++i;
                 break;
             }
             case GINSTR_LT_EQU: {
-                GUIN_printf("LT-EQU\n");
+                guin_printf("LT-EQU\n");
                 ++i;
                 break;
             }
             default: {
-                GUIN_printf("err %d\n", x->bytecode[i]);
+                guin_printf("err %d\n", x->bytecode[i]);
                 valid = false;
                 ++i;
                 break;
@@ -633,20 +633,20 @@ bool GUIN_print_Bytecode_into_ASM(GUIN_Bytecode* x)
 
 
 #include "compiler/ast.h"
-GINSTR_Datatype GUIN_ASTDatatype_to_Bytecode_Datatype(GUIN_ASTDatatype x)
+GINSTR_Datatype guin_ASTDatatype_to_Bytecode_Datatype(guin_ASTDatatype x)
 {
     switch (x)
     {
-        case GUIN_ASTDATATYPE_NIL:           return GINSTRDATATYPE_NIL;
-        case GUIN_ASTDATATYPE_STRING:        return GINSTRDATATYPE_STRING;
-        case GUIN_ASTDATATYPE_INT:           return GINSTRDATATYPE_INT64;
-        case GUIN_ASTDATATYPE_NUMBER:        return GINSTRDATATYPE_NUMBER64;
-        case GUIN_ASTDATATYPE_BOOL:          return GINSTRDATATYPE_BOOL;
-        case GUIN_ASTDATATYPE_CHAR:          return GINSTRDATATYPE_CHAR;
-        case GUIN_ASTDATATYPE_FUNCTION:      return GINSTRDATATYPE_FUNCTION;
-        case GUIN_ASTDATATYPE_DYNAMIC:       return GINSTRDATATYPE_DYNAMIC;
+        case guin_ASTDATATYPE_NIL:           return GINSTRDATATYPE_NIL;
+        case guin_ASTDATATYPE_STRING:        return GINSTRDATATYPE_STRING;
+        case guin_ASTDATATYPE_INT:           return GINSTRDATATYPE_INT64;
+        case guin_ASTDATATYPE_NUMBER:        return GINSTRDATATYPE_NUMBER64;
+        case guin_ASTDATATYPE_BOOL:          return GINSTRDATATYPE_BOOL;
+        case guin_ASTDATATYPE_CHAR:          return GINSTRDATATYPE_CHAR;
+        case guin_ASTDATATYPE_FUNCTION:      return GINSTRDATATYPE_FUNCTION;
+        case guin_ASTDATATYPE_DYNAMIC:       return GINSTRDATATYPE_DYNAMIC;
         default:
-            printf("Couldnt find GUIN_BytecodeDatatype equivalent of ASTDatatype %d!\n", x);
+            printf("Couldnt find guin_BytecodeDatatype equivalent of ASTDatatype %d!\n", x);
             exit(1);
     }
 }

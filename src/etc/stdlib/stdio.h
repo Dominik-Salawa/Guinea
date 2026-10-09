@@ -1,5 +1,5 @@
-#ifndef GUINEA_STDIO_H
-#define GUINEA_STDIO_H
+#ifndef guin_STDIO_h
+#define guin_STDIO_h
 
 #include <stdlib.h>
 #include <stdarg.h>
@@ -23,11 +23,11 @@ FORMATTING RULES FOR GUINEA PRINT
 */
 
 
-long GUIN_vprintf(FILE* file, char* string, va_list args);
-long GUIN_fprintf(FILE* file, char* string, ...);
-long GUIN_printf(char* string, ...);
+long guin_vprintf(FILE* file, char* string, va_list args);
+long guin_fprintf(FILE* file, char* string, ...);
+long guin_printf(char* string, ...);
 
-GUIN_String GUIN_input(void);
-GUIN_String GUIN_readfile(FILE* file);
+guin_String guin_input(void);
+guin_String guin_readfile(FILE* file);
 
 #endif

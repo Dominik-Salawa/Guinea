@@ -6,87 +6,87 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-typedef enum GUIN_LexTokenEnum {
-    GUIN_TK_UNINIT = 0,
+typedef enum guin_LexTokenEnum {
+    guin_TK_UNINIT = 0,
 
-    GUIN_TK_Identifier,
-    GUIN_TK_SEMI_COLON,
-    GUIN_TK_COLON,
-    GUIN_TK_DOT,
+    guin_TK_Identifier,
+    guin_TK_SEMI_COLON,
+    guin_TK_COLON,
+    guin_TK_DOT,
 
-    GUIN_TK_var,
+    guin_TK_var,
 
     // DATA
-    GUIN_TK_Int_val,
-    GUIN_TK_Number_val,
-    GUIN_TK_String_val,
-    GUIN_TK_Char_val,
-    GUIN_TK_Bool_val,
-    GUIN_TK_nil,
-    GUIN_TK_NaN,
-    GUIN_TK_Inf,
+    guin_TK_Int_val,
+    guin_TK_Number_val,
+    guin_TK_String_val,
+    guin_TK_Char_val,
+    guin_TK_Bool_val,
+    guin_TK_nil,
+    guin_TK_NaN,
+    guin_TK_Inf,
 
     // CONTROL FLOW
-    GUIN_TK_if,
-    GUIN_TK_then,
-    GUIN_TK_else,
-    GUIN_TK_while,
-    GUIN_TK_for,
-    GUIN_TK_do,
-    GUIN_TK_end,
+    guin_TK_if,
+    guin_TK_then,
+    guin_TK_else,
+    guin_TK_while,
+    guin_TK_for,
+    guin_TK_do,
+    guin_TK_end,
 
-    GUIN_TK_return,
-    GUIN_TK_continue,
-    GUIN_TK_break,
+    guin_TK_return,
+    guin_TK_continue,
+    guin_TK_break,
 
     // LOGIC
-    GUIN_TK_and,
-    GUIN_TK_or,
-    GUIN_TK_not,
-    GUIN_TK_EQU,
-    GUIN_TK_NOT_EQU,
-    GUIN_TK_GT,
-    GUIN_TK_LT,
-    GUIN_TK_GT_EQU,
-    GUIN_TK_LT_EQU,
+    guin_TK_and,
+    guin_TK_or,
+    guin_TK_not,
+    guin_TK_EQU,
+    guin_TK_NOT_EQU,
+    guin_TK_GT,
+    guin_TK_LT,
+    guin_TK_GT_EQU,
+    guin_TK_LT_EQU,
 
     // DATATYPES
-    GUIN_TK_func,
-    GUIN_TK_int,
-    GUIN_TK_number,
-    GUIN_TK_char,
-    GUIN_TK_bool,
-    GUIN_TK_string,
-    GUIN_TK_dynamic,
-    GUIN_TK_void,
+    guin_TK_func,
+    guin_TK_int,
+    guin_TK_number,
+    guin_TK_char,
+    guin_TK_bool,
+    guin_TK_string,
+    guin_TK_dynamic,
+    guin_TK_void,
 
     // MATH/OPERATIONS
-    GUIN_TK_ASSIGN,
-    GUIN_TK_ADD,
-    GUIN_TK_SUB,
-    GUIN_TK_MUL,
-    GUIN_TK_DIV,
-    GUIN_TK_MOD,
-    GUIN_TK_POW,
-    GUIN_TK_PARENTHESIS_L,
-    GUIN_TK_PARENTHESIS_R,
-    GUIN_TK_HASH,
+    guin_TK_ASSIGN,
+    guin_TK_ADD,
+    guin_TK_SUB,
+    guin_TK_MUL,
+    guin_TK_DIV,
+    guin_TK_MOD,
+    guin_TK_POW,
+    guin_TK_PARENTHESIS_L,
+    guin_TK_PARENTHESIS_R,
+    guin_TK_HASH,
  
-    GUIN_TK_BRACKET_L,
-    GUIN_TK_BRACKET_R,
+    guin_TK_BRACKET_L,
+    guin_TK_BRACKET_R,
 
-    GUIN_TK_CURLY_L,
-    GUIN_TK_CURLY_R,
-    GUIN_TK_COMMA,
+    guin_TK_CURLY_L,
+    guin_TK_CURLY_R,
+    guin_TK_COMMA,
 
     // MISC
-    GUIN_TK_EOF,
-    GUIN_TK_UNKNOWN,
-    GUIN_TK_ERR,
-} GUIN_LexTokenEnum;
+    guin_TK_EOF,
+    guin_TK_UNKNOWN,
+    guin_TK_ERR,
+} guin_LexTokenEnum;
 
 typedef struct {
-    GUIN_LexTokenEnum type;
+    guin_LexTokenEnum type;
     size_t line;
     size_t column;
     size_t length;
@@ -94,11 +94,11 @@ typedef struct {
     union {
         bool        bl;
         char        ch;
-        GUIN_String      string;
-        GUIN_int64     integer;
-        GUIN_number64  number;
+        guin_String      string;
+        guin_int64     integer;
+        guin_number64  number;
     };
-} GUIN_LexToken;
+} guin_LexToken;
 
 typedef struct {
     char*    string;
@@ -109,12 +109,12 @@ typedef struct {
 
     size_t   current_column;
     size_t   current_line;
-} GUIN_LexState;
+} guin_LexState;
 
-char* GUIN_LexTokenEnum_to_string(GUIN_LexTokenEnum e);
+char* guin_LexTokenEnum_to_string(guin_LexTokenEnum e);
 
-GUIN_LexState GUIN_init_LexState(GUIN_String* file_content);
-GUIN_LexToken GUIN_advance_lexer(GUIN_LexState* lState);
-void          GUIN_destroy_LexToken(GUIN_LexToken* lToken);
+guin_LexState guin_init_LexState(guin_String* file_content);
+guin_LexToken guin_advance_lexer(guin_LexState* lState);
+void          guin_destroy_LexToken(guin_LexToken* lToken);
 
 #endif
