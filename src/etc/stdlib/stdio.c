@@ -10,13 +10,12 @@
 #include "../strings.c"
 #include "../../../include/declarations.h"
 
-static long guin_print_double(FILE* file, guin_number64 num)
+static long guin_print_double(FILE* file, const guin_number64 num)
 {
     long size = snprintf(NULL, 0, "%.15f", num) + 1;
     if (size < 0) return size;
 
-    char* buffer = malloc(sizeof(char) * size);
-    if (!buffer) return -1;
+    char buffer[size];
 
     snprintf(buffer, size, "%.20f", num);
 
@@ -38,6 +37,7 @@ static long guin_print_double(FILE* file, guin_number64 num)
 long guin_vprintf(FILE* file, char* string, va_list args)
 {
     long amount_of_chars_outputted = 0;
+
     while (true) {
         char ch = *string;
         if (ch == 0) break;

@@ -6,6 +6,7 @@
 // guinea.h is located in /include/
 
 #include "../include/guinea.h"
+#include "guinea.h"
 
 #include "etc/stdlib/stdio.h"
 

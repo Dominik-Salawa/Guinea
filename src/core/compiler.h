@@ -1,10 +1,12 @@
-#ifndef guin_COMPILER_h
-#define guin_COMPILER_h
+#ifndef guin_COMPILER_AMALGAMATION_h
+#define guin_COMPILER_AMALGAMATION_h
 
 // THIS FILES ENTIRE PURPOSE IS TO QUICKLY LINK AND INCLUDE ALL THE .h FILES FROM /src/core/compiler
 
 #include "errors.h"
 #include "bytecode.h"
+#include "compiler/flags.h"
+#include "compiler/compiler.h"
 #include "compiler/lexer.h"
 #include "compiler/ast.h"
 #include "compiler/parser.h"

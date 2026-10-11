@@ -8,7 +8,7 @@ typedef struct guin_VM guin_VM;
 
 const size_t guin_MEM_PAGE_SIZE = 1024;
 
-typedef int GC_STATUS;
+typedef int guin_GC_STATUS;
 
 #define guin_GC_STATUS_SUCCESS     0
 #define guin_GC_STATUS_MEM_FAIL    1
@@ -34,12 +34,12 @@ guin_GC guin_init_GC(void);
 void guin_destroy_GC(guin_GC* gc);
 
 // returns whether the GC needed to make memory for the required slots (if 0 then it wont make any)
-GC_STATUS guin_GC_activate(guin_VM* vm, size_t required_slots);
+guin_GC_STATUS guin_GC_activate(guin_VM* vm, size_t required_slots);
 // marks every ValueHeader in every page for sweep
 void guin_GC_mark(guin_VM* vm);
 // returns whether the GC needed to make memory for the required slots (if 0 then it wont make any)
 // and assumes guin_GC_mark has been called beforehand
-GC_STATUS guin_GC_sweep(guin_GC* gc, size_t required_slots);
+guin_GC_STATUS guin_GC_sweep(guin_GC* gc, size_t required_slots);
 
 // NULL == memory fault and you should abort unless required_slots == 0
 // else it will return the exact size of the required slots youve asked

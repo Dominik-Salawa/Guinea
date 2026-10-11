@@ -1,79 +1,109 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "guinea.c"
 
-int main(int argc, char** argv)
+static inline bool Advance_CLI(int* i, const char** argv, const int argc) 
 {
-    int i = 1;
+	if (*i == argc-1) return false;
+	int ii = *i + 1;
+	while (argv[ii][0] == '-' && ii < argc-1) ++ii;
+	int old = *i;
+	*i = ii;
+	return old != ii && argv[ii][0] != '-';
+}
 
+// only used inside int main(...)
+#define A() Advance_CLI(&i, argv, argc)
+
+int main(const int argc, const char** argv, const char** envp)
+{
     if (argc == 1) {
         printf("Guinea v%d.%d.%d\n", guin_MAJOR_VER, guin_MINOR_VER, guin_BUGFIX_VER);
         return 0;
     }
 
-    if (argc > 2) {
-        if (strcmp(argv[1], "-d") == 0 || strcmp(argv[1], "--debug") == 0) {
-            ++i;
-            guin_log_on = true;
-        }
-    }
+	guin_Compiler compiler = {0};
 
-    guin_ubyte mode = 0;
-
-    if (argc > i + 1) {
-        if (strcmp(argv[i], "run") == 0) {
-            mode = 1;
-        } else if (strcmp(argv[i], "compile") == 0) {
-            mode = 2;
-        }
-    }
-    ++i;
+	for (size_t i = 1; i < (size_t)argc; ++i) {
+		if (argv[i][0] == '-' && !guin_set_compiler_flag(argv[i], &compiler.flags)) {
+			printf("Guinea: `%s` is an unknown flag!\n", argv[i]);
+			return 1;
+		}
+	}
     
-    if (mode == 0) {
-        printf("Error: didnt say a valid method on what to do!\n");
-        return 1;
-    }
+	int i = 0;
+	A();
+	
+	const char* task = argv[i];
 
-    FILE* f = fopen(argv[i], "r");
+	if (strcmp(task, "run") == 0) {
+		if (!A()) {
+			printf("Guinea: Expected a file directory to run!\n");
+			return 1;
+		}
 
-    if (!f) {
-        printf("Failed to open file!\n");
-        return 1;
-    }
+		guin_String s;
+		{
+			FILE* f = fopen(argv[i], "r");
+			if (!f) {
+				printf("Guinea: Failed to open `%s`!\n", argv[i]);
+				return 1;
+			}
 
-    
-    guin_String inp = guin_readfile(f);
-    fclose(f);
+			s = guin_readfile(f);
+			fclose(f);
+			if (!s.content) {
+				printf("Guinea: Failed to read `%s`!\n", argv[i]);
+				return 1;
+			}
+		}
 
-    if (!inp.content || inp.length == 0) return 0;
+		guin_VM vm = guin_init_VM();
 
-    guin_IR ir = (guin_IR){0};
-    ir.filename = argv[i];
-    ir.source = inp;
+		guin_destroy_VM(&vm);
+		guin_clearstring(&s);
+	} 
+	else if (strcmp(task, "compile") == 0) {
+		if (!A()) {
+			printf("Guinea: Expected a file directory to compile!\n");
+			return 1;
+		}
 
-    guin_Bytecode* x = guin_IR_CONVERT(&ir, true);
+		guin_String s;
+		{
+			FILE* f = fopen(argv[i], "r");
+			if (!f) {
+				printf("Guinea: Failed to open `%s`!\n", argv[i]);
+				return 1;
+			}
 
-    if (x) {
-        guin_print_Bytecode_into_ASM(x);
-        if (mode == 1) {
+			s = guin_readfile(f);
+			fclose(f);
+			if (!s.content) {
+				printf("Guinea: Failed to read `%s`!\n", argv[i]);
+				return 1;
+			}
+		}
 
-        }
-        else if (mode == 2) {
-            ++i;
-            if (i < argc) {
-                FILE* tosave = fopen(argv[i], "w");
-                if (tosave) {
-                    fwrite(x->bytecode, sizeof(guin_ubyte), x->length, tosave);
-                    fclose(tosave);
-                }
-            } else {
-                printf("no place to compile it to!\n");
-            }
-        }
-    }
+		if (!A()) {
+			printf("Guinea: Expected a file directory to save to!\n");
+			guin_clearstring(&s);
+			return 1;
+		}
+		
+		guin_VM vm = guin_init_VM();
 
-    guin_destroy_Bytecode_ptr(&x);
-    guin_clearstring(&inp);
+		guin_destroy_VM(&vm);
+		guin_clearstring(&s);
+	} 
+	else {
+		printf((argv[i][0] != '-')? "Guinea: `%s` is an unknown task!\n" : "Guinea: No task was given!\n", task);
+		return 1;
+	}
+
+
+
     return 0;
 }

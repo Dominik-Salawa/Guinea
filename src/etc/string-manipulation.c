@@ -1,7 +1,7 @@
 #ifndef guin_STRING_MANIPULATION_c
 #define guin_STRING_MANIPULATION_c
 
-#include "string_manipulation.h"
+#include "string-manipulation.h"
 #include "../../include/declarations.h"
 #include <stdbool.h>
 #include <stdlib.h>

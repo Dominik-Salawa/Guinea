@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+#include "core/compiler/flags.h"
 #include "core/interpreter.h"
 #include "core/compiler.h"
 #include "etc/stdlib/stdio.h"

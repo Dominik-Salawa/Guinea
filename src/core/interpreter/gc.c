@@ -65,7 +65,7 @@ void guin_destroy_GC(guin_GC* x)
 }
 
 // returns whether the GC needed to make memory for the required slots (if 0 then it wont make any)
-GC_STATUS guin_GC_activate(guin_VM* vm, size_t required_slots)
+guin_GC_STATUS guin_GC_activate(guin_VM* vm, size_t required_slots)
 {
     if (!vm) return false;
     guin_GC_mark(vm);
@@ -93,7 +93,7 @@ void guin_GC_mark(guin_VM* vm)
 }
 // returns whether the GC needed to make memory for the required slots (if 0 then it wont make any)
 // and assumes guin_GC_mark has been called beforehand
-GC_STATUS guin_GC_sweep(guin_GC* gc, size_t required_slots)
+guin_GC_STATUS guin_GC_sweep(guin_GC* gc, size_t required_slots)
 {
     size_t original_required_slots = required_slots;
 
@@ -176,7 +176,7 @@ guin_ValueHeader** guin_GC_get_memory(guin_VM* vm, size_t required_slots)
 
     if (x_len != required_slots) {
         {
-            GC_STATUS status = guin_GC_activate(vm, required_slots);
+            guin_GC_STATUS status = guin_GC_activate(vm, required_slots);
 
             if (status == guin_GC_STATUS_MEM_FAIL) {
                 free(x);
