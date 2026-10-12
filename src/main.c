@@ -60,7 +60,27 @@ int main(const int argc, const char** argv, const char** envp)
 			}
 		}
 
+		guin_IR ir = {.filename="test",.source=s};
+
+		guin_Bytecode* bc = guin_IR_CONVERT(&ir);
+		guin_clearstring(&s);
+		if (!bc) {
+			printf("Guinea: Failed to convert `%s`!\n", argv[i]);
+			return 1;
+		}
+
 		guin_VM vm = guin_init_VM();
+		guin_load_Bytecode_into_VM(&vm, bc);
+		guin_run_VM(&vm);
+
+		guin_print_Bytecode_into_ASM(bc);
+		guin_API_print_global(&vm);
+
+		putchar(10);
+
+		guin_API_print_main_stack(&vm);
+
+		if (vm.errmsg) puts(vm.errmsg);
 
 		guin_destroy_VM(&vm);
 		guin_clearstring(&s);

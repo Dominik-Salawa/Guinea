@@ -7,7 +7,7 @@
 #include "log.h"
 
 size_t guin_log_layer_size = 0;
-bool guin_log_on = false;
+bool guin_log_on = true;
 
 void guin_log(char* string, ...)
 {

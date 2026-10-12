@@ -2,16 +2,17 @@
 #define guin_GC_c
 
 #include "gc.h"
+#include "../../../include/declarations.h"
 
 guin_MEM_PAGE* guin_init_MEM_PAGE_ptr(void)
 {
-    guin_MEM_PAGE* x = malloc(sizeof(guin_MEM_PAGE));
+    guin_MEM_PAGE* x = guin_malloc(sizeof(guin_MEM_PAGE));
     if (!x) return NULL;
 
     *x = (guin_MEM_PAGE){0};
-    x->page = malloc(sizeof(guin_ValueHeader) * guin_MEM_PAGE_SIZE);
+    x->page = guin_malloc(sizeof(guin_ValueHeader) * guin_MEM_PAGE_SIZE);
     if (!x->page) {
-        free(x);
+        guin_mfree(x);
         return NULL;
     }
     x->vacant_slots = guin_MEM_PAGE_SIZE;
@@ -21,7 +22,7 @@ void guin_destroy_MEM_PAGE_ptr(guin_MEM_PAGE** x)
 {
     for (size_t i = 0; i < guin_MEM_PAGE_SIZE; ++i)
         guin_destroy_ValueHeader(&(*x)->page[i]);
-    free(*x);
+    guin_mfree(*x);
     *x = NULL;
 }
 
@@ -143,13 +144,13 @@ guin_GC_STATUS guin_GC_sweep(guin_GC* gc, size_t required_slots)
 
 // NULL == memory fault and you should abort unless required_slots == 0
 // else it will return the exact size of the required slots youve asked
-// which you have to free the list later
+// which you have to guin_mfree the list later
 guin_ValueHeader** guin_GC_get_memory(guin_VM* vm, size_t required_slots)
 {
     if (!vm || required_slots == 0) return NULL;
     guin_GC* gc = &vm->gc;
 
-    guin_ValueHeader** x = malloc(sizeof(guin_ValueHeader*) * required_slots);
+    guin_ValueHeader** x = guin_malloc(sizeof(guin_ValueHeader*) * required_slots);
     if (!x) return NULL;
 
     size_t x_len = 0;
@@ -179,7 +180,7 @@ guin_ValueHeader** guin_GC_get_memory(guin_VM* vm, size_t required_slots)
             guin_GC_STATUS status = guin_GC_activate(vm, required_slots);
 
             if (status == guin_GC_STATUS_MEM_FAIL) {
-                free(x);
+                guin_mfree(x);
                 return NULL;
             }
         }

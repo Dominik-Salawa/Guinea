@@ -1,32 +1,9 @@
-var yay: int = 2;
-var d: bool = "-"*(10 + 10^2) + "a" + "nil" + "a" + "-"*10 == "hi";
-var adawdawda: bool = ("-"*(10 + 10^2) + "a" + "nil" + "a" + "-"*10) == "hi";
-var fetch: func = nil;
-var length: func = nil;
+var pi: number = 3.14159;
+var area_of_circle: int = 0;
+var r: int = 5
 
-/*
-func main(): int
-{
-    
-    var x: int = fetch;
-    var y: int = 1/4;;;;;
-    return 9 + 10;
-    var a: int = fetch;
-    var i: int = 5;
-    var b: int = i + (d / yay)^yay;
-
-    func testing_my_language(): int
-    {
-        var a: int = 5;
-        return a;
-    }
-
-
-    if length(d) == testing_my_language {
-        var gk: int = 999;;;;;
-    }
-    while y* 6 > 15 {
-        var s: int = 0;
-    }
-    return 0;
+var i: int = 0
+while i < 10^5 {
+	//i = i + 1
+	var d: int = area_of_circle + pi*r^2
 }

@@ -21,8 +21,9 @@ char* guin_ASTDatatype_to_string(guin_ASTDatatype dt)
         case guin_ASTDATATYPE_STRING:       return "string";
         case guin_ASTDATATYPE_CHAR:         return "char";
         case guin_ASTDATATYPE_DYNAMIC:      return "dynamic";
-        default:                            return "(null)";
+		case guin_ASTDATATYPE_VOID:			return "void";
     }
+	return "(null)";
 }
 
 
@@ -32,29 +33,41 @@ guin_byte guin_get_pathway_count_of_ExpressionNodeAST(guin_ExpressionNodeType ty
     guin_byte pathways;
     switch (type)
     {
-        case guin_EXPRNODE_ADD:          pathways = 2; break;
-        case guin_EXPRNODE_SUB:          pathways = 2; break;
-        case guin_EXPRNODE_MUL:          pathways = 2; break;
-        case guin_EXPRNODE_DIV:          pathways = 2; break;
-        case guin_EXPRNODE_MOD:          pathways = 2; break;
-        case guin_EXPRNODE_POW:          pathways = 2; break;
+        case guin_EXPRNODE_ADD:          	  pathways = 2; break;
+        case guin_EXPRNODE_SUB:          	  pathways = 2; break;
+        case guin_EXPRNODE_MUL:          	  pathways = 2; break;
+        case guin_EXPRNODE_DIV:          	  pathways = 2; break;
+        case guin_EXPRNODE_MOD:          	  pathways = 2; break;
+        case guin_EXPRNODE_POW:          	  pathways = 2; break;
+        case guin_EXPRNODE_ASSIGN:       	  pathways = 2; break;
 
-        case guin_EXPRNODE_AND:          pathways = 2; break;
-        case guin_EXPRNODE_OR:           pathways = 2; break;
+        case guin_EXPRNODE_AND:          	  pathways = 2; break;
+        case guin_EXPRNODE_OR:           	  pathways = 2; break;
 
-        case guin_EXPRNODE_EQU:          pathways = 2; break;
-        case guin_EXPRNODE_NOT_EQU:      pathways = 2; break;
+        case guin_EXPRNODE_EQU:          	  pathways = 2; break;
+        case guin_EXPRNODE_NOT_EQU:     	  pathways = 2; break;
 
-        case guin_EXPRNODE_GT:           pathways = 2; break;
-        case guin_EXPRNODE_LT:           pathways = 2; break;
-        case guin_EXPRNODE_GT_EQU:       pathways = 2; break;
-        case guin_EXPRNODE_LT_EQU:       pathways = 2; break;
+        case guin_EXPRNODE_GT:           	  pathways = 2; break;
+        case guin_EXPRNODE_LT:           	  pathways = 2; break;
+        case guin_EXPRNODE_GT_EQU:       	  pathways = 2; break;
+        case guin_EXPRNODE_LT_EQU:       	  pathways = 2; break;
 
-        case guin_EXPRNODE_NEG:          pathways = 1; break;
-        case guin_EXPRNODE_NOT:          pathways = 1; break;
-        case guin_EXPRNODE_CALL:         pathways = 1; break;
-        case guin_EXPRNODE_PARENTHESIS:  pathways = 1; break;
-        default: pathways = 0;
+        case guin_EXPRNODE_NEG:          	  pathways = 1; break;
+        case guin_EXPRNODE_NOT:          	  pathways = 1; break;
+        case guin_EXPRNODE_CALL:         	  pathways = 1; break;
+        case guin_EXPRNODE_PARENTHESIS:  	  pathways = 1; break;
+
+		case guin_EXPRNODE_INT: 		 	  pathways = 0; break;
+		case guin_EXPRNODE_NUMBER: 		 	  pathways = 0; break;
+		case guin_EXPRNODE_STRING: 		 	  pathways = 0; break;
+		case guin_EXPRNODE_BOOL: 		 	  pathways = 0; break;
+		case guin_EXPRNODE_CHAR: 		 	  pathways = 0; break;
+		case guin_EXPRNODE_FUNCTION_LITERAL:  pathways = 0; break;
+		case guin_EXPRNODE_GLOBAL_IDENTIFIER: pathways = 0; break;
+		case guin_EXPRNODE_LOCAL_IDENTIFIER:  pathways = 0; break;
+		case guin_EXPRNODE_NIL:				  pathways = 0; break;
+
+		case guin_EXPRNODE_UNINIT:			  pathways = 0; break;
     }
     return pathways;
 }
@@ -80,6 +93,8 @@ char* guin_ExpressionNodeType_to_string(guin_ExpressionNodeType dt)
         case guin_EXPRNODE_LT:                   return "<";
         case guin_EXPRNODE_GT_EQU:               return ">=";
         case guin_EXPRNODE_LT_EQU:               return "<=";
+        case guin_EXPRNODE_ASSIGN:               return "=";
+        case guin_EXPRNODE_NOT:	                 return "!";
 
         case guin_EXPRNODE_NEG:                  return "-";
         case guin_EXPRNODE_CALL:                 return "()";
@@ -92,8 +107,9 @@ char* guin_ExpressionNodeType_to_string(guin_ExpressionNodeType dt)
         case guin_EXPRNODE_GLOBAL_IDENTIFIER:    return "(global identifier)";
         case guin_EXPRNODE_LOCAL_IDENTIFIER:     return "(local identifier)";
         case guin_EXPRNODE_NIL:                  return "nil";
-        default:                            return "NULL";
+		case guin_EXPRNODE_PARENTHESIS:		     return "(...)";
     }
+	return "(null)";
 }
 
 
@@ -103,7 +119,7 @@ bool guin_assign_ExpressionNodeAST(guin_ExpressionNodeAST** x, guin_ExpressionNo
 {
     if (!x) return false;
     if (!(*x)) {
-        *x = malloc(sizeof(guin_ExpressionNodeAST));
+        *x = guin_malloc(sizeof(guin_ExpressionNodeAST));
         if (!(*x)) return false;
         **x = (guin_ExpressionNodeAST){0};
     }
@@ -197,6 +213,14 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
             guin_log_pop_layer();
             return;
 
+		case guin_EXPRNODE_ASSIGN:
+            guin_log("=\n");
+            guin_log_push_layer();
+            guin_log_ExpressionNodeAST(x->right);
+            guin_log_ExpressionNodeAST(x->left);
+            guin_log_pop_layer();
+            return;
+
         case guin_EXPRNODE_EQU:
             guin_log("==\n");
             guin_log_push_layer();
@@ -246,7 +270,6 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
             return;
 
         ///
-        
 
         case guin_EXPRNODE_NEG:
             guin_log("NEG\n");
@@ -371,6 +394,11 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
                 guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
                 break;
 
+			case guin_EXPRNODE_ASSIGN:
+				guin_destroy_ExpressionNodeAST_ptr(&tmp->left);
+                guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
+                break;
+
             case guin_EXPRNODE_EQU:
                 guin_destroy_ExpressionNodeAST_ptr(&tmp->left);
                 guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
@@ -413,12 +441,9 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
                 break;
 
             case guin_EXPRNODE_CALL:
-            //printf("call\n");
                 guin_destroy_ExprFuncCallAST(&tmp->data.exprFuncCallAST);
-            //printf("continue\n");
                 guin_log_ExpressionNodeAST(tmp->right);
                 guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
-            //printf("done\n");
                 break;
 
             case guin_EXPRNODE_NIL:      break;
@@ -432,7 +457,6 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
                 break;
 
             case guin_EXPRNODE_GLOBAL_IDENTIFIER:
-            printf("identifier\n");
                 guin_clearstring(&tmp->data.string_identifier);
                 break;
 
@@ -444,18 +468,17 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
                 break;
         }
     }
-    if (tmp) free(tmp);
+    if (tmp) guin_mfree(tmp);
     *x = NULL;
 }
 
 guin_ExpressionAST* guin_init_ExpressionAST_ptr(void)
 {
-    guin_ExpressionAST* x = malloc(sizeof(guin_ExpressionAST));
+    guin_ExpressionAST* x = guin_malloc(sizeof(guin_ExpressionAST));
     if (x) *x = (guin_ExpressionAST){0};
     return x;
 }
 
-// FOR DESTROYING ExpressionAST
 void guin_destroy_ExpressionAST(guin_ExpressionAST* x)
 {
     if (!x) return;
@@ -463,12 +486,11 @@ void guin_destroy_ExpressionAST(guin_ExpressionAST* x)
     x->fail = false;
 }
 
-// FOR DESTROYING ExpressionAST*
 void guin_destroy_ExpressionAST_ptr(guin_ExpressionAST** x)
 {
     if (!x) return;
     guin_destroy_ExpressionAST(*x);
-    if (*x) free(*x);
+    if (*x) guin_mfree(*x);
     *x = NULL;
 }
 
@@ -494,7 +516,7 @@ guin_ExprFuncCallAST guin_init_ExprFuncCallAST(void)
 {
     guin_ExprFuncCallAST x = {0};
     x.expression_args_size = 8;
-    x.expression_args = malloc(sizeof(guin_ExpressionAST*) * x.expression_args_size);
+    x.expression_args = guin_malloc(sizeof(guin_ExpressionAST*) * x.expression_args_size);
     if (!x.expression_args) return (guin_ExprFuncCallAST){0};
     return x;
 }
@@ -505,7 +527,7 @@ bool guin_add_ExpressionAST_ptr_to_ExprFuncCallAST(guin_ExprFuncCallAST* x, guin
         size_t original_size = x->expression_args_size;
         while (x->expression_args_length >= x->expression_args_size) 
             x->expression_args_size *= 2;
-        guin_ExpressionAST** tmp = realloc(x->expression_args, sizeof(guin_ExpressionAST*) * x->expression_args_size);
+        guin_ExpressionAST** tmp = guin_remalloc(x->expression_args, sizeof(guin_ExpressionAST*) * x->expression_args_size);
         if (!tmp) {
             x->expression_args_size = original_size;
             return false;
@@ -523,7 +545,7 @@ void guin_destroy_ExprFuncCallAST(guin_ExprFuncCallAST* x)
         for (size_t i = 0; i < x->expression_args_length; ++i)
             guin_destroy_ExpressionAST(x->expression_args[i]);
 
-        free(x->expression_args);
+        guin_mfree(x->expression_args);
         x->expression_args = NULL;
     }
     x->expression_args_length = 0;
@@ -533,7 +555,7 @@ guin_FunctionAST guin_init_FunctionAST(void)
 {
     guin_FunctionAST x = (guin_FunctionAST){0};
     x.args.size = 3;
-    x.args.args = malloc(sizeof(guin_FuncArgsAST) * x.args.size);
+    x.args.args = guin_malloc(sizeof(guin_FuncArgsAST) * x.args.size);
     if (!x.args.args) return (guin_FunctionAST){0};
     return x;
 }
@@ -541,7 +563,7 @@ void guin_destroy_FunctionAST(guin_FunctionAST* x)
 {
     if (!x) return;
     guin_destroy_ASTScope(&x->scope);
-    if (x->args.args) free(x->args.args);
+    if (x->args.args) guin_mfree(x->args.args);
     guin_clearstring_ptr(&x->name);
     x->args.length = 0;
     x->args.size   = 0;
@@ -553,7 +575,7 @@ bool guin_add_arg_to_FunctionAST(guin_FunctionAST* x, guin_ASTDatatype datatype)
     if (x->args.length >= x->args.size) {
         size_t original_size = x->args.size;
         while (x->args.length >= x->args.size) x->args.size *= 2;
-        guin_FuncArgsAST* tmp = realloc(x->args.args, sizeof(guin_FuncArgsAST) * x->args.size);
+        guin_FuncArgsAST* tmp = guin_remalloc(x->args.args, sizeof(guin_FuncArgsAST) * x->args.size);
         if (!tmp) {
             x->args.size = original_size;
             return false;
@@ -571,7 +593,7 @@ guin_ASTScope guin_init_ASTScope(void)
 {
     guin_ASTScope x = (guin_ASTScope){0};
     x.size = 6;
-    x.nodes = malloc(sizeof(guin_AST) * x.size);
+    x.nodes = guin_malloc(sizeof(guin_AST) * x.size);
     if (!x.nodes) {
         return (guin_ASTScope){0};
     }
@@ -590,7 +612,7 @@ bool guin_add_AST_to_ASTScope(guin_ASTScope* x, guin_AST* toadd)
         } else {
             x->size = 32;
         }
-        guin_AST* tmp = realloc(x->nodes, x->size * sizeof(guin_AST));
+        guin_AST* tmp = guin_remalloc(x->nodes, x->size * sizeof(guin_AST));
         if (!tmp) {
             x->size = original_size;
             return false;
@@ -610,7 +632,7 @@ void guin_destroy_ASTScope(guin_ASTScope* x)
         guin_destroy_AST(&x->nodes[i]);
     }
 
-    free(x->nodes);
+    guin_mfree(x->nodes);
     x->nodes  = NULL;
     x->length = 0;
     x->size   = 0;
@@ -636,7 +658,7 @@ void guin_destroy_IfWhileAST(guin_IfWhileAST* x)
 
 inline guin_AST* guin_init_AST_ptr(guin_ASTNodeType nodetype)
 {
-    guin_AST* x = malloc(sizeof(guin_AST));
+    guin_AST* x = guin_malloc(sizeof(guin_AST));
     *x = (guin_AST){0};
     if (!x) return NULL;
     x->nodetype = nodetype;
@@ -648,6 +670,7 @@ void guin_destroy_AST(guin_AST* g_ast)
     switch (g_ast->nodetype)
     {
         case guin_ASTNODE_DECLARATION: { guin_destroy_VariableDeclarationAST(&g_ast->declarationAST);      break; }
+        case guin_ASTNODE_EXPRESSION:  { guin_destroy_ExpressionAST(&g_ast->expressionAST);     		   break; }
         case guin_ASTNODE_IF:          { guin_destroy_IfWhileAST(&g_ast->ifWhileAST);                      break; }
         case guin_ASTNODE_WHILE:       { guin_destroy_IfWhileAST(&g_ast->ifWhileAST);                      break; }
         case guin_ASTNODE_SCOPE:       { guin_destroy_ASTScope(&g_ast->scopeAST);                          break; }
@@ -668,7 +691,7 @@ void guin_destroy_AST_ptr(guin_AST** g_ast)
     if (!g_ast) return;
     if (!*g_ast) return;
     guin_destroy_AST(*g_ast);
-    free(*g_ast);
+    guin_mfree(*g_ast);
     *g_ast = NULL;
 }
 

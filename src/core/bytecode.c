@@ -8,6 +8,7 @@
 #include "../etc/strings.h"
 #include "../etc/stdlib/stdio.h"
 #include "../etc/log.h"
+#include "../../include/declarations.h"
 
 char* guin_GINSTR_Datatype_to_string(GINSTR_Datatype x)
 {
@@ -25,8 +26,8 @@ char* guin_GINSTR_Datatype_to_string(GINSTR_Datatype x)
         case GINSTRDATATYPE_CHAR:       return "char";
         case GINSTRDATATYPE_FUNCTION:   return "function";
         case GINSTRDATATYPE_DYNAMIC:    return "dynamic";
-        default: return "(null)";
     }
+	return "(null)";
 }
 
 guin_String* guin_get_string_in_Bytecode(const guin_Bytecode* x, size_t i, const guin_ubyte size_of_len_number)
@@ -55,19 +56,19 @@ guin_Bytecode guin_init_Bytecode(void)
     guin_Bytecode x = {0};
     x.size = 32;
     x.length = 0;
-    x.bytecode = malloc(x.size);
+    x.bytecode = guin_malloc(x.size);
     if (!x.bytecode) x.size = 0;
     return x;
 }
 
 guin_Bytecode* guin_init_Bytecode_ptr(void)
 {
-    guin_Bytecode* x = malloc(sizeof(guin_Bytecode));
+    guin_Bytecode* x = guin_malloc(sizeof(guin_Bytecode));
     if (!x) return NULL;
 
     *x = guin_init_Bytecode();
     if (!x->bytecode) {
-        free(x);
+        guin_mfree(x);
         return NULL;
     }
 
@@ -79,7 +80,7 @@ bool guin_double_Bytecode_size(guin_Bytecode* x)
     if (!x) return false;
 
     x->size *= 2;
-    guin_ubyte* tmp = realloc(x->bytecode, x->size * sizeof(guin_ubyte));
+    guin_ubyte* tmp = guin_remalloc(x->bytecode, x->size * sizeof(guin_ubyte));
 
     if (!tmp) {
         x->size /= 2;
@@ -95,7 +96,7 @@ bool guin_resize_Bytecode_size(guin_Bytecode* x, size_t newsize)
     if (!x) return false;
     if (newsize == x->size) return true;
 
-    guin_ubyte* tmp = realloc(x->bytecode, newsize * sizeof(guin_ubyte));
+    guin_ubyte* tmp = guin_remalloc(x->bytecode, newsize * sizeof(guin_ubyte));
 
     if (!tmp) {
         return false;
@@ -150,7 +151,7 @@ void guin_destroy_Bytecode(guin_Bytecode* x)
 {
     if (!x) return;
     if (x->bytecode) {
-        free(x->bytecode);
+        guin_mfree(x->bytecode);
         x->bytecode = NULL;
     }
     x->length = 0;
@@ -162,7 +163,7 @@ void guin_destroy_Bytecode_ptr(guin_Bytecode** x)
     if (!x) return;
     if (*x) {
         guin_destroy_Bytecode(*x);
-        free(*x);
+        guin_mfree(*x);
     }
     *x = NULL;
 }
@@ -183,7 +184,11 @@ guin_Bytecode* guin_add_Bytecode_String(guin_Bytecode* x, const guin_String* str
     if (!x || !str) return NULL;
     //if (!add_guin_Bytecode_w_byte_size(x, (guin_ubyte*)&str->length, sizeof(size_t))) return NULL;
     if (!guin_add_Bytecode(x, (guin_ubyte*)&str->length, sizeof(size_t))) return NULL;
-    if (!guin_add_Bytecode(x, (guin_ubyte*)str->content, str->length))    return NULL;
+	if (sizeof(size_t) < 8) {
+		for (int i = 0; i < (int)(8-sizeof(size_t)); ++i)
+			if (!guin_add_Bytecode_one_byte(x, 0)) return NULL;
+	}
+    if (!guin_add_Bytecode(x, (guin_ubyte*)str->content, str->length)) return NULL;
     return x;
 }
 
@@ -242,6 +247,11 @@ bool guin_print_Bytecode_into_ASM(guin_Bytecode* x)
 
         switch (x->bytecode[i])
         {
+			case GINSTR_POP:
+				puts("POP\n");
+				++i;
+				break;
+				
             case GINSTR_RET:
                 puts("RET\n");
                 ++i;
@@ -301,7 +311,7 @@ bool guin_print_Bytecode_into_ASM(guin_Bytecode* x)
                 guin_printf("LOAD GLOBAL: ");
                 ++i;
 
-                guin_String* name = guin_get_string_in_Bytecode(x, i, sizeof(size_t));
+                guin_String* name = guin_get_string_in_Bytecode(x, i, sizeof(guin_uint64));
                 if (!name) {
                     guin_printf("no name\n");
                     valid = false;
@@ -645,10 +655,10 @@ GINSTR_Datatype guin_ASTDatatype_to_Bytecode_Datatype(guin_ASTDatatype x)
         case guin_ASTDATATYPE_CHAR:          return GINSTRDATATYPE_CHAR;
         case guin_ASTDATATYPE_FUNCTION:      return GINSTRDATATYPE_FUNCTION;
         case guin_ASTDATATYPE_DYNAMIC:       return GINSTRDATATYPE_DYNAMIC;
-        default:
-            printf("Couldnt find guin_BytecodeDatatype equivalent of ASTDatatype %d!\n", x);
-            exit(1);
+		case guin_ASTDATATYPE_ERR:			 return GINSTRDATATYPE_NULL;
+		case guin_ASTDATATYPE_VOID:			 return GINSTRDATATYPE_VOID;
     }
+	return GINSTRDATATYPE_NULL;
 }
 
 #endif

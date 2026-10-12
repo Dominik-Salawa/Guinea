@@ -6,9 +6,11 @@
 #include <stdbool.h>
 #include "../../etc/strings.h"
 #include "value.h"
+#include "vm.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 guin_ValueHeader guin_init_ValueHeader(GINSTR_Datatype header_type)
 {
@@ -32,27 +34,53 @@ void guin_destroy_ValueHeader(guin_ValueHeader* x)
         case GINSTRDATATYPE_NULL:       break;
         case GINSTRDATATYPE_NUMBER32:   break;
         case GINSTRDATATYPE_NUMBER64:   break;
-        default:
-            printf("idk what datatype this is! %d\n", x->current_value_type);
-            exit(1);
+		case GINSTRDATATYPE_DYNAMIC:    break;
     }
     *x = (guin_ValueHeader){0};
 }
 
+
 guin_STATUS guin_assign_ValueHeader_with_ValueHeader(guin_ValueHeader* to_assign, guin_ValueHeader value)
 {
     if (to_assign->header_type != value.current_value_type && to_assign->header_type != GINSTRDATATYPE_DYNAMIC && value.current_value_type != GINSTRDATATYPE_NIL) {
-        printf("incorrect val\n");   
-        return guin_FAIL;
-    }
-
-    guin_destroy_ValueHeader(to_assign);
-    *to_assign = value;
-
+		if (guin_is_number(to_assign->header_type) && guin_is_number(value.current_value_type)) {
+			guin_number64 val = (value.current_value_type == GINSTRDATATYPE_NUMBER64)? value.n64 : value.n32;
+			if (to_assign->header_type == GINSTRDATATYPE_NUMBER64)
+				to_assign->n64 = val;
+			else
+				to_assign->n32 = val;
+		}
+		else if (guin_is_number(to_assign->header_type) && guin_is_int(value.current_value_type)) {
+			guin_int64 val = (value.current_value_type == GINSTRDATATYPE_INT64)? value.i64 : value.i32;
+			if (to_assign->header_type == GINSTRDATATYPE_NUMBER64)
+				to_assign->n64 = val;
+			else
+				to_assign->n32 = val;
+		}
+		else if (guin_is_int(to_assign->header_type) && guin_is_number(value.current_value_type)) {
+			guin_number64 val = (value.current_value_type == GINSTRDATATYPE_NUMBER64)? value.n64 : value.n32;
+			if (to_assign->header_type == GINSTRDATATYPE_INT64)
+				to_assign->i64 = val;
+			else
+				to_assign->i32 = val;
+		}
+		else if (guin_is_int(to_assign->header_type) && guin_is_int(value.current_value_type)) {
+			guin_int64 val = (value.current_value_type == GINSTRDATATYPE_INT64)? value.i64 : value.i32;
+			if (to_assign->header_type == GINSTRDATATYPE_INT64)
+				to_assign->i64 = val;
+			else
+				to_assign->i32 = val;
+		} 
+		else {
+			return guin_FAIL;
+		}
+    } else {
+		guin_destroy_ValueHeader(to_assign);
+		*to_assign = value;
+	}
     return guin_SUCCESS;
 }
 
-#include <string.h>
 // make sure source starts on the datatype
 guin_VH_from_BC_result guin_get_ValueHeader_from_Bytecode(guin_Bytecode* bytecode, guin_ubyte* src)
 {
@@ -142,12 +170,12 @@ guin_VH_from_BC_result guin_get_ValueHeader_from_Bytecode(guin_Bytecode* bytecod
                 return x;
             }
             src += len;
+        	break;
         }
-        break;
 
-        default:
-            x.errmsg = "Unsupported datatype";
-            return x;
+		case GINSTRDATATYPE_FUNCTION: {
+            guin_int64 len;
+		}
     }
     x.to_jump = src - original;
     x.value = vh;

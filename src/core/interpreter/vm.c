@@ -3,6 +3,8 @@
 
 #include "stacks.h"
 #include "vm.h"
+#include "vm.h"
+#include "../../../include/declarations.h"
 #include "gc.h"
 #include <math.h>
 #include <string.h>
@@ -12,7 +14,7 @@ guin_GLOBALMAP guin_init_GLOBALMAP(void)
     guin_GLOBALMAP x;
     x.size = 8;
     x.length = 0;
-    x.content = malloc(sizeof(guin_VARIABLE_HEADER) * x.size);
+    x.content = guin_malloc(sizeof(guin_VARIABLE_HEADER) * x.size);
     if (!x.content) return (guin_GLOBALMAP){0};
     return x;
 }
@@ -22,10 +24,11 @@ void guin_destroy_GLOBALMAP(guin_GLOBALMAP* x)
     if (x->content) {
         for (size_t i = 0; i < x->length; ++i)
             guin_destroy_VARIABLE_HEADER(&x->content[i]);
-        free(x->content);
+        guin_mfree(x->content);
     }
     *x = (guin_GLOBALMAP){0};
 }
+// tales ownership of global_name
 guin_STATUS guin_add_GLOBALNAME_to_GLOBALMAP(guin_GLOBALMAP* x, GINSTR_Datatype datatype, char* global_name)
 {
     if (!x || datatype == GINSTRDATATYPE_NULL || !global_name) return guin_FAIL;
@@ -38,7 +41,7 @@ guin_STATUS guin_add_GLOBALNAME_to_GLOBALMAP(guin_GLOBALMAP* x, GINSTR_Datatype 
         } else {
             x->size = 8;
         }
-        guin_VARIABLE_HEADER* tmp = realloc(x->content, sizeof(guin_VARIABLE_HEADER) * x->size);
+        guin_VARIABLE_HEADER* tmp = guin_remalloc(x->content, sizeof(guin_VARIABLE_HEADER) * x->size);
         if (!tmp) {
             x->size = original_size;
             return guin_MEM_FAIL;
@@ -63,7 +66,7 @@ guin_STATUS guin_add_GLOBALNAME_to_GLOBALMAP_cp_global_name(guin_GLOBALMAP* x, G
         } else {
             x->size = 8;
         }
-        guin_VARIABLE_HEADER* tmp = realloc(x->content, sizeof(guin_VARIABLE_HEADER) * x->size);
+        guin_VARIABLE_HEADER* tmp = guin_remalloc(x->content, sizeof(guin_VARIABLE_HEADER) * x->size);
         if (!tmp) {
             x->size = original_size;
             return guin_MEM_FAIL;
@@ -76,7 +79,7 @@ guin_STATUS guin_add_GLOBALNAME_to_GLOBALMAP_cp_global_name(guin_GLOBALMAP* x, G
     x->content[x->length++] = y;
     return guin_SUCCESS;
 }
-// DO NOT FREE
+// DO NOT guin_mfree
 guin_VARIABLE_HEADER* guin_fetch_GLOBALNAME_from_GLOBALMAP(guin_GLOBALMAP* x, char* global_name)
 {
     if (!x || !global_name) return NULL;
@@ -112,7 +115,7 @@ guin_VM guin_init_VM(void)
 }
 guin_VM* guin_init_VM_ptr(void)
 {
-    guin_VM* x = malloc(sizeof(guin_VM));
+    guin_VM* x = guin_malloc(sizeof(guin_VM));
     if (!x) return NULL;
     *x = guin_init_VM();
     if (!x->stack_main.baseptr) // means something went wrong and the entire value got zeroed
@@ -132,7 +135,7 @@ void guin_destroy_VM_ptr(guin_VM** x)
     if (!x) return;
     if (!*x) return;
     guin_destroy_VM(*x);
-    free(*x);
+    guin_mfree(*x);
     *x = NULL;
 }
 
@@ -168,7 +171,7 @@ void guin_destroy_VM_ptr(guin_VM** x)
         guin_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
         guin_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
         if (yval == 0)\
-            new.n64 = guin_NaN;\
+            new.n64 = guin_Inf;\
         else\
             new.n64 = xval / yval;\
     }\
@@ -177,7 +180,7 @@ void guin_destroy_VM_ptr(guin_VM** x)
         guin_number64 xval = (x.current_value_type == GINSTRDATATYPE_NUMBER64)? x.n64 : x.n32;\
         guin_int64 yval    = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
         if (yval == 0)\
-            new.n64 = guin_NaN;\
+            new.n64 = guin_Inf;\
         else\
             new.n64 = xval / yval;\
     }\
@@ -186,7 +189,7 @@ void guin_destroy_VM_ptr(guin_VM** x)
         guin_int64 xval    = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;\
         guin_number64 yval = (y.current_value_type == GINSTRDATATYPE_NUMBER64)? y.n64 : y.n32;\
         if (yval == 0)\
-            new.n64 = guin_NaN;\
+            new.n64 = guin_Inf;\
         else\
             new.n64 = xval / yval;\
     }\
@@ -195,7 +198,7 @@ void guin_destroy_VM_ptr(guin_VM** x)
         guin_int64 xval = (x.current_value_type == GINSTRDATATYPE_INT64)? x.i64 : x.i32;\
         guin_int64 yval = (y.current_value_type == GINSTRDATATYPE_INT64)? y.i64 : y.i32;\
         if (yval == 0)\
-            new.n64 = guin_NaN;\
+            new.n64 = guin_Inf;\
         else\
             new.n64 = xval / yval;\
     }
@@ -203,12 +206,12 @@ void guin_destroy_VM_ptr(guin_VM** x)
 // ARITHMETIC
 bool guin_VM_add(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -244,12 +247,12 @@ bool guin_VM_add(guin_VM* vm)
 
 bool guin_VM_sub(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -279,12 +282,12 @@ bool guin_VM_sub(guin_VM* vm)
 
 bool guin_VM_mul(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -321,7 +324,7 @@ bool guin_VM_mul(guin_VM* vm)
         new = (guin_ValueHeader){.current_value_type=GINSTRDATATYPE_STRING, .str=guin_init_String_ptr()};
         if (new.str->size <= hd->str->length * loopcount) {
             new.str->size = hd->str->length * loopcount + 1;
-            char* tmp = realloc(new.str->content, sizeof(char) * new.str->size);
+            char* tmp = guin_remalloc(new.str->content, sizeof(char) * new.str->size);
             if (tmp) {
                 new.str->content = tmp;
             } else {
@@ -345,12 +348,12 @@ bool guin_VM_mul(guin_VM* vm)
 
 bool guin_VM_div(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -371,12 +374,12 @@ bool guin_VM_div(guin_VM* vm)
 
 bool guin_VM_mod(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -406,12 +409,12 @@ bool guin_VM_mod(guin_VM* vm)
 
 bool guin_VM_pow(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -483,12 +486,12 @@ bool guin_VM_not(guin_VM* vm)
 
 bool guin_VM_and(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -499,12 +502,12 @@ bool guin_VM_and(guin_VM* vm)
 
 bool guin_VM_or(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -515,12 +518,12 @@ bool guin_VM_or(guin_VM* vm)
 
 bool guin_VM_equ(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -552,12 +555,12 @@ bool guin_VM_equ(guin_VM* vm)
 
 bool guin_VM_not_equ(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -589,12 +592,12 @@ bool guin_VM_not_equ(guin_VM* vm)
 
 bool guin_VM_gt(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -623,12 +626,12 @@ bool guin_VM_gt(guin_VM* vm)
 
 bool guin_VM_lt(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -657,12 +660,12 @@ bool guin_VM_lt(guin_VM* vm)
 
 bool guin_VM_gt_equ(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -691,12 +694,12 @@ bool guin_VM_gt_equ(guin_VM* vm)
 
 bool guin_VM_lt_equ(guin_VM* vm)
 {
-    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (y.current_value_type == GINSTRDATATYPE_NULL) return false;
-
     guin_ValueHeader x = guin_pop_VALUE_STACK(&vm->stack_main);
-    if (x.current_value_type == GINSTRDATATYPE_NULL) {
-        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, y);
+    if (x.current_value_type == GINSTRDATATYPE_NULL) return false;
+
+    guin_ValueHeader y = guin_pop_VALUE_STACK(&vm->stack_main);
+    if (y.current_value_type == GINSTRDATATYPE_NULL) {
+        guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, x);
         return false;
     }
 
@@ -757,7 +760,7 @@ guin_STATUS GINSTR_VM_DECLARE_GLOBAL_BYTECODE(guin_VM* vm, guin_FRAME* frame)
         return guin_CORRUPTED_DATA;
     }
     frame->pc += sizeof(namelen);
-    char* name = malloc(namelen + 1);
+    char* name = guin_malloc(namelen + 1);
     if (!name) return guin_MEM_FAIL;
 
     for (size_t i = 0; i < (size_t)namelen; ++i, ++frame->pc)
@@ -766,23 +769,26 @@ guin_STATUS GINSTR_VM_DECLARE_GLOBAL_BYTECODE(guin_VM* vm, guin_FRAME* frame)
 
     guin_STATUS s = guin_add_GLOBALNAME_to_GLOBALMAP(&vm->global, dt, name);
     if (s != guin_SUCCESS) {
-        free(name);
+        guin_mfree(name);
         return s;
     }
 
     { // assigns the Global variable its own dedicated slot and assigns from stack
         guin_ValueHeader** x = guin_GC_get_memory(vm, 1);
         if (!x) return guin_MEM_FAIL;
+
         
         guin_VARIABLE_HEADER* glocation = guin_fetch_GLOBALNAME_from_GLOBALMAP(&vm->global, name);
         glocation->ptr_to_value = *x;
         glocation->ptr_to_value->header_type = dt;
-        free(x);
+        glocation->ptr_to_value->current_value_type = GINSTRDATATYPE_NIL;
+        guin_mfree(x);
 
         guin_ValueHeader popped_val = guin_pop_VALUE_STACK(&vm->stack_main);
+		printf("got location %p %s\n", (void*)glocation->ptr_to_value, guin_GINSTR_Datatype_to_string(popped_val.header_type));
         s = guin_assign_ValueHeader_with_ValueHeader(glocation->ptr_to_value, popped_val);
         if (s != guin_SUCCESS) {
-            printf("unsuccessful assigning to `%s`\n", name);
+            printf("unsuccessful assignment to `%s`\n", name);
             if (popped_val.current_value_type != GINSTRDATATYPE_NULL)
                 guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, popped_val);
             return s;
@@ -815,6 +821,12 @@ guin_STATUS GINSTR_VM_GT_EQU_BYTECODE(guin_VM* vm, guin_FRAME* frame)   guin_BAS
 guin_STATUS GINSTR_VM_LT_EQU_BYTECODE(guin_VM* vm, guin_FRAME* frame)   guin_BASIC_OP_ARITHMETIC_LOGIC(guin_VM_lt_equ)
 
 #define guin_VM_is_valid_Program_Counter(pc, bytecode) (pc >= bytecode.bytecode && pc < bytecode.bytecode + bytecode.length)
+
+guin_STATUS GINSTR_VM_POP_BYTECODE(guin_VM* vm, guin_FRAME* frame)
+{
+	++frame->pc;
+	return (guin_pop_VALUE_STACK(&vm->stack_main).header_type != GINSTRDATATYPE_NULL)? guin_SUCCESS : guin_FAIL;
+}
 
 guin_STATUS GINSTR_VM_JMP_BYTECODE(guin_VM* vm, guin_FRAME* frame)
 {
@@ -852,6 +864,71 @@ guin_STATUS GINSTR_VM_RET_BYTECODE(guin_VM* vm, guin_FRAME* frame)
     return guin_SUCCESS;
 }
 
+guin_STATUS GINSTR_VM_LOAD_GLOBAL_BYTECODE(guin_VM* vm, guin_FRAME* frame)
+{
+	guin_uint64 len;
+	++frame->pc;
+	if (!guin_safe_memcpy_Bytecode(&len, &frame->func->funcval->bytecode, frame->pc, sizeof(guin_uint64))) {
+        vm->errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
+        return guin_FAIL;
+    }
+
+	frame->pc += sizeof(guin_uint64);
+
+	char name[len+1];
+	name[len] = 0;
+	if (!guin_safe_memcpy_Bytecode(&name, &frame->func->funcval->bytecode, frame->pc, len)) {
+        vm->errmsg = "Encountered corrupted bytecode mid-way through the runtime!";
+        return guin_FAIL;
+    }
+
+	guin_VARIABLE_HEADER* n = guin_fetch_GLOBALNAME_from_GLOBALMAP(&vm->global, name);
+	if (!n) {
+		vm->errmsg = "Failed to fetch global name!";
+		return guin_FAIL;
+	}
+
+	frame->pc += len;
+	vm->load = n->ptr_to_value;
+	printf("val: %ld %s\n", n->ptr_to_value->i64, name);
+    return guin_SUCCESS;
+}
+
+guin_STATUS GINSTR_VM_WRITE_LOAD_BYTECODE(guin_VM* vm, guin_FRAME* frame)
+{
+	if (!vm->load) {
+		vm->errmsg = "Failed to Write, VM load is NULL!";
+		return guin_FAIL;
+	}
+
+	guin_ValueHeader vh = guin_pop_VALUE_STACK(&vm->stack_main);
+	if (vh.header_type == GINSTRDATATYPE_NULL) {
+		vm->errmsg = "Failed to Write, Main Stack is empty!";
+		return guin_FAIL;
+	}
+
+	guin_STATUS s = guin_assign_ValueHeader_with_ValueHeader(vm->load, vh);
+	if (s != guin_SUCCESS) return s;
+
+	++frame->pc;
+	return guin_SUCCESS;
+}
+
+guin_STATUS GINSTR_VM_PUSH_LOAD_BYTECODE(guin_VM* vm, guin_FRAME* frame)
+{
+	if (!vm->load) {
+		vm->errmsg = "Failed to Push, VM load is NULL!";
+		return guin_FAIL;
+	}
+
+	guin_ValueHeader l = *vm->load;
+	if (!guin_add_VALUE_to_VALUE_STACK(&vm->stack_main, l))
+		return guin_MEM_FAIL;
+
+	++frame->pc;
+	return guin_SUCCESS;
+}
+
 typedef guin_STATUS (*guin_BytecodeHandler)(guin_VM* vm, guin_FRAME* frame);
 static guin_BytecodeHandler guin_VM_bytecode_handler[256] = {
     [GINSTR_PUSH_IMMEDIATE] = &GINSTR_VM_PUSH_IMMEDIATE_BYTECODE,
@@ -860,6 +937,10 @@ static guin_BytecodeHandler guin_VM_bytecode_handler[256] = {
     [GINSTR_JMP]            = &GINSTR_VM_JMP_BYTECODE,
     [GINSTR_JMPL]           = &GINSTR_VM_JMPL_BYTECODE,
 
+    [GINSTR_LOAD_GLOBAL]    = &GINSTR_VM_LOAD_GLOBAL_BYTECODE,
+    [GINSTR_WRITE_LOAD]     = &GINSTR_VM_WRITE_LOAD_BYTECODE,
+    [GINSTR_PUSH_LOAD]      = &GINSTR_VM_PUSH_LOAD_BYTECODE,
+    [GINSTR_POP]            = &GINSTR_VM_POP_BYTECODE,
     [GINSTR_RET]            = &GINSTR_VM_RET_BYTECODE,
 
     [GINSTR_ADD]            = &GINSTR_VM_ADD_BYTECODE,
@@ -886,14 +967,30 @@ guin_STATUS guin_load_Bytecode_into_VM(guin_VM* vm, guin_Bytecode* global)
 {
     if (!vm || !global) return guin_FAIL;
 
-    guin_FunctionValue* func = malloc(sizeof(guin_FunctionValue));
+    guin_FunctionValue* func = guin_malloc(sizeof(guin_FunctionValue));
     func->argc = 0;
-    func->bytecode = *global;
+	guin_Bytecode b;
+	b.bytecode = guin_malloc(global->length);
+	if (!b.bytecode) {
+		guin_mfree(func);
+		return guin_MEM_FAIL;
+	}
+	b.length = global->length;
+	b.size   = global->length;
+	for (size_t i = 0; i < global->length; ++i)
+		b.bytecode[i] = global->bytecode[i];
+
+    func->bytecode = b;
     func->return_type = GINSTRDATATYPE_VOID;
 
     guin_ValueHeader** y = guin_GC_get_memory(vm, 1);
+	if (!y) {
+		guin_destroy_Bytecode(&b);
+		guin_mfree(func);
+		return guin_MEM_FAIL;
+	}
     guin_ValueHeader* x = *y;
-    free(y);
+    guin_mfree(y);
 
     x->current_value_type = GINSTRDATATYPE_FUNCTION;
     x->funcval = func;

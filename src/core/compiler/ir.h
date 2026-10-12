@@ -12,6 +12,6 @@ typedef struct guin_IR {
 } guin_IR;
 
 GINSTR guin_ExpressionNodeType_to_GINSTR(guin_ExpressionNodeType x);
-guin_Bytecode* guin_IR_CONVERT(guin_IR* ir, const bool on_global);
+guin_Bytecode* guin_IR_CONVERT(guin_IR* ir);
 
 #endif

@@ -21,11 +21,12 @@ guin_STATUS guin_add_GLOBALNAME_to_GLOBALMAP(guin_GLOBALMAP* x, GINSTR_Datatype 
 guin_VARIABLE_HEADER* guin_fetch_GLOBALNAME_from_GLOBALMAP(guin_GLOBALMAP* x, char* global_name);
 
 typedef struct guin_VM {
-    guin_FRAME_STACK stack_frames;
-    guin_VALUE_STACK stack_main;
-    guin_GLOBALMAP   global;
-    guin_GC          gc;
-    guin_ubyte*      pc;
+    guin_FRAME_STACK  stack_frames;
+    guin_VALUE_STACK  stack_main;
+    guin_GLOBALMAP    global;
+    guin_GC           gc;
+    guin_ubyte*       pc;
+	guin_ValueHeader* load;
     char* errmsg;
 } guin_VM;
 guin_VM  guin_init_VM(void);

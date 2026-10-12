@@ -3,17 +3,19 @@
 
 #include "strings.h"
 #include <string.h>
+#include "../../include/declarations.h"
 
 guin_String guin_init_String(void)
 {
-    guin_String s = (guin_String){.content=malloc(32),.length=0,.size=32};
-    s.content[0] = 0;
+    guin_String s = (guin_String){.content=guin_malloc(32),.length=0,.size=32};
+	if (s.content) s.content[0] = 0;
+	else           s.size = 0;
     return s;
 }
 
 guin_String* guin_init_String_ptr(void)
 {
-    guin_String* x = malloc(sizeof(guin_String));
+    guin_String* x = guin_malloc(sizeof(guin_String));
     if (!x) return NULL;
     *x = guin_init_String();
     return x;
@@ -23,7 +25,7 @@ guin_String* guin_stringaddchar(guin_String* str, char ch)
 {
     if (str->length >= str->size-1) {
         str->size *= 2;
-        char* tmp = realloc(str->content, str->size);
+        char* tmp = guin_remalloc(str->content, str->size);
         if (!tmp) return NULL;
 
         str->content = tmp;
@@ -41,17 +43,17 @@ void guin_clearstring(guin_String* str)
     str->size   = 0;
 
     if (str->content) {
-        free(str->content);
+        guin_mfree(str->content);
         str->content = NULL;
     }
 }
 
-// THIS IS IF YOU WANT TO free() A PTR STRING
+// THIS IS IF YOU WANT TO guin_mfree() A PTR STRING
 void guin_clearstring_ptr(guin_String** str)
 {
     if (!str) return;
     guin_clearstring(*str);
-    free(*str);
+    guin_mfree(*str);
     *str = NULL;
 }
 
@@ -59,7 +61,7 @@ guin_String* guin_stringconcat(guin_String* toconcat, guin_String* toadd)
 {
     while (toconcat->length + toadd->length + 1 > toconcat->size) {
         toconcat->size = toconcat->length + toadd->length + 1;
-        char* tmp = realloc(toconcat->content, toconcat->size);
+        char* tmp = guin_remalloc(toconcat->content, toconcat->size);
 
         if (!tmp)
             return NULL;
@@ -80,7 +82,7 @@ guin_String guin_copystring(guin_String* str)
 
     x.size    = str->size;
     x.length  = 0;
-    x.content = malloc(x.size);
+    x.content = guin_malloc(x.size);
     if (!x.content) return (guin_String){0};
 
     guin_stringconcat(&x, str);
@@ -102,7 +104,7 @@ guin_String* guin_stringconcat_char_w_len(guin_String* toconcat, const char* toa
 {
     if (toconcat->length + toadd_len + 1 > toconcat->size) {
         size_t newsize = toconcat->length + toadd_len + 1;
-        char* tmp = realloc(toconcat->content, newsize);
+        char* tmp = guin_remalloc(toconcat->content, newsize);
 
         if (!tmp)
             return NULL;

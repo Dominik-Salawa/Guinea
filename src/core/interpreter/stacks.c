@@ -4,7 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "stacks.h"
+#include "../../../include/declarations.h"
 
+// takes ownership of name
 guin_VARIABLE_HEADER  guin_init_VARIABLE_HEADER(GINSTR_Datatype datatype, char* name, guin_ValueHeader* ptr)
 {
     guin_VARIABLE_HEADER x = (guin_VARIABLE_HEADER){0};
@@ -21,7 +23,7 @@ guin_VARIABLE_HEADER  guin_init_VARIABLE_HEADER_cp_name(GINSTR_Datatype datatype
     if (!datatype) return x;
 
     x.datatype = datatype;
-    x.name = malloc(sizeof(char) * strlen(name) + 1);
+    x.name = guin_malloc(strlen(name) + 1);
     if (!x.name) {
         return (guin_VARIABLE_HEADER){0};
     }
@@ -33,13 +35,13 @@ guin_VARIABLE_HEADER* guin_init_VARIABLE_HEADER_ptr(GINSTR_Datatype datatype, ch
 {
     if (!datatype) return NULL;
 
-    guin_VARIABLE_HEADER* x = malloc(sizeof(guin_VARIABLE_HEADER));
+    guin_VARIABLE_HEADER* x = guin_malloc(sizeof(guin_VARIABLE_HEADER));
     if (!x) return NULL;
 
     *x = guin_init_VARIABLE_HEADER(datatype, name, ptr);
     if (!x->datatype) {
-        if (x->name) free(x->name);
-        free(x);
+        if (x->name) guin_mfree(x->name);
+        guin_mfree(x);
         return NULL;
     }
 
@@ -47,15 +49,15 @@ guin_VARIABLE_HEADER* guin_init_VARIABLE_HEADER_ptr(GINSTR_Datatype datatype, ch
 }
 void guin_destroy_VARIABLE_HEADER(guin_VARIABLE_HEADER* x)
 {
-    if (x->name) free(x->name);
+    if (x->name) guin_mfree(x->name);
     *x = (guin_VARIABLE_HEADER){0};
 }
 void guin_destroy_VARIABLE_HEADER_ptr(guin_VARIABLE_HEADER** x)
 {
     if (!x)  return;
     if (!*x) return;
-    if ((*x)->name) free((*x)->name);
-    free(*x);
+    if ((*x)->name) guin_mfree((*x)->name);
+    guin_mfree(*x);
     *x = NULL;
 }
 
@@ -67,7 +69,7 @@ guin_VALUE_STACK guin_init_VALUE_STACK(void)
 {
     guin_VALUE_STACK x = {0};
     x.size = guin_STACK_INITIAL_SIZE;
-    x.baseptr = malloc(x.size * sizeof(guin_ValueHeader));
+    x.baseptr = guin_malloc(x.size * sizeof(guin_ValueHeader));
     x.stackptr = x.baseptr;
 
     if (!x.baseptr)
@@ -81,7 +83,7 @@ void guin_destroy_VALUE_STACK(guin_VALUE_STACK* x)
     if (x->baseptr) {
         for (guin_ValueHeader* ptr = x->baseptr; ptr < x->stackptr; ++ptr)
             guin_destroy_ValueHeader(ptr);
-        free(x->baseptr);
+        guin_mfree(x->baseptr);
     }
     *x = (guin_VALUE_STACK){0}; // nullifies everything
 }
@@ -89,7 +91,7 @@ bool guin_grow_VALUE_STACK(guin_VALUE_STACK* x)
 {
     size_t difference_between_base_n_stack = x->stackptr - x->baseptr;
     x->size *= 2;
-    guin_ValueHeader* tmp = realloc(x->baseptr, x->size * sizeof(guin_ValueHeader));
+    guin_ValueHeader* tmp = guin_remalloc(x->baseptr, x->size * sizeof(guin_ValueHeader));
     if (!tmp) {
         x->size /= 2;
         return false;
@@ -133,7 +135,7 @@ guin_FRAME guin_init_FRAME(guin_ValueHeader* func)
     x.pc = func->funcval->bytecode.bytecode; // 1st val of bytecode
     return x;
 }
-// shouldnt destroy or free, as everything is just references
+// shouldnt destroy or guin_mfree, as everything is just references
 void guin_destroy_FRAME(guin_FRAME* x)
 {
     x->func = NULL;
@@ -146,7 +148,7 @@ guin_FRAME_STACK guin_init_FRAME_STACK(void)
 {
     guin_FRAME_STACK x = (guin_FRAME_STACK){0};
     x.size = 32;
-    x.baseptr = malloc(x.size * sizeof(guin_FRAME));
+    x.baseptr = guin_malloc(x.size * sizeof(guin_FRAME));
     if (!x.baseptr)
         return (guin_FRAME_STACK){0};
     x.stackptr = x.baseptr;
@@ -158,7 +160,7 @@ void guin_destroy_FRAME_STACK(guin_FRAME_STACK* x)
     if (x->baseptr) {
         for (guin_FRAME* i = x->baseptr; i < x->stackptr; ++i)
             guin_destroy_FRAME(i);
-        free(x->baseptr);
+        guin_mfree(x->baseptr);
     }
     *x = (guin_FRAME_STACK){0};
 }
@@ -166,7 +168,7 @@ bool guin_grow_FRAME_STACK(guin_FRAME_STACK* x)
 {
     size_t difference_between_base_n_stack = x->stackptr - x->baseptr;
     x->size *= 2;
-    guin_FRAME* tmp = realloc(x->baseptr, sizeof(guin_FRAME) * x->size);
+    guin_FRAME* tmp = guin_remalloc(x->baseptr, sizeof(guin_FRAME) * x->size);
     if (!tmp) {
         x->size /= 2;
         return false;

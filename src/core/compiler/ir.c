@@ -47,8 +47,8 @@ GINSTR guin_ExpressionNodeType_to_GINSTR(guin_ExpressionNodeType x)
 
 #define is_number_int_expr(expr) (expr == EXPRNODE_INT || expr == EXPRNODE_NUMBER)
 #define is_immediate_value(expr) (is_number_int_expr(expr) || expr == EXPRNODE_BOOL || expr == EXPRNODE_CHAR || expr == EXPRNODE_STRING || expr == EXPRNODE_NIL || expr == EXPRNODE_FUNCTION_LITERAL)
-// please leave arg3 as false, its just for chaining, NOT LISTENING TO THIS MESSAGE WILL MESS UP THE FUNCTION
-static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST* expr, guin_Bytecode** addr_to_bytecode, bool dont_push_load, bool assign_trust_push)
+// please leave `push_load` as false, its just for chaining, NOT LISTENING TO THIS MESSAGE WILL MESS UP THE FUNCTION
+static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST* expr, guin_Bytecode** addr_to_bytecode, bool push_load, bool current_assign_pushes)
 {
     guin_ExpressionNodeType x = guin_EXPRNODE_UNINIT;
 
@@ -63,9 +63,20 @@ static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST
         case 2:
         {
             x = expr->type;
-            guin_IR_CONVERT_expression(expr->left,  addr_to_bytecode, false, true);
-            guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
-            guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)guin_ExpressionNodeType_to_GINSTR(expr->type));
+			if (expr->type == guin_EXPRNODE_ASSIGN && (expr->left->type != guin_EXPRNODE_GLOBAL_IDENTIFIER && expr->left->type != guin_EXPRNODE_LOCAL_IDENTIFIER)) {
+				guin_log("Cannot compile expression assign if left isnt assignable!\n");
+				return guin_EXPRNODE_UNINIT;
+			}
+			if (x == guin_EXPRNODE_ASSIGN) {
+            	guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, true, true);
+            	guin_IR_CONVERT_expression(expr->left,  addr_to_bytecode, false, true);
+				guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)GINSTR_WRITE_LOAD);
+				if (current_assign_pushes) guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)GINSTR_PUSH_LOAD);
+			} else {
+				guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, true, true);
+            	guin_IR_CONVERT_expression(expr->left,  addr_to_bytecode, true, true);
+            	guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)guin_ExpressionNodeType_to_GINSTR(expr->type));
+			}
             break;
         }
 
@@ -97,20 +108,15 @@ static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST
 
                 case guin_EXPRNODE_CALL:
                 {
-                    guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
+                    guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, true, true);
 
                     for (size_t i = 0; i < expr->data.exprFuncCallAST.expression_args_length; ++i)
-                        guin_IR_CONVERT_expression(expr->data.exprFuncCallAST.expression_args[i]->top, addr_to_bytecode, false, true);
+                        guin_IR_CONVERT_expression(expr->data.exprFuncCallAST.expression_args[i]->top, addr_to_bytecode, true, true);
 
                     guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)GINSTR_CALL);
                     guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)expr->data.exprFuncCallAST.expression_args_length);
                     break;
                 }
-
-
-                case guin_EXPRNODE_PARENTHESIS:
-                    guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
-                    break;
 
                 default:
                     guin_IR_CONVERT_expression(expr->right, addr_to_bytecode, false, true);
@@ -132,14 +138,12 @@ static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST
                     guin_add_Bytecode_one_byte(bytecode, (guin_ubyte)guin_ASTDatatype_to_Bytecode_Datatype(expr->data.function.return_type));
                     guin_Bytecode* funcbc = guin_IR_CONVERT_ASTSCOPE(&expr->data.function.scope);
                     if (!funcbc) {
-                        guin_destroy_Bytecode_ptr(addr_to_bytecode);
                         return guin_EXPRNODE_UNINIT;
                     }
 
                     if (funcbc->length > 0 && funcbc->bytecode[funcbc->length-1] != GINSTR_RET) {
                         guin_log("add RET since its missing from func bytecode\n");
                         if (!guin_add_Bytecode_one_byte(funcbc, GINSTR_RET)) {
-                            guin_destroy_Bytecode_ptr(addr_to_bytecode);
                             guin_destroy_Bytecode_ptr(&funcbc);
                             return guin_EXPRNODE_UNINIT;
                         }
@@ -191,7 +195,7 @@ static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST
                 case guin_EXPRNODE_GLOBAL_IDENTIFIER:
                     guin_add_Bytecode_one_byte(bytecode, GINSTR_LOAD_GLOBAL);
                     guin_add_Bytecode_String(bytecode, &expr->data.string_identifier);
-                    if (!dont_push_load) {
+                    if (push_load) {
                         guin_add_Bytecode_one_byte(bytecode, GINSTR_PUSH_LOAD);
                     }
                     break;
@@ -199,29 +203,20 @@ static guin_ExpressionNodeType guin_IR_CONVERT_expression(guin_ExpressionNodeAST
                 case guin_EXPRNODE_LOCAL_IDENTIFIER:
                     guin_add_Bytecode_one_byte(bytecode, GINSTR_LOAD_LOCAL);
                     guin_add_Bytecode_w_byte_size(bytecode, &expr->data.slot_num, sizeof(guin_LOCAL_SLOT_INT));
-                    if (!dont_push_load) {
+                    if (push_load) {
                         guin_add_Bytecode_one_byte(bytecode, GINSTR_PUSH_LOAD);
                     }
                     break;
 
-                default:
-                    guin_log("expr G_IR_CONVERT_expression err %d:%s\n", expr->type, guin_ExpressionNodeType_to_string(expr->type));
-                    x = guin_EXPRNODE_UNINIT;
-                    guin_destroy_Bytecode_ptr(addr_to_bytecode);
-                    return x;
-
+				default: return guin_EXPRNODE_UNINIT;
             }
             break;
         }
-
-        default:
-            printf("err IR CONV RESULT\n");
-            break;
     }
     return x;
 }
 
-static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Bytecode** addr_to_bytecode)
+static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(guin_AST* astnode, guin_Bytecode** addr_to_bytecode)
 {
     if (!addr_to_bytecode || !astnode) return guin_FAIL;
 
@@ -232,7 +227,6 @@ static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Byt
 
             if (ir_tree == guin_EXPRNODE_UNINIT) {
                 guin_log("failed!\n");
-                guin_destroy_Bytecode_ptr(addr_to_bytecode);
                 return guin_FAIL;
             }
 
@@ -264,14 +258,12 @@ static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Byt
             guin_ExpressionNodeType ir_tree = guin_IR_CONVERT_expression(astnode->ifWhileAST.expression->top, addr_to_bytecode, false, true);
             if (ir_tree == guin_EXPRNODE_UNINIT) {
                 guin_log("failed ir tree!\n");
-                guin_destroy_Bytecode_ptr(addr_to_bytecode);
                 return guin_MEM_FAIL;
             }
 
             guin_Bytecode* if_conv = guin_IR_CONVERT_ASTSCOPE(&astnode->ifWhileAST.nodes);
             if (!if_conv) {
                 guin_log("failed to get if conversion!\n");
-                guin_destroy_Bytecode_ptr(addr_to_bytecode);
                 return guin_MEM_FAIL;
             }
 
@@ -316,7 +308,6 @@ static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Byt
             if (ir_tree == guin_EXPRNODE_UNINIT) {
                 guin_log("failed ir tree!\n");
                 guin_destroy_Bytecode_ptr(&ir_tree_bc);
-                guin_destroy_Bytecode_ptr(addr_to_bytecode);
                 return guin_FAIL;
             }
 
@@ -324,7 +315,6 @@ static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Byt
             if (!while_conv) {
                 guin_log("failed to get while conversion!\n");
                 guin_destroy_Bytecode_ptr(&ir_tree_bc);
-                guin_destroy_Bytecode_ptr(addr_to_bytecode);
                 return guin_FAIL;
             }
 
@@ -367,7 +357,6 @@ static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Byt
             if (!scope_conv) {
                 guin_log("failed to get scope conversion!\n");
                 guin_destroy_Bytecode_ptr(&scope_conv);
-                guin_destroy_Bytecode_ptr(addr_to_bytecode);
                 return guin_FAIL;
             }
             guin_add_Bytecode_w_byte_size(*addr_to_bytecode, scope_conv->bytecode, scope_conv->length);
@@ -390,23 +379,26 @@ static guin_STATUS guin_IR_ADD_AST_TO_BYTECODE(const guin_AST* astnode, guin_Byt
             break;
         }
 
-        case guin_ASTNODE_NULL: 
+		case guin_ASTNODE_EXPRESSION: {
+			guin_IR_CONVERT_expression(astnode->expressionAST.top, addr_to_bytecode, false, false);
+			if (astnode->expressionAST.top->type != guin_EXPRNODE_ASSIGN)
+            	guin_add_Bytecode_one_byte(*addr_to_bytecode, (guin_ubyte)GINSTR_POP);
+			break;
+		}
+        
+		case guin_ASTNODE_NULL: 
             return guin_FAIL;
-
         case guin_ASTNODE_BREAK: 
             return guin_FAIL;
-
         case guin_ASTNODE_CONTINUE: 
             return guin_FAIL;
-
         case guin_ASTNODE_IGNORE:
             break;
-
         case guin_ASTNODE_END:
             return guin_FINISHED;
     }
 
-    guin_log("reached the end\n");
+    guin_log("ir astnode converted\n");
     return guin_CONTINUE;
 }
 
@@ -444,7 +436,7 @@ static guin_Bytecode* guin_IR_CONVERT_ASTSCOPE(const guin_ASTScope* astscope)
     return bytecode;
 }
 
-guin_Bytecode* guin_IR_CONVERT(guin_IR* ir, const bool on_global)
+guin_Bytecode* guin_IR_CONVERT(guin_IR* ir)
 {
     guin_ParseState pState = guin_init_ParseState(&ir->source);
     guin_Bytecode* bytecode = guin_init_Bytecode_ptr();

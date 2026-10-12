@@ -36,8 +36,9 @@ typedef enum guin_ExpressionNodeType {
     guin_EXPRNODE_DIV,
     guin_EXPRNODE_POW,
     guin_EXPRNODE_MOD,
-    guin_EXPRNODE_NEG,  // make stuff negative, only on the right side it continues (SHOULD ONLY BE FOR VARIABLES!!! NOT NUMBERS OR INTS)
-    guin_EXPRNODE_CALL, // func call, the right side is where it continues
+    guin_EXPRNODE_NEG,    // make stuff negative, only on the right side it continues (SHOULD ONLY BE FOR VARIABLES!!! NOT NUMBERS OR INTS)
+	guin_EXPRNODE_ASSIGN, // left is to what to be assigned to, right is to what it should be assigned with 
+	guin_EXPRNODE_CALL,   // func call, the right side is where it continues
 
     // MORE OPERATIONS
     guin_EXPRNODE_EQU,
@@ -200,7 +201,7 @@ typedef enum guin_ASTNodeType {
     guin_ASTNODE_CLEAR_LOCAL_SLOT,
 
     guin_ASTNODE_DECLARATION,
-//    guin_ASTNODE_EXPRESSION,
+    guin_ASTNODE_EXPRESSION,
     guin_ASTNODE_IF,
     guin_ASTNODE_WHILE,
     guin_ASTNODE_SCOPE,
@@ -216,6 +217,7 @@ typedef struct guin_AST {
 
     union {
         guin_VariableDeclarationAST declarationAST;
+		guin_ExpressionAST			expressionAST;
         guin_IfWhileAST             ifWhileAST;
         guin_ASTScope               scopeAST;
         guin_ClearLocalSlotAST      clearLocalSlotAST;

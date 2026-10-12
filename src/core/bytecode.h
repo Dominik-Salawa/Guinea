@@ -3,6 +3,7 @@
 
 #include "../../include/declarations.h"
 #include "../etc/strings.h"
+#include "compiler/ast.h"
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -33,7 +34,8 @@ typedef enum GINSTR {
 
     GINSTR_NOT,
     GINSTR_NEG,
-    GINSTR_CALL, // special behavior: itll stop at a certain point, as before the call gets answered the interpreter pushes an EOA (end of args) point, so itll consume all args until that point
+    GINSTR_CALL,
+	GINSTR_POP, // Pop from main stack
 
     GINSTR_AND,
     GINSTR_OR,
@@ -75,7 +77,7 @@ typedef enum GINSTR_Datatype {
 #define guin_is_number_variant(x)   (guin_is_number_or_int(x) || x == GINSTRDATATYPE_BOOL || x == GINSTRDATATYPE_CHAR)
 
 #define guin_underflow_Bytecode(_bytecode_ptr, ptr)          (ptr < _bytecode_ptr->bytecode)
-#define guin_overflow_Bytecode(_bytecode_ptr, ptr)           (ptr >= _bytecode_ptr->bytecode + _bytecode_ptr->size)
+#define guin_overflow_Bytecode(_bytecode_ptr, ptr)           (ptr >= _bytecode_ptr->bytecode + _bytecode_ptr->length)
 #define guin_out_of_bounds_from_Bytecode(_bytecode_ptr, ptr) (guin_overflow_Bytecode(_bytecode_ptr, ptr) || guin_underflow_Bytecode(_bytecode_ptr, ptr))
 
 typedef struct guin_Bytecode {
@@ -97,7 +99,6 @@ void guin_destroy_Bytecode(guin_Bytecode* x);
 void guin_destroy_Bytecode_ptr(guin_Bytecode** x);
 bool guin_print_Bytecode_into_ASM(guin_Bytecode* x);
 
-#include "compiler/ast.h"
 GINSTR_Datatype guin_ASTDatatype_to_Bytecode_Datatype(guin_ASTDatatype x);
 
 #endif

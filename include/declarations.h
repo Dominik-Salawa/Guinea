@@ -33,4 +33,8 @@ guin_number32 guin__NaN__(void);
 #define guin_NaN         (guin__NaN__())
 #define guin_is_NaN(num) (num != num) // according to IEEE 754, a NaN cannot equ to itself
 
+void* guin_malloc(size_t size);
+void* guin_remalloc(void* ptr, size_t size);
+void  guin_mfree(void* ptr);
+
 #endif
