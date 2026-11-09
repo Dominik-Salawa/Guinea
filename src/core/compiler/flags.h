@@ -6,6 +6,7 @@
 
 typedef struct guin_Flags {
 	bool debug;
+	bool shadow;
 } guin_Flags;
 typedef void (*guin_Flag_enable)(guin_Flags*);
 

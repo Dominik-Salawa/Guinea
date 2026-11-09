@@ -5,14 +5,16 @@
 #include "flags.h"
 
 long guin_fprint_Flags(FILE* f, const guin_Flags* flags) 
-	{ return guin_fprintf(f, "| debug: %b\n", flags->debug); }
+	{ return guin_fprintf(f, "| debug: %b\n" "| shadow: %b\n", flags->debug, flags->shadow); }
 long guin_print_Flags(const guin_Flags* flags)
 	{ return guin_fprint_Flags(stdout, flags); }
 
-void guin_debug_enabler(guin_Flags* flags) { flags->debug = true; }
+void guin_debug_enabler(guin_Flags* flags)  { flags->debug = true; }
+void guin_shadow_enabler(guin_Flags* flags) { flags->debug = true; }
 
 guin_Flag_option guin_flag_options[] = {
-	{.long_ver="--debug",.short_ver="-d",.enabler=guin_debug_enabler}
+	{.long_ver="--debug",  .short_ver="-d",  .enabler=guin_debug_enabler },
+	{.long_ver="--shadow", .short_ver="-sh", .enabler=guin_shadow_enabler},
 };
 
 bool guin_set_compiler_flag(const char* arg, guin_Flags* fo)
