@@ -1,5 +1,5 @@
-#ifndef BYTECODE_H
-#define BYTECODE_H
+#ifndef guin_BYTECODE_h
+#define guin_BYTECODE_h
 
 #include "../../include/declarations.h"
 #include "../etc/strings.h"
@@ -24,6 +24,10 @@ typedef enum GINSTR {
     GINSTR_PUSH_LOAD,
     GINSTR_PUSH_IMMEDIATE,
 
+	GINSTR_SET_IREG,
+	GINSTR_PUSH_IREG,
+	GINSTR_POP,
+
     // operations
     GINSTR_ADD = 0x30,
     GINSTR_SUB,
@@ -35,7 +39,6 @@ typedef enum GINSTR {
     GINSTR_NOT,
     GINSTR_NEG,
     GINSTR_CALL,
-	GINSTR_POP, // Pop from main stack
 
     GINSTR_AND,
     GINSTR_OR,

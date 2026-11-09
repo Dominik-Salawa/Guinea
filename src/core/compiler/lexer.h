@@ -39,17 +39,6 @@ typedef enum guin_LexTokenEnum {
     guin_TK_continue,
     guin_TK_break,
 
-    // LOGIC
-    guin_TK_and,
-    guin_TK_or,
-    guin_TK_not,
-    guin_TK_EQU,
-    guin_TK_NOT_EQU,
-    guin_TK_GT,
-    guin_TK_LT,
-    guin_TK_GT_EQU,
-    guin_TK_LT_EQU,
-
     // DATATYPES
     guin_TK_func,
     guin_TK_int,
@@ -60,7 +49,12 @@ typedef enum guin_LexTokenEnum {
     guin_TK_dynamic,
     guin_TK_void,
 
-    // MATH/OPERATIONS
+
+// FOR ADDING OPERATIONS
+// PLEASE UPDATE guin_is_op
+// IN parser.h
+    // OPERATIONS
+	   // arithmetic
     guin_TK_ASSIGN,
     guin_TK_ADD,
     guin_TK_SUB,
@@ -68,6 +62,17 @@ typedef enum guin_LexTokenEnum {
     guin_TK_DIV,
     guin_TK_MOD,
     guin_TK_POW,
+	   // logic
+	guin_TK_and,
+    guin_TK_or,
+    guin_TK_not,
+    guin_TK_EQU,
+    guin_TK_NOT_EQU,
+    guin_TK_GT,
+    guin_TK_LT,
+    guin_TK_GT_EQU,
+    guin_TK_LT_EQU,
+
     guin_TK_PARENTHESIS_L,
     guin_TK_PARENTHESIS_R,
     guin_TK_HASH,

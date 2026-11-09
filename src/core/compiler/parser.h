@@ -72,4 +72,6 @@ void guin_advance_parser(guin_ParseState* pState);
 //guin_ExpressionAST* guin_get_function_args_in_expression_parser(guin_ParseState* pState);
 guin_AST* guin_parse_segment(guin_ParseState* pState, const guin_LexTokenEnum ending, const bool is_global_scope);
 
+#define guin_is_op(LexTokenType) (LexTokenType <= guin_TK_LT_EQU && LexTokenType >= guin_TK_ASSIGN)
+
 #endif

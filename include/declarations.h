@@ -1,7 +1,8 @@
 #ifndef guin_DECLARATIONS_h
 #define guin_DECLARATIONS_h
 
-#include <inttypes.h>
+#include <stdint.h>
+#include <stddef.h>
 #include <math.h>
 
 typedef unsigned char guin_uchar;

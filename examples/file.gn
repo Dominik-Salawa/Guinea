@@ -3,7 +3,11 @@ var area_of_circle: int = 0;
 var r: int = 5
 
 var i: int = 0
-while i < 10^5 {
+while i < 10^5: {
 	//i = i + 1
 	var d: int = area_of_circle + pi*r^2
+}
+
+for var i: int = 0; i < 10; ++i: {
+	printf("Hi\n")
 }

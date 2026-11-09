@@ -1,0 +1,9 @@
+include <stdlib/io>
+
+func main(void): int
+{
+	File x = open("me", IoPerm_write)
+	write(x, "Hello, World!\n")
+	close(x)
+	return 0
+}

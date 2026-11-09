@@ -1,0 +1,8 @@
+// (guin_ExpressionAST == NULL)? "mem fail" : "safe"
+// (guin_ExpressionAST->top == NULL)? "no tree to begin with" : "safe"
+
+func guin_parse_expression
+	(var pState: &guin_ParserState, const ending: guin_LexType) -> &guin_ExpressionAST
+{
+	...
+}

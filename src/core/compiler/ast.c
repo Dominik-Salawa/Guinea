@@ -1,5 +1,5 @@
-#ifndef AST_C
-#define AST_C
+#ifndef guin_AST_c
+#define guin_AST_c
 
 #include "ast.h"
 #include "../../etc/strings.h"
@@ -28,9 +28,9 @@ char* guin_ASTDatatype_to_string(guin_ASTDatatype dt)
 
 
 
-guin_byte guin_get_pathway_count_of_ExpressionNodeAST(guin_ExpressionNodeType type)
+int guin_get_pathway_count_of_ExpressionNodeAST(guin_ExpressionNodeType type)
 {
-    guin_byte pathways;
+    int pathways;
     switch (type)
     {
         case guin_EXPRNODE_ADD:          	  pathways = 2; break;
@@ -55,7 +55,6 @@ guin_byte guin_get_pathway_count_of_ExpressionNodeAST(guin_ExpressionNodeType ty
         case guin_EXPRNODE_NEG:          	  pathways = 1; break;
         case guin_EXPRNODE_NOT:          	  pathways = 1; break;
         case guin_EXPRNODE_CALL:         	  pathways = 1; break;
-        case guin_EXPRNODE_PARENTHESIS:  	  pathways = 1; break;
 
 		case guin_EXPRNODE_INT: 		 	  pathways = 0; break;
 		case guin_EXPRNODE_NUMBER: 		 	  pathways = 0; break;
@@ -68,6 +67,7 @@ guin_byte guin_get_pathway_count_of_ExpressionNodeAST(guin_ExpressionNodeType ty
 		case guin_EXPRNODE_NIL:				  pathways = 0; break;
 
 		case guin_EXPRNODE_UNINIT:			  pathways = 0; break;
+		default: pathways = 0;
     }
     return pathways;
 }
@@ -107,11 +107,19 @@ char* guin_ExpressionNodeType_to_string(guin_ExpressionNodeType dt)
         case guin_EXPRNODE_GLOBAL_IDENTIFIER:    return "(global identifier)";
         case guin_EXPRNODE_LOCAL_IDENTIFIER:     return "(local identifier)";
         case guin_EXPRNODE_NIL:                  return "nil";
-		case guin_EXPRNODE_PARENTHESIS:		     return "(...)";
     }
 	return "(null)";
 }
 
+
+
+guin_ExpressionNodeAST*
+guin_init_ExpressionNodeAST_ptr(void)
+{
+	guin_ExpressionNodeAST* x = guin_malloc(sizeof(guin_ExpressionNodeAST));
+	if (x) *x = (guin_ExpressionNodeAST){0};
+	return x;
+}
 
 
 
@@ -278,13 +286,6 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
             guin_log_pop_layer();
             return;
 
-        case guin_EXPRNODE_PARENTHESIS:
-            guin_log("(...)\n");
-            guin_log_push_layer();
-            guin_log_ExpressionNodeAST(x->right);
-            guin_log_pop_layer();
-            return;
-
         case guin_EXPRNODE_CALL:
             guin_log("(");
 
@@ -436,10 +437,6 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
                 guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
                 break;
 
-            case guin_EXPRNODE_PARENTHESIS:
-                guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
-                break;
-
             case guin_EXPRNODE_CALL:
                 guin_destroy_ExprFuncCallAST(&tmp->data.exprFuncCallAST);
                 guin_log_ExpressionNodeAST(tmp->right);
@@ -483,7 +480,7 @@ void guin_destroy_ExpressionAST(guin_ExpressionAST* x)
 {
     if (!x) return;
     guin_destroy_ExpressionNodeAST_ptr(&x->top);
-    x->fail = false;
+    *x = (guin_ExpressionAST){0};
 }
 
 void guin_destroy_ExpressionAST_ptr(guin_ExpressionAST** x)
