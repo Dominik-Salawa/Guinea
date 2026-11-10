@@ -10,7 +10,7 @@ typedef struct guin_AST guin_AST;
 typedef struct guin_ASTScope guin_ASTScope;
 
 typedef enum guin_ASTDatatype {
-    guin_ASTDATATYPE_ERR = 0, // FOR ERRORS
+    guin_ASTDATATYPE_NULL = 0, // FOR ERRORS
     guin_ASTDATATYPE_VOID,
     guin_ASTDATATYPE_NIL,
     guin_ASTDATATYPE_INT,
@@ -88,6 +88,7 @@ typedef struct guin_ExprFuncCallAST {
 guin_ExprFuncCallAST guin_init_ExprFuncCallAST(void);
 bool guin_add_ExpressionAST_ptr_to_ExprFuncCallAST(guin_ExprFuncCallAST* x, guin_ExpressionAST* toadd);
 void guin_destroy_ExprFuncCallAST(guin_ExprFuncCallAST* x);
+void guin_destroy_ExprFuncCallAST_ptr(guin_ExprFuncCallAST** x);
 
 
 typedef struct guin_FuncArgsAST {
@@ -106,13 +107,16 @@ typedef struct FunctionAST {
 } guin_FunctionAST;
 guin_FunctionAST guin_init_FunctionAST(void);
 void guin_destroy_FunctionAST(guin_FunctionAST* x);
+void guin_destroy_FunctionAST_ptr(guin_FunctionAST** x);
 
 
 typedef struct guin_ExpressionNodeAST {
     struct guin_ExpressionNodeAST* left;
     struct guin_ExpressionNodeAST* right;
+    struct guin_ExpressionNodeAST* prev;
     guin_ExpressionNodeType type;
 
+	bool fail;
 	bool empty;
 	bool is_parenthesis;
 
@@ -125,14 +129,14 @@ typedef struct guin_ExpressionNodeAST {
 	*/
 
     union {
-        guin_number64 number;
-        guin_int64  integer;
-        guin_String string_identifier;
-        guin_LOCAL_SLOT_INT slot_num;
-        char ch;
-        bool bl;
-        guin_FunctionAST     function;
-        guin_ExprFuncCallAST exprFuncCallAST;
+        guin_number64 		  number;
+        guin_int64            integer;
+        guin_String*          string_identifier;
+        guin_LOCAL_SLOT_INT   slot_num;
+        char 				  ch;
+        bool 				  bl;
+        guin_FunctionAST*     function;
+        guin_ExprFuncCallAST* exprFuncCallAST;
     } data;
 } guin_ExpressionNodeAST;
 guin_ExpressionNodeAST* guin_init_ExpressionNodeAST_ptr(void);
@@ -141,8 +145,9 @@ void guin_destroy_ExpressionNodeAST(guin_ExpressionNodeAST* x);
 void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x);
 
 typedef struct guin_ExpressionAST {
-    bool incomplete;
+    bool incomplete; // the tree ended abruptly
     bool empty; // there was no tree to begin with
+    bool fail; // failed to parse it
     bool is_parenthesis; // for the function guin_eval_expression_parser so it can correctly identify instead of mistaking for wrong precendence
     guin_ExpressionNodeAST* top;
 } guin_ExpressionAST;

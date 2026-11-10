@@ -12,7 +12,7 @@ char* guin_ASTDatatype_to_string(guin_ASTDatatype dt)
 {
     switch (dt)
     {
-        case guin_ASTDATATYPE_ERR:          return "err";
+        case guin_ASTDATATYPE_NULL:         return "null";
         case guin_ASTDATATYPE_NIL:          return "nil";
         case guin_ASTDATATYPE_INT:          return "int";
         case guin_ASTDATATYPE_NUMBER:       return "number";
@@ -289,10 +289,10 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
         case guin_EXPRNODE_CALL:
             guin_log("(");
 
-            for (size_t i = 0; i < x->data.exprFuncCallAST.expression_args_length; i++){
-                guin_log_ExpressionNodeAST(x->data.exprFuncCallAST.expression_args[i]->top);
+            for (size_t i = 0; i < x->data.exprFuncCallAST->expression_args_length; i++){
+                guin_log_ExpressionNodeAST(x->data.exprFuncCallAST->expression_args[i]->top);
 
-                if (i != x->data.exprFuncCallAST.expression_args_length-1)
+                if (i != x->data.exprFuncCallAST->expression_args_length-1)
                     guin_log(", ");
             }
 
@@ -316,11 +316,11 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
             return;
 
         case guin_EXPRNODE_STRING:
-            guin_log("\"%s\"\n", x->data.string_identifier.content);
+            guin_log("\"%s\"\n", x->data.string_identifier->content);
             return;
 
         case guin_EXPRNODE_GLOBAL_IDENTIFIER:
-            guin_log("(global) %s\n", x->data.string_identifier.content);
+            guin_log("(global) %s\n", x->data.string_identifier->content);
             return;
 
         case guin_EXPRNODE_LOCAL_IDENTIFIER:
@@ -438,7 +438,7 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
                 break;
 
             case guin_EXPRNODE_CALL:
-                guin_destroy_ExprFuncCallAST(&tmp->data.exprFuncCallAST);
+                guin_destroy_ExprFuncCallAST_ptr(&tmp->data.exprFuncCallAST);
                 guin_log_ExpressionNodeAST(tmp->right);
                 guin_destroy_ExpressionNodeAST_ptr(&tmp->right);
                 break;
@@ -450,18 +450,18 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
             case guin_EXPRNODE_NUMBER:   break;
 
             case guin_EXPRNODE_STRING:
-                guin_clearstring(&tmp->data.string_identifier);
+                guin_clearstring(tmp->data.string_identifier);
                 break;
 
             case guin_EXPRNODE_GLOBAL_IDENTIFIER:
-                guin_clearstring(&tmp->data.string_identifier);
+                guin_clearstring(tmp->data.string_identifier);
                 break;
 
             case guin_EXPRNODE_LOCAL_IDENTIFIER:
                 break;
 
             case guin_EXPRNODE_FUNCTION_LITERAL:
-                guin_destroy_FunctionAST(&tmp->data.function);
+                guin_destroy_FunctionAST_ptr(&tmp->data.function);
                 break;
         }
     }
@@ -505,7 +505,7 @@ void guin_destroy_VariableInfoAST(guin_VariableInfoAST* x)
 {
     if (!x) return;
     guin_clearstring(&x->identifier);
-    x->datatype = guin_ASTDATATYPE_ERR;
+    x->datatype = guin_ASTDATATYPE_NULL;
 }
 
 
@@ -547,6 +547,12 @@ void guin_destroy_ExprFuncCallAST(guin_ExprFuncCallAST* x)
     }
     x->expression_args_length = 0;
 }
+void guin_destroy_ExprFuncCallAST_ptr(guin_ExprFuncCallAST** x)
+{
+    if (!x) return;
+	guin_destroy_ExprFuncCallAST(*x);
+	*x = NULL;
+}
 
 guin_FunctionAST guin_init_FunctionAST(void)
 {
@@ -564,6 +570,13 @@ void guin_destroy_FunctionAST(guin_FunctionAST* x)
     guin_clearstring_ptr(&x->name);
     x->args.length = 0;
     x->args.size   = 0;
+}
+void guin_destroy_FunctionAST_ptr(guin_FunctionAST** x)
+{
+    if (!x) return;
+    guin_destroy_FunctionAST(*x);
+	free(*x);
+	*x = NULL;
 }
 bool guin_add_arg_to_FunctionAST(guin_FunctionAST* x, guin_ASTDatatype datatype)
 {

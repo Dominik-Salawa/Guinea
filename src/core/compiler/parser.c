@@ -125,6 +125,11 @@ bool guin_add_ParseScopeNode_variable(guin_ParseState* pState, guin_String* iden
 {
     if (!pState || !identifier) return false;
 
+	if (identifier->length == 0) {
+		guin_log("identifier has no length!\n");
+		return false;
+	}
+
     if (!pState->scope_top) {
         guin_log("there is no scope top!\n");
         return false;
@@ -199,7 +204,7 @@ guin_ParseState guin_init_ParseState(guin_String* file_content)
 {
     guin_ParseState x = {0};
     x.lState = guin_init_LexState(file_content);
-    x.scope_top = guin_init_ParseScopeNode_ptr(guin_SCOPE_GLOBAL, guin_ASTDATATYPE_ERR);
+    x.scope_top = guin_init_ParseScopeNode_ptr(guin_SCOPE_GLOBAL, guin_ASTDATATYPE_NULL);
     x.scope_base_aka_global = x.scope_top;
     return x;
 }

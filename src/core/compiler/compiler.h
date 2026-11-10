@@ -6,6 +6,9 @@
 typedef struct guin_Compiler {
 	char* filename;
 	guin_Flags flags;
+
+	guin_ParseState pState;
+	guin_IR ir;
 } guin_Compiler;
 
 #endif

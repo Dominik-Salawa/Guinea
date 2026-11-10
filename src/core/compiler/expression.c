@@ -1,9 +1,9 @@
 #include "ast.h"
 #include "parser.h"
 
-#define prev    (pState->prev)
-#define current (pState->current)
-#define ahead   (pState->ahead)
+#define previous (pState->prev)
+#define current  (pState->current)
+#define ahead    (pState->ahead)
 
 guin_ExpressionNodeAST*
 guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_scope)
@@ -17,6 +17,36 @@ guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_
 			x->type = guin_EXPRNODE_INT;
 			x->data.integer = current.integer;
 			break;
+
+		case guin_TK_Identifier: {
+			if (in_global_scope) {
+				x->fail = true;
+				pState->errmsg = "Global expressions can only have immediate values!";
+				break;
+			}
+
+			guin_VariableInfoAST* info = guin_get_var_info(pState, current.string.content);
+			if (!info) {
+				x->fail = true;
+				pState->errmsg = "Identifier does not exist!";
+				break;
+			}
+
+			if (info->slot == 0) {
+				x->type = guin_EXPRNODE_GLOBAL_IDENTIFIER;
+				guin_String* str = guin_copystring_as_ptr(&current.string);
+				if (!str) {
+					guin_destroy_ExpressionNodeAST_ptr(&x);
+					return NULL;
+				}
+				x->data.string_identifier = str;
+			} else {
+				x->type = guin_EXPRNODE_LOCAL_IDENTIFIER;
+				x->data.slot_num = info->slot;
+			}
+
+			break;
+		}
 
 		default:
 			x->empty = true;
@@ -32,9 +62,9 @@ guin_eval_expression_section_parser(guin_ParseState* pState, const bool in_globa
 	guin_ExpressionNodeAST* value = guin_eval_expression_value_parser(pState, in_global_scope);
 	if (!value) return NULL;
 	if (value->empty) return value;
+	if (value->fail)  return value;
 
 	if (guin_is_op(ahead.type)) {
-		printf("op ahead\n");
 		guin_advance_parser(pState);
 
 		guin_ExpressionNodeAST* x = guin_init_ExpressionNodeAST_ptr();
@@ -63,13 +93,24 @@ guin_eval_expression_parser(guin_ParseState* pState, const bool in_global_scope)
 	return the tree
 
 	*/
+
 	guin_ExpressionAST* tree = guin_init_ExpressionAST_ptr();
 	if (!tree) return NULL;
 
 	guin_ExpressionNodeAST* root = guin_eval_expression_section_parser(pState, in_global_scope);
 	if (!root) return NULL;
 
-	if (root->empty) {
+	if (root->fail) {
+		// errorpoint
+		guin_destroy_ExpressionNodeAST_ptr(&root);
+
+		guin_ExpressionAST* final = guin_init_ExpressionAST_ptr();
+		if (!final) return NULL;
+
+		final->fail = true;
+		return final;
+	}
+	else if (root->empty) {
 		// errorpoint
 		guin_destroy_ExpressionNodeAST_ptr(&root);
 
@@ -100,7 +141,6 @@ guin_eval_expression_parser(guin_ParseState* pState, const bool in_global_scope)
 		guin_ExpressionNodeAST* chain = guin_eval_expression_section_parser(pState, in_global_scope);
 		if (!chain) {
 			guin_destroy_ExpressionNodeAST_ptr(&root);
-
 			return NULL;
 		}
 		if (chain->empty) {
@@ -110,21 +150,44 @@ guin_eval_expression_parser(guin_ParseState* pState, const bool in_global_scope)
 			tree->incomplete = true;
 			break;
 		}
+		if (chain->fail) {
+			guin_destroy_ExpressionNodeAST_ptr(&chain);
+			// errorpoint
+			guin_destroy_ExpressionNodeAST_ptr(&root);
+			tree->fail = true;
+			break;
+		}
 
 		int x = guin_get_Precedence_level(current_place->type);
 		int y = guin_get_Precedence_level(chain->type);
 
 		if (y == 0 || chain->is_parenthesis) {
 			current_place->right = chain;
+			chain->prev = current_place;
 			break;
 		}
 		else if (x >= y) {
 			current_place->right = chain->left;
-			chain->left = root;
-			root = current_place = chain;
-		} 
+
+			guin_ExpressionNodeAST* to_be_ahead = current_place;
+			while (to_be_ahead->prev && y < guin_get_Precedence_level(to_be_ahead->prev->type))
+				to_be_ahead = to_be_ahead->prev;
+
+			chain->left = to_be_ahead;
+			chain->prev = to_be_ahead->prev;
+			to_be_ahead->prev = chain;
+
+			current_place = chain;
+			if (current_place->prev == NULL) 
+				root = current_place;
+			else if (current_place->prev->left == to_be_ahead)
+				current_place->prev->left = current_place;
+			else // has to be (current_place->prev->right == to_be_ahead)
+				current_place->prev->right = current_place;
+		}
 		else { // x < y
 			current_place->right = chain;
+			chain->prev = current_place;
 			current_place = chain;
 		}
 	} while (true);
