@@ -10,6 +10,6 @@
 #include "compiler/lexer.h"
 #include "compiler/ast.h"
 #include "compiler/parser.h"
-#include "compiler/ir.h"
+#include "compiler/expressions.h"
 
 #endif

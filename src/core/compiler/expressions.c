@@ -1,5 +1,6 @@
 #include "ast.h"
 #include "parser.h"
+#include "expressions.h"
 
 #define previous (pState->prev)
 #define current  (pState->current)
@@ -13,9 +14,32 @@ guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_
 	guin_ExpressionNodeAST* x = guin_init_ExpressionNodeAST_ptr();
 	switch (current.type) 
 	{
+		case guin_TK_nil:
+			x->type = guin_EXPRNODE_NIL;
+			break;
+
 		case guin_TK_Int_val:
 			x->type = guin_EXPRNODE_INT;
 			x->data.integer = current.integer;
+			break;
+
+		case guin_TK_Number_val:
+			x->type = guin_EXPRNODE_NUMBER;
+			x->data.number = current.number;
+			break;
+
+		case guin_TK_Bool_val:
+			x->type = guin_EXPRNODE_BOOL;
+			x->data.bl = current.bl;
+			break;
+
+		case guin_TK_String_val:
+			x->type = guin_EXPRNODE_STRING;
+			x->data.string = guin_copystring_as_ptr(&current.string);
+			if (!x->data.string) {
+				guin_destroy_ExpressionNodeAST_ptr(&x);
+				return NULL;
+			}
 			break;
 
 		case guin_TK_Identifier: {
@@ -39,7 +63,7 @@ guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_
 					guin_destroy_ExpressionNodeAST_ptr(&x);
 					return NULL;
 				}
-				x->data.string_identifier = str;
+				x->data.string = str;
 			} else {
 				x->type = guin_EXPRNODE_LOCAL_IDENTIFIER;
 				x->data.slot_num = info->slot;
@@ -166,13 +190,15 @@ guin_eval_expression_parser(guin_ParseState* pState, const bool in_global_scope)
 			chain->prev = current_place;
 			break;
 		}
-		else if (x >= y) {
+		// for x = a = 5, we want to make it so its a below to tree so it gets evaluated first
+		else if (x >= y && !(current_place->type == guin_EXPRNODE_ASSIGN && chain->type == guin_EXPRNODE_ASSIGN)) {
 			current_place->right = chain->left;
 
 			guin_ExpressionNodeAST* to_be_ahead = current_place;
 			while (to_be_ahead->prev && y < guin_get_Precedence_level(to_be_ahead->prev->type))
 				to_be_ahead = to_be_ahead->prev;
 
+			
 			chain->left = to_be_ahead;
 			chain->prev = to_be_ahead->prev;
 			to_be_ahead->prev = chain;
@@ -185,7 +211,7 @@ guin_eval_expression_parser(guin_ParseState* pState, const bool in_global_scope)
 			else // has to be (current_place->prev->right == to_be_ahead)
 				current_place->prev->right = current_place;
 		}
-		else { // x < y
+		else { // x < y || (current_place->type == guin_EXPRNODE_ASSIGN && chain->type == guin_EXPRNODE_ASSIGN)
 			current_place->right = chain;
 			chain->prev = current_place;
 			current_place = chain;

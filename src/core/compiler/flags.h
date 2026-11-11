@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct guin_Flags {
 	bool debug;
@@ -20,6 +21,7 @@ long guin_fprint_Flags(FILE* f, const guin_Flags* flags);
 long guin_print_Flags(const guin_Flags* flags);
 bool guin_set_compiler_flag(const char* arg, guin_Flags* fo);
 
-extern guin_Flag_option guin_flag_options[];
+extern const guin_Flag_option guin_flag_options[];
+extern const size_t guin_flag_options_size;
 
 #endif

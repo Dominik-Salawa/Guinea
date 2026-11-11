@@ -4,6 +4,8 @@
 #include "../include/declarations.h"
 #include <stdlib.h>
 
+size_t MAX_NAMESPACE_DEPTH = 10;
+
 guin_number32 guin__NaN__(void)
 {
     union {

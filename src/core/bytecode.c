@@ -655,7 +655,7 @@ GINSTR_Datatype guin_ASTDatatype_to_Bytecode_Datatype(guin_ASTDatatype x)
         case guin_ASTDATATYPE_CHAR:          return GINSTRDATATYPE_CHAR;
         case guin_ASTDATATYPE_FUNCTION:      return GINSTRDATATYPE_FUNCTION;
         case guin_ASTDATATYPE_DYNAMIC:       return GINSTRDATATYPE_DYNAMIC;
-		case guin_ASTDATATYPE_ERR:			 return GINSTRDATATYPE_NULL;
+		case guin_ASTDATATYPE_NULL:			 return GINSTRDATATYPE_NULL;
 		case guin_ASTDATATYPE_VOID:			 return GINSTRDATATYPE_VOID;
     }
 	return GINSTRDATATYPE_NULL;

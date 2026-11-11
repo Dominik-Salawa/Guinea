@@ -64,8 +64,8 @@ char* guin_LexTokenEnum_to_string(guin_LexTokenEnum e)
         case guin_TK_NOT_EQU:        return "!=";
         case guin_TK_LT_EQU:         return "<=";
         case guin_TK_GT_EQU:         return ">=";
-        case guin_TK_and:            return "and";
-        case guin_TK_or:             return "or";
+        case guin_TK_and:            return "&&";
+        case guin_TK_or:             return "||";
 
         case guin_TK_CURLY_L:        return "{";
         case guin_TK_CURLY_R:        return "}";
@@ -113,8 +113,6 @@ static const struct guin_LexNodeStringToEnumData stringtoken[] = {
     {.string="while",       .type=guin_TK_while},
     {.string="for",         .type=guin_TK_for},
     {.string="not",         .type=guin_TK_not},
-    {.string="and",         .type=guin_TK_and},
-    {.string="or",          .type=guin_TK_or},
     {.string="continue",    .type=guin_TK_continue},
     {.string="break",       .type=guin_TK_break},
     {.string="return",      .type=guin_TK_return},
@@ -158,6 +156,8 @@ static const struct guin_DoubleOperationChar doublechartoken[] = {
     {.f_ch='!', .s_ch='=',      .type=guin_TK_NOT_EQU},
     {.f_ch='<', .s_ch='=',      .type=guin_TK_LT_EQU},
     {.f_ch='>', .s_ch='=',      .type=guin_TK_GT_EQU},
+    {.f_ch='&', .s_ch='&',      .type=guin_TK_and},
+    {.f_ch='|', .s_ch='|',      .type=guin_TK_or},
 };
 
 static void guin_set_token_type(guin_LexToken* token, guin_LexState* lState) // for true/false also converts into right datatype
@@ -398,22 +398,33 @@ static void guin_parse_lexer_string(guin_LexState* lState, guin_LexToken* lToken
 
 
 
-guin_LexState guin_init_LexState(guin_String* file_content)
+bool guin_init_LexState(guin_LexState* lState, guin_String* file_content)
 {
     guin_LexState x;
 
     x.current_column = 1;
     x.current_line   = 1;
 
-    x.string         = file_content->content;
+	char* str = guin_malloc(file_content->length+1);
+	if (!str) return false;
+
+	for (size_t i = 0; i < file_content->length; ++i)
+		str[i] = file_content->content[i];
+	str[file_content->length] = 0;
+
+    x.string         = str;
     x.str_length     = file_content->length;
     x.index          = 0;
 
     x.errmsg         = NULL;
-
-    return x;
+	
+	*lState = x;
+    return true;
 }
-
+void guin_destroy_LexState(guin_LexState* x)
+{
+	guin_mfree(x->string);
+}
 
 
 

@@ -9,13 +9,14 @@ long guin_fprint_Flags(FILE* f, const guin_Flags* flags)
 long guin_print_Flags(const guin_Flags* flags)
 	{ return guin_fprint_Flags(stdout, flags); }
 
-void guin_debug_enabler(guin_Flags* flags)  { flags->debug = true; }
-void guin_shadow_enabler(guin_Flags* flags) { flags->debug = true; }
+void guin_debug_enabler(guin_Flags* flags)    { flags->debug = true; }
+void guin_shadow_enabler(guin_Flags* flags)   { flags->debug = true; }
 
-guin_Flag_option guin_flag_options[] = {
-	{.long_ver="--debug",  .short_ver="-d",  .enabler=guin_debug_enabler },
-	{.long_ver="--shadow", .short_ver="-sh", .enabler=guin_shadow_enabler},
+const guin_Flag_option guin_flag_options[] = {
+	{.long_ver="--debug",   .short_ver="-d",   .enabler=guin_debug_enabler },
+	{.long_ver="--shadow",  .short_ver="-sh",  .enabler=guin_shadow_enabler},
 };
+const size_t guin_flag_options_size = sizeof(guin_flag_options)/sizeof(guin_Flag_option);
 
 bool guin_set_compiler_flag(const char* arg, guin_Flags* fo)
 {

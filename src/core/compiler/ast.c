@@ -199,7 +199,7 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
         ///
 
         case guin_EXPRNODE_AND:
-            guin_log("and\n");
+            guin_log("&&\n");
             guin_log_push_layer();
             guin_log_ExpressionNodeAST(x->right);
             guin_log_ExpressionNodeAST(x->left);
@@ -207,7 +207,7 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
             return;
 
         case guin_EXPRNODE_OR:
-            guin_log("or\n");
+            guin_log("||\n");
             guin_log_push_layer();
             guin_log_ExpressionNodeAST(x->right);
             guin_log_ExpressionNodeAST(x->left);
@@ -316,11 +316,11 @@ void guin_log_ExpressionNodeAST(guin_ExpressionNodeAST* x)
             return;
 
         case guin_EXPRNODE_STRING:
-            guin_log("\"%s\"\n", x->data.string_identifier->content);
+            guin_log("\"%s\"\n", x->data.string->content);
             return;
 
         case guin_EXPRNODE_GLOBAL_IDENTIFIER:
-            guin_log("(global) %s\n", x->data.string_identifier->content);
+            guin_log("(global) %s\n", x->data.identifier->content);
             return;
 
         case guin_EXPRNODE_LOCAL_IDENTIFIER:
@@ -450,11 +450,11 @@ void guin_destroy_ExpressionNodeAST_ptr(guin_ExpressionNodeAST** x)
             case guin_EXPRNODE_NUMBER:   break;
 
             case guin_EXPRNODE_STRING:
-                guin_clearstring(tmp->data.string_identifier);
+                guin_clearstring_ptr(&tmp->data.string);
                 break;
 
             case guin_EXPRNODE_GLOBAL_IDENTIFIER:
-                guin_clearstring(tmp->data.string_identifier);
+                guin_clearstring_ptr(&tmp->data.string);
                 break;
 
             case guin_EXPRNODE_LOCAL_IDENTIFIER:
@@ -575,7 +575,7 @@ void guin_destroy_FunctionAST_ptr(guin_FunctionAST** x)
 {
     if (!x) return;
     guin_destroy_FunctionAST(*x);
-	free(*x);
+	guin_mfree(*x);
 	*x = NULL;
 }
 bool guin_add_arg_to_FunctionAST(guin_FunctionAST* x, guin_ASTDatatype datatype)

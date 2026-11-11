@@ -48,7 +48,6 @@ void guin_clearstring(guin_String* str)
     }
 }
 
-// THIS IS IF YOU WANT TO guin_mfree() A PTR STRING
 void guin_clearstring_ptr(guin_String** str)
 {
     if (!str) return;

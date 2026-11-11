@@ -9,6 +9,6 @@
 #include "compiler/lexer.c"
 #include "compiler/ast.c"
 #include "compiler/parser.c"
-#include "compiler/ir.c"
+#include "compiler/expressions.c"
 
 #endif

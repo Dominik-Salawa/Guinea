@@ -3,7 +3,10 @@ include <stdlib/io>
 func main(void): int
 {
 	File x = open("me", IoPerm_write)
+	if (!x) return 1
+
 	write(x, "Hello, World!\n")
 	close(x)
+	
 	return 0
 }

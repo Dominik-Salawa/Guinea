@@ -131,7 +131,8 @@ typedef struct guin_ExpressionNodeAST {
     union {
         guin_number64 		  number;
         guin_int64            integer;
-        guin_String*          string_identifier;
+        guin_String*          string;
+        guin_String*          identifier;
         guin_LOCAL_SLOT_INT   slot_num;
         char 				  ch;
         bool 				  bl;
@@ -224,7 +225,7 @@ typedef enum guin_ASTNodeType {
 
 typedef struct guin_AST {
     guin_ASTNodeType nodetype;
-    bool error;
+    bool fail;
 
     union {
         guin_VariableDeclarationAST declarationAST;

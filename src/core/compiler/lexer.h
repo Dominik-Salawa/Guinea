@@ -39,6 +39,9 @@ typedef enum guin_LexTokenEnum {
     guin_TK_continue,
     guin_TK_break,
 
+    guin_TK_namespace,
+    guin_TK_class,
+
     // DATATYPES
     guin_TK_func,
     guin_TK_int,
@@ -83,6 +86,7 @@ typedef enum guin_LexTokenEnum {
     guin_TK_CURLY_L,
     guin_TK_CURLY_R,
     guin_TK_COMMA,
+	guin_TK_MACRO_ARG_SPLIT,
 
     // MISC
     guin_TK_EOF,
@@ -118,8 +122,9 @@ typedef struct {
 
 char* guin_LexTokenEnum_to_string(guin_LexTokenEnum e);
 
-guin_LexState guin_init_LexState(guin_String* file_content);
+bool guin_init_LexState(guin_LexState* lState, guin_String* file_content);
 guin_LexToken guin_advance_lexer(guin_LexState* lState);
 void          guin_destroy_LexToken(guin_LexToken* lToken);
+void guin_destroy_LexState(guin_LexState* x);
 
 #endif
