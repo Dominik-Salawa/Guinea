@@ -95,46 +95,79 @@ guin_AST* guin_eval_namespace_parser(guin_ParseState* pState, const bool in_glob
 	return NULL;
 }
 
+typedef guin_AST* (*guin_EvalFunc)(guin_ParseState* pState, const bool in_global_scope);
+#define guin_CAN_IN_GLOBAL_SCOPE (1)
+#define guin_CAN_IN_LOCAL_SCOPE  (2)
+#define guin_CAN_IN_BOTH_SCOPE   (3)
+
+typedef struct guin_ParseEvalLog {
+	const guin_EvalFunc func;
+	const guin_ubyte status;
+} guin_ParseEvalLog;
+
+const static guin_ParseEvalLog parse_table[256] = {
+	[guin_TK_var]       = {guin_eval_variable_parser,  guin_CAN_IN_BOTH_SCOPE},
+	[guin_TK_namespace] = {guin_eval_namespace_parser, guin_CAN_IN_GLOBAL_SCOPE},
+};
+
 guin_AST* guin_parse_segment(guin_ParseState* pState, const bool in_global_scope)
 {
-	guin_advance_parser(pState);
+	if (!guin_advance_parser(pState))
+		return NULL;
 
-	switch (guin_pState_current.type)
-	{
-		case guin_TK_var:
-			return guin_eval_variable_parser(pState, in_global_scope);
-		case guin_TK_namespace:
-			return guin_eval_namespace_parser(pState, in_global_scope);
-
-		default: {
-			guin_AST* x = guin_init_AST_ptr(guin_ASTNODE_EXPRESSION);
-			if (!x) return NULL;
-
-			guin_ExpressionAST* expr = guin_eval_expression_parser(pState, in_global_scope);
-			if (!expr) {
-				guin_destroy_AST_ptr(&x);
-				return NULL;
-			}
-			else if (expr->empty) {
-				pState->errmsg = "Failed to fetch a statement!";
-				x->fail = true;
-				return x;
-			}
-			else if (expr->incomplete) {
-				pState->errmsg = "Expression was left incomplete!";
-				x->fail = true;
-				return x;
-			}
-			else if (expr->fail) {
-				x->fail = true;
-				return x;
-			}
-
-			x->expressionAST = *expr;
-			guin_mfree(expr);
+	guin_ParseEvalLog entry = parse_table[pState->current.type];
+	if (entry.func) {
+		// if its allowed in global scopes
+		if (!(entry.status & guin_CAN_IN_GLOBAL_SCOPE) && in_global_scope) {
+			pState->errmsg = "Cannot use a statement in a global space!";
+			guin_AST* x = guin_init_AST_ptr(guin_ASTNODE_NULL);
+			if (x) x->fail = true; 
 			return x;
 		}
+
+		// if its allowed in local scopes
+		if (!(entry.status & guin_CAN_IN_LOCAL_SCOPE) && !in_global_scope) {
+			pState->errmsg = "Cannot use a statement in a local space!";
+			guin_AST* x = guin_init_AST_ptr(guin_ASTNODE_NULL);
+			if (x) x->fail = true; 
+			return x;
+		}
+
+		return entry.func(pState, in_global_scope);
 	}
+	// else if see if its an expression, if not, fail
+
+	guin_AST* x = guin_init_AST_ptr(guin_ASTNODE_EXPRESSION);
+	if (!x) return NULL;
+
+	guin_ExpressionAST* expr = guin_eval_expression_parser(pState, in_global_scope);
+	if (!expr) {
+		guin_destroy_AST_ptr(&x);
+		return NULL;
+	}
+	else if (expr->empty) {
+		pState->errmsg = "Failed to fetch a statement!";
+		x->fail = true;
+		return x;
+	}
+	else if (in_global_scope) {
+		pState->errmsg = "Expressions are not allowed in global scopes!";
+		x->fail = true;
+		return x;
+	}
+	else if (expr->incomplete) {
+		pState->errmsg = "Expression was left incomplete!";
+		x->fail = true;
+		return x;
+	}
+	else if (expr->fail) {
+		x->fail = true;
+		return x;
+	}
+
+	x->expressionAST = *expr;
+	guin_mfree(expr);
+	return x;
 }
 
 #endif

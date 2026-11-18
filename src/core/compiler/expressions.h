@@ -9,5 +9,6 @@
 // If it is returned as incomplete, it means it was able to chain for a bit but was broken, if that is
 // the case, expect the Parse position to be a token ahead of the broken chain
 guin_ExpressionAST* guin_eval_expression_parser(guin_ParseState* pState, const bool in_global_scope);
+guin_String*        guin_expression_get_Namespace_string(guin_ParseState* pState);
 
 #endif

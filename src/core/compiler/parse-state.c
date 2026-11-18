@@ -254,7 +254,7 @@ guin_destroy_ParseState(guin_ParseState* pState)
 	guin_mfree(pState->namespacing.start);
 }
 
-void 
+bool 
 guin_advance_parser(guin_ParseState* pState)
 {
     if (pState->lState.index != 0) {
@@ -263,11 +263,20 @@ guin_advance_parser(guin_ParseState* pState)
         pState->current       = pState->ahead;
         pState->ahead         = pState->super_ahead;
         pState->super_ahead   = guin_advance_lexer(&pState->lState);
+		if (!pState->super_ahead.type) {
+			pState->err.out_of_mem = true;
+			return false;
+		}
     } else if (pState->current.type != guin_TK_EOF) {
         pState->current       = guin_advance_lexer(&pState->lState);
         pState->ahead         = guin_advance_lexer(&pState->lState);
         pState->super_ahead   = guin_advance_lexer(&pState->lState);
+		if (!pState->current.type || !pState->ahead.type || !pState->super_ahead.type) {
+			pState->err.out_of_mem = true;
+			return false;
+		}
     }
+	return true;
 }
 
 

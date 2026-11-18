@@ -113,6 +113,7 @@ typedef struct guin_ParseState {
 
 	struct {
 		bool namespacing_depth;
+		bool out_of_mem;
 	} err;
 } guin_ParseState;
 
@@ -126,6 +127,12 @@ guin_VariableInfoAST* guin_get_var_info(guin_ParseState* pState, char* name);
 
 bool guin_init_ParseState(guin_ParseState* pState, guin_String* file_content);
 void guin_destroy_ParseState(guin_ParseState* pState);
-void guin_advance_parser(guin_ParseState* pState);
+bool guin_advance_parser(guin_ParseState* pState);
+
+#define guin_advance_parser_MEM_SAFE(pState)\
+do {\
+	if ((pState)->err.out_of_mem || !guin_advance_parser(pState))\
+		goto out_of_mem_parser;\
+} while (0)
 
 #endif
