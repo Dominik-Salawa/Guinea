@@ -2,15 +2,93 @@
 #include "parser.h"
 #include "expressions.h"
 
-#define previous (pState->prev)
-#define current  (pState->current)
-#define ahead    (pState->ahead)
+#define previous 	   (pState->prev)
+#define current        (pState->current)
+#define ahead          (pState->ahead)
+#define super_ahead    (pState->super_ahead)
+
+
+// it will move the parser forward by at least one, usually ending
+// on a field access dot (.) when it cant chain further
+//
+// ONLY call it when on the identifier
+guin_String*
+guin_expression_get_Namespace_string(guin_ParseState* pState)
+{
+	guin_String* ns    = guin_init_String_ptr();
+	if (!ns) { 
+		return NULL; 
+	}
+
+	guin_NamespaceParseNode* n = pState->namespacing.start;
+	char ch_for_namespace = ':';
+	guin_LexTokenEnum tk_for_namespace = guin_TK_COLON;
+
+	if (current.type == guin_TK_Identifier && ahead.type == tk_for_namespace) {
+		guin_NamespaceParseNode* tmp = guin_find_Namespace_in_Namespace(n, (const char**)&current.string.content, 1);
+		if (!tmp) {
+			return ns;
+		}
+		n = tmp;
+
+		if (!guin_stringconcat_char_w_len(ns, current.string.content, current.string.length)) {
+			guin_clearstring_ptr(&ns);
+			return NULL;
+		}
+
+		if (ahead.type != tk_for_namespace) {
+			return ns;
+		}
+
+		guin_advance_parser(pState);
+
+		if (!guin_stringconcat_char_w_len(ns, &ch_for_namespace, 1)) {
+			guin_clearstring_ptr(&ns);
+			return NULL;
+		}
+	} else {
+		return ns;
+	}
+
+	while (true) {
+		if (ahead.type == guin_TK_Identifier && super_ahead.type == tk_for_namespace) {
+			guin_NamespaceParseNode* tmp = guin_find_Namespace_in_Namespace(n, (const char**)&ahead.string.content, 1);
+			if (!tmp) {
+				return ns;
+			}
+			n = tmp;
+
+			if (!guin_stringconcat_char_w_len(ns, ahead.string.content, ahead.string.length)) {
+				guin_clearstring_ptr(&ns);
+				return NULL;
+			}
+
+			guin_advance_parser(pState);
+
+			if (ahead.type != tk_for_namespace) {
+				return ns;
+			}
+
+			guin_advance_parser(pState);
+
+			if (!guin_stringconcat_char_w_len(ns, &ch_for_namespace, 1)) {
+				guin_clearstring_ptr(&ns);
+				return NULL;
+			}
+		} else {
+			return ns;
+		}
+	}
+}
+
+
 
 guin_ExpressionNodeAST*
 guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_scope)
 {
 	if (!pState) return NULL;
 
+	bool is_namespace = false;
 	guin_ExpressionNodeAST* x = guin_init_ExpressionNodeAST_ptr();
 	switch (current.type) 
 	{
@@ -49,6 +127,13 @@ guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_
 				break;
 			}
 
+			guin_NamespaceParseNode* namespace = guin_find_Namespace(pState, (const char**)&current.string.content, 1);
+			if (namespace && ahead.type == guin_TK_DOT) {
+				guin_printf("%s\n", guin_expression_get_Namespace_string(pState));
+				exit(1);
+				break;
+			}
+
 			guin_VariableInfoAST* info = guin_get_var_info(pState, current.string.content);
 			if (!info) {
 				x->fail = true;
@@ -63,7 +148,7 @@ guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_
 					guin_destroy_ExpressionNodeAST_ptr(&x);
 					return NULL;
 				}
-				x->data.string = str;
+				x->data.identifier = str;
 			} else {
 				x->type = guin_EXPRNODE_LOCAL_IDENTIFIER;
 				x->data.slot_num = info->slot;
@@ -75,6 +160,7 @@ guin_eval_expression_value_parser(guin_ParseState* pState, const bool in_global_
 		default:
 			x->empty = true;
 	}
+
 	return x;
 }
 

@@ -103,7 +103,7 @@ typedef struct {
     union {
         bool        bl;
         char        ch;
-        guin_String      string;
+        guin_String    string;
         guin_int64     integer;
         guin_number64  number;
     };

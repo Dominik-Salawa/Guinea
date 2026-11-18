@@ -2,9 +2,10 @@
 #define guin_DECLARATIONS_c
 
 #include "../include/declarations.h"
+#include "core/compiler/lexer.h"
 #include <stdlib.h>
 
-size_t MAX_NAMESPACE_DEPTH = 10;
+const size_t MAX_NAMESPACE_DEPTH = 10;
 
 guin_number32 guin__NaN__(void)
 {

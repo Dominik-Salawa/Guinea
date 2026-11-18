@@ -10,9 +10,10 @@ Before we get into Guinea, this is how you print "Hello, World!":
 ```Guinea
 include <stdlib/io>
 
-func main(void): int
+func 
+main(void): int
 {
-	Io::printf("Hello, World!\n")
+	Io:write(Io:out, "Hello, World!\n")
 	return 0
 }
 ```
@@ -31,14 +32,16 @@ If the first 2 parameters do not follow (in order) of the datatypes of the provi
 The full version of main is:
 
 ```Guinea
-func main(const argv: {string}, const env: {string}): int
+func 
+main(const argv: {string}, const env: {string}): int
 {
 	...
 }
 
 or 
 
-func main(const argv: {string}, const env: {string}): void
+func 
+main(const argv: {string}, const env: {string}): void
 {
 	...
 }

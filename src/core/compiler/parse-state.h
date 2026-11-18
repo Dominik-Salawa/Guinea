@@ -58,7 +58,7 @@ typedef struct guin_NamespaceParseNode {
 } guin_NamespaceParseNode;
 
 // source is located in src/declarations.c
-extern size_t MAX_NAMESPACE_DEPTH;
+extern const size_t MAX_NAMESPACE_DEPTH;
 
 bool guin_init_NamespaceParseNode(guin_NamespaceParseNode* node, const char* name, guin_NamespaceParseNode* prev);
 bool guin_init_NamespaceParseNode_chown_of_name(guin_NamespaceParseNode* node, char* name, guin_NamespaceParseNode* prev);
@@ -79,6 +79,9 @@ guin_NamespaceParseNode* guin_find_Namespace(guin_ParseState* pState, const char
 guin_NamespaceParseNode* guin_find_Namespace_in_Namespace(guin_NamespaceParseNode* pState, const char** names, const size_t names_len);
 void guin_log_Namespace(guin_NamespaceParseNode* parent);
 
+// WILL change an err in pState, pState->err.namespacing_depth = true so
+// pls check if it does so
+guin_NamespaceParseNode* guin_push_Namespace_chown_of_name(guin_ParseState* pState, char* name);
 guin_NamespaceParseNode* guin_push_Namespace(guin_ParseState* pState, const char* name);
 void guin_pop_Namespace(guin_ParseState* pState);
 
@@ -89,17 +92,28 @@ typedef struct guin_ParseState {
     guin_LexToken prev;
     guin_LexToken current;
     guin_LexToken ahead;
+    guin_LexToken super_ahead;
 
 	struct {
 		size_t depth;
 		guin_NamespaceParseNode* current;
-		guin_NamespaceParseNode start; // contains all the nodes and all
+
+		/*
+		Please note that start is meant to hold all the
+		namespacing nodes, do not use `name` or `prev`
+		as THEY ARE INVALID.
+		*/
+		guin_NamespaceParseNode* start;
 	} namespacing;
 
     guin_ParseScopeNode* scope_top;
     guin_ParseScopeNode* scope_base_aka_global;
     guin_LexState lState;
     char* errmsg;
+
+	struct {
+		bool namespacing_depth;
+	} err;
 } guin_ParseState;
 
 guin_ParseScopeNode* guin_init_ParseScopeNode_ptr(guin_ScopeType scopetype, guin_ASTDatatype ret_type);

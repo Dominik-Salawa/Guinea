@@ -12,26 +12,6 @@
 #include "ast.h"
 #include "expressions.h"
 
-static guin_LexTokenEnum valid_Operations[] = {
-    guin_TK_ADD,
-    guin_TK_SUB,
-    guin_TK_MUL,
-    guin_TK_DIV,
-    guin_TK_MOD,
-    guin_TK_POW,
-
-    guin_TK_and,
-    guin_TK_or,
-
-    guin_TK_EQU,
-    guin_TK_NOT_EQU,
-    guin_TK_GT,
-    guin_TK_LT,
-    guin_TK_GT_EQU,
-    guin_TK_LT_EQU,
-	guin_TK_ASSIGN,
-};
-
 struct guin_ExpressionPrecedenceStruct {
     guin_ubyte rank;
     guin_ExpressionNodeType type;

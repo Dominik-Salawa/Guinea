@@ -216,10 +216,20 @@ guin_init_ParseState(guin_ParseState* pState, guin_String* file_content)
 	if (!x.scope_top) return false;
 
     x.scope_base_aka_global = x.scope_top;
-	if (!guin_init_NamespaceParseNode(&x.namespacing.start, NULL, NULL)) {
+	x.namespacing.start = guin_malloc(sizeof(guin_NamespaceParseNode));
+
+	if (!x.namespacing.start) {
 		guin_destroy_ParseState(&x);
 		return false;
 	}
+
+	if (!guin_init_NamespaceParseNode(x.namespacing.start, NULL, NULL)) {
+		guin_destroy_ParseState(&x);
+		return false;
+	}
+
+	x.namespacing.current = x.namespacing.start;
+
 	*pState = x;
     return true;
 }
@@ -238,8 +248,10 @@ guin_destroy_ParseState(guin_ParseState* pState)
     guin_destroy_LexToken(&pState->prev);
     guin_destroy_LexToken(&pState->current);
     guin_destroy_LexToken(&pState->ahead);
+    guin_destroy_LexToken(&pState->super_ahead);
 	guin_destroy_LexState(&pState->lState);
-	guin_destroy_NamespaceParseNode(&pState->namespacing.start);
+	guin_destroy_NamespaceParseNode(pState->namespacing.start);
+	guin_mfree(pState->namespacing.start);
 }
 
 void 
@@ -247,12 +259,14 @@ guin_advance_parser(guin_ParseState* pState)
 {
     if (pState->lState.index != 0) {
         guin_destroy_LexToken(&pState->prev);
-        pState->prev    = pState->current;
-        pState->current = pState->ahead;
-        pState->ahead   = guin_advance_lexer(&pState->lState);
+        pState->prev          = pState->current;
+        pState->current       = pState->ahead;
+        pState->ahead         = pState->super_ahead;
+        pState->super_ahead   = guin_advance_lexer(&pState->lState);
     } else if (pState->current.type != guin_TK_EOF) {
-        pState->current = guin_advance_lexer(&pState->lState);
-        pState->ahead   = guin_advance_lexer(&pState->lState);
+        pState->current       = guin_advance_lexer(&pState->lState);
+        pState->ahead         = guin_advance_lexer(&pState->lState);
+        pState->super_ahead   = guin_advance_lexer(&pState->lState);
     }
 }
 
@@ -263,10 +277,11 @@ guin_init_NamespaceParseNode(guin_NamespaceParseNode* node, const char* name, gu
 	if (!node) return false;
 	if (name) {
 		size_t n = strlen(name);
-		char* mem = guin_malloc(n);
+		char* mem = guin_malloc(n+1);
 		if (!mem) return false;
 		for (size_t i = 0; i < n; ++i) 
 			mem[i] = name[i];
+		mem[n] = '\0';
 		return guin_init_NamespaceParseNode_chown_of_name(node, mem, prev);
 	}
 	else {
@@ -296,12 +311,13 @@ guin_init_NamespaceParseNode_chown_of_name(guin_NamespaceParseNode* node, char* 
 
 	node->subnames.size = 1;
 	node->subnames.names = guin_malloc(node->subnames.size * sizeof(guin_NamespaceParseNode));
+
 	if (!node->subnames.names) {
 		if (name) guin_mfree(name);
-		return NULL;
+		return false;
 	}
 
-	return node;
+	return true;
 }
 
 // deep copies the string, returns false if it fails to add
@@ -314,20 +330,30 @@ guin_add_NamespaceParseNode_in_Namespace(guin_NamespaceParseNode* parent, const 
 	if (!mem) return false;
 	for (size_t i = 0; i < n; ++i) 
 		mem[i] = name[i];
-	mem[n] = 0;
+	mem[n] = '\0';
 	return guin_add_NamespaceParseNode_in_Namespace_chown_of_name(parent, mem);
 }
-// claims ownership of the string, returns false if it fails to add
-// assumed it uses the same allocator as Guinea
+
 guin_NamespaceParseNode*
 guin_add_NamespaceParseNode_in_Namespace_chown_of_name(guin_NamespaceParseNode* parent, char* name)
 {
-	if (!parent || !name) return false;
-	size_t n = strlen(name);
+	if (!parent || !name) {
+		if (name) guin_mfree(name);
+		return false;
+	}
 
 	if (!parent->subnames.names) {
 		if (name) guin_mfree(name);
 		return NULL;
+	}
+
+	{ // if it already exists in the current branch
+		const char* m = name;
+		guin_NamespaceParseNode* c = guin_find_Namespace_in_Namespace(parent, &m, 1);
+		if (c) {
+			guin_mfree(name);
+			return c;
+		}
 	}
 
 	if (parent->subnames.length >= parent->subnames.size) {
@@ -341,11 +367,14 @@ guin_add_NamespaceParseNode_in_Namespace_chown_of_name(guin_NamespaceParseNode* 
 		parent->subnames.names = tmp;
 	}
 
-	return 
-		(guin_init_NamespaceParseNode_chown_of_name(&parent->subnames.names[parent->subnames.length], name, parent))? 
-			&parent->subnames.names[parent->subnames.length++]
-		:
-			NULL;
+	guin_NamespaceParseNode* x = &parent->subnames.names[parent->subnames.length];
+
+	if (guin_init_NamespaceParseNode_chown_of_name(x, name, parent)) {
+		++parent->subnames.length;
+		return x;
+	}
+
+	return NULL;
 }
 // DO NOT DESTROY
 // recommend to make a tmp array of top to bottom of Namespaces, with the length of it in order to find
@@ -356,8 +385,8 @@ guin_find_Namespace(guin_ParseState* pState, const char** names, const size_t na
 {
 	if (!pState || !names || names_len == 0) return NULL;
 
-	for (size_t i = 0; i < pState->namespacing.start.subnames.length; ++i) {
-		guin_NamespaceParseNode* x = guin_find_Namespace_in_Namespace(&pState->namespacing.start.subnames.names[i], names, names_len);
+	for (size_t i = 0; i < pState->namespacing.start->subnames.length; ++i) {
+		guin_NamespaceParseNode* x = guin_find_Namespace_in_Namespace(&pState->namespacing.start->subnames.names[i], names, names_len);
 		if (x) return x;
 	}
 
@@ -391,6 +420,8 @@ guin_log_Namespace(guin_NamespaceParseNode* parent)
 		guin_log("(null)\n");
 		return;
 	}
+
+	guin_log("%s\n", parent->name);
 	guin_log_push_layer();
 	for (size_t i = 0; i < parent->subnames.length; ++i)
 		guin_log_Namespace(&parent->subnames.names[i]);
@@ -398,24 +429,30 @@ guin_log_Namespace(guin_NamespaceParseNode* parent)
 }
 
 
+// WILL change an err in pState, pState->err.namespacing_depth = true so
+// pls check if it does so
 guin_NamespaceParseNode*
 guin_push_Namespace(guin_ParseState* pState, const char* name)
 {
 	if (!pState || !name)
-		return false;
+		return NULL;
 
-	if (pState->namespacing.depth > MAX_NAMESPACE_DEPTH)
-		return false;
+	if (pState->namespacing.depth > MAX_NAMESPACE_DEPTH) {
+		pState->err.namespacing_depth = true;
+		return NULL;
+	}
 
 	size_t n = strlen(name);
-	char* str = guin_malloc(n);
-	if (!str) return false;
+	char* str = guin_malloc(n+1);
+	if (!str) return NULL;
 
 	for (size_t i = 0; i < n; ++i)
 		str[i] = name[i];
+	str[n] = '\0';
 
-	return guin_add_NamespaceParseNode_in_Namespace_chown_of_name(pState->namespacing.current, str);
+	return guin_push_Namespace_chown_of_name(pState, str);
 }
+
 guin_NamespaceParseNode* 
 guin_push_Namespace_chown_of_name(guin_ParseState* pState, char* name)
 {
@@ -430,18 +467,22 @@ guin_push_Namespace_chown_of_name(guin_ParseState* pState, char* name)
 	}
 
 	guin_NamespaceParseNode* x = guin_add_NamespaceParseNode_in_Namespace_chown_of_name(pState->namespacing.current, name);
+
 	if (x) {
 		++pState->namespacing.depth;
-		pState->namespacing.current = &pState->namespacing.current->subnames.names[pState->namespacing.current->subnames.length];
+		pState->namespacing.current = x;
 		return x;
 	}
 
 	return NULL;
 }
+
 void 
 guin_pop_Namespace(guin_ParseState* pState)
 {
-	
+	if (!pState || !pState->namespacing.current->prev) return;
+	--pState->namespacing.depth;
+	pState->namespacing.current = pState->namespacing.current->prev;
 }
 
 
